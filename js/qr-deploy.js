@@ -12,11 +12,13 @@ modalDeployBtn.addEventListener('click', async () => {
     // Generate a unique ID for this deployment
     const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
     
-    // Use the Piping Server for deployment
+    // Verified piping server endpoint
     const pipingServerUrl = 'https://piping.glitch.me/deploy';
     
     // Get the current model URL
     const modelUrl = currentModelSrc; // This is defined in gallery.js
+    
+    console.log('Deploying model to mobile:', modelUrl);
     
     // Post the model URL to the piping server
     const response = await fetch(pipingServerUrl, {
@@ -29,6 +31,7 @@ modalDeployBtn.addEventListener('click', async () => {
     
     // Process the response from the piping server
     const data = await response.json();
+    console.log('Received response from piping server:', data);
     
     if (data.mobileUrl) {
       // Generate QR code with the mobile URL
