@@ -11,6 +11,7 @@ class MobileDeployment {
     this.qrUrl = document.getElementById('qr-url');
     this.refreshMobileBtn = document.getElementById('refreshMobileBtn');
     this.statusMessage = document.getElementById('statusMessage');
+    this.connectionStatus = document.getElementById('connectionStatus');
     
     // State
     this.pipeId = this.getRandomInt(1e+20);
@@ -33,6 +34,7 @@ class MobileDeployment {
     this.closeModal = this.closeModal.bind(this);
     this.refreshMobile = this.refreshMobile.bind(this);
     this.pingLoop = this.pingLoop.bind(this);
+    this.updateConnectionStatus = this.updateConnectionStatus.bind(this);
   }
   
   init() {
@@ -209,6 +211,50 @@ class MobileDeployment {
         }, 5000);
       }
     }
+    
+    // Also update connection status
+    const isConnecting = color === '#FFA500'; // Orange indicates connecting
+    const isConnected = color === '#4285F4'; // Blue indicates connected
+    const isError = color === '#DC143C'; // Red indicates error
+    
+    if (isConnecting) {
+      this.updateConnectionStatus('connecting', message);
+    } else if (isConnected) {
+      this.updateConnectionStatus('connected', message);
+    } else if (isError) {
+      this.updateConnectionStatus('error', message);
+    }
+  }
+  
+  // Update connection status indicator
+  updateConnectionStatus(state, message) {
+    if (!this.connectionStatus) return;
+    
+    const indicator = this.connectionStatus.querySelector('.status-indicator');
+    const statusText = this.connectionStatus.querySelector('.status-text');
+    
+    // Show the status
+    this.connectionStatus.style.display = 'inline-flex';
+    
+    // Clear any existing classes
+    indicator.classList.remove('status-connected', 'status-connecting', 'status-error');
+    
+    switch (state) {
+      case 'connecting':
+        indicator.classList.add('status-connecting');
+        statusText.textContent = 'Connecting to piping server...';
+        break;
+      case 'connected':
+        indicator.classList.add('status-connected');
+        statusText.textContent = 'Connected to piping server';
+        break;
+      case 'error':
+        indicator.style.backgroundColor = '#EA4335'; // Red
+        statusText.textContent = 'Connection error';
+        break;
+      default:
+        this.connectionStatus.style.display = 'none';
+    }
   }
   
   // POST helper function
@@ -348,11 +394,26 @@ class MobileDeployment {
     try {
       console.log('Refreshing mobile view...');
       this.isSendingData = true;
+      
+      // Change refresh button state
+      if (this.refreshMobileBtn) {
+        this.refreshMobileBtn.textContent = 'Sending...';
+        this.refreshMobileBtn.style.backgroundColor = '#FFA500'; // Orange
+        this.refreshMobileBtn.disabled = true;
+      }
+      
       this.updateStatus('Sending data to mobile device. Textured models will take some time.', 'white');
       
       // Set a timeout to reset sending state
       setTimeout(() => {
         this.isSendingData = false;
+        
+        // Reset refresh button
+        if (this.refreshMobileBtn) {
+          this.refreshMobileBtn.textContent = 'Refresh Mobile';
+          this.refreshMobileBtn.style.backgroundColor = '#34A853'; // Green
+          this.refreshMobileBtn.disabled = false;
+        }
       }, this.REFRESH_DELAY);
       
       // Get current model info from global variables (defined in gallery.js)
@@ -444,9 +505,30 @@ class MobileDeployment {
       this.contentHasChanged = false;
       this.updateStatus('Model successfully refreshed on mobile device!', '#4285F4');
       
+      // Update refresh button to success state
+      if (this.refreshMobileBtn) {
+        this.refreshMobileBtn.textContent = 'Successfully Refreshed';
+        this.refreshMobileBtn.style.backgroundColor = '#34A853'; // Green
+        this.refreshMobileBtn.disabled = false;
+        
+        // Reset text after 3 seconds
+        setTimeout(() => {
+          if (this.refreshMobileBtn) {
+            this.refreshMobileBtn.textContent = 'Refresh Mobile';
+          }
+        }, 3000);
+      }
+      
     } catch (error) {
       console.error('Error refreshing mobile view:', error);
       this.updateStatus('Failed to refresh mobile view. Please try again.', '#DC143C');
+      
+      // Reset refresh button to error state
+      if (this.refreshMobileBtn) {
+        this.refreshMobileBtn.textContent = 'Refresh Failed - Try Again';
+        this.refreshMobileBtn.style.backgroundColor = '#EA4335'; // Red
+        this.refreshMobileBtn.disabled = false;
+      }
     } finally {
       this.isSendingData = false;
     }
