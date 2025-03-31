@@ -1,83 +1,417 @@
-// Mobile deployment with QR code functionality using Piping Server
+// Enhanced mobile deployment with QR code functionality using the original Space Opera mechanism
+// This leverages the piping server for real-time communication between editor and mobile view
 
-// Get QR code related elements
-const modalDeployBtn = document.getElementById('modalDeployBtn');
-const qrOverlay = document.getElementById('qrOverlay');
-const qrCloseButton = document.getElementById('qrCloseButton');
-const qrUrl = document.getElementById('qr-url');
-
-// Deploy to mobile functionality
-modalDeployBtn.addEventListener('click', async () => {
-  try {
-    // Generate a unique ID for this deployment
-    const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+class MobileDeployment {
+  constructor() {
+    // Elements
+    this.modalDeployBtn = document.getElementById('modalDeployBtn');
+    this.qrOverlay = document.getElementById('qrOverlay');
+    this.qrCloseButton = document.getElementById('qrCloseButton');
+    this.qrCanvas = document.getElementById('qr-code');
+    this.qrUrl = document.getElementById('qr-url');
+    this.refreshMobileBtn = document.getElementById('refreshMobileBtn');
+    this.statusMessage = document.getElementById('statusMessage');
     
-    // Verified piping server endpoint
-    const pipingServerUrl = 'https://piping.glitch.me/deploy';
+    // State
+    this.pipeId = this.getRandomInt(1e+20);
+    this.isDeployed = false;
+    this.isSendingData = false;
+    this.contentHasChanged = false;
+    this.haveReceivedResponse = false;
+    this.sessionList = [];
+    this.mobilePingUrl = this.getPingUrl(this.pipeId);
+    this.defaultToSceneViewer = true;
     
-    // Get the current model URL
-    const modelUrl = currentModelSrc; // This is defined in gallery.js
+    // Configuration
+    this.DOMAIN = 'https://piping.glitch.me/';
+    this.REFRESH_DELAY = 20000; // 20s
     
-    console.log('Deploying model to mobile:', modelUrl);
+    // Bind methods
+    this.init = this.init.bind(this);
+    this.deployToMobile = this.deployToMobile.bind(this);
+    this.openModal = this.openModal.bind(this);
+    this.closeModal = this.closeModal.bind(this);
+    this.refreshMobile = this.refreshMobile.bind(this);
+    this.pingLoop = this.pingLoop.bind(this);
+  }
+  
+  init() {
+    // Set up event listeners
+    this.modalDeployBtn.addEventListener('click', this.deployToMobile);
+    this.qrCloseButton.addEventListener('click', this.closeModal);
+    if (this.refreshMobileBtn) {
+      this.refreshMobileBtn.addEventListener('click', this.refreshMobile);
+    }
     
-    // Post the model URL to the piping server
-    const response = await fetch(pipingServerUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ modelUrl })
+    // Close QR overlay when clicking outside or pressing ESC
+    this.qrOverlay.addEventListener('click', (event) => {
+      if (event.target === this.qrOverlay) {
+        this.closeModal();
+      }
     });
     
-    // Process the response from the piping server
-    const data = await response.json();
-    console.log('Received response from piping server:', data);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.qrOverlay.style.display === 'flex') {
+        this.closeModal();
+      }
+    });
+  }
+  
+  // Random integer generator for unique IDs
+  getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
+  }
+  
+  // URL helpers
+  getSessionUrl(sessionId) {
+    return `${this.DOMAIN}${this.pipeId}-${sessionId}`;
+  }
+  
+  getPingUrl(pipeId) {
+    return `${this.DOMAIN}ping-${pipeId}`;
+  }
+  
+  posterToSession(sessionID, modelId) {
+    return `${this.DOMAIN}${this.pipeId}-${sessionID}-${modelId}-poster`;
+  }
+  
+  gltfToSession(sessionID, modelId) {
+    return `${this.DOMAIN}${this.pipeId}-${sessionID}-${modelId}`;
+  }
+  
+  envToSession(sessionID, envIsHdr) {
+    const addOn = envIsHdr ? '#.hdr' : '';
+    return `${this.DOMAIN}${this.pipeId}-${sessionID}-env${addOn}`;
+  }
+  
+  // Get the full URL for mobile viewing
+  getViewableSite() {
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}view/?id=${this.pipeId}`;
+  }
+  
+  // Generate and show QR code
+  openModal() {
+    const viewableSite = this.getViewableSite();
     
-    if (data.mobileUrl) {
-      // Generate QR code with the mobile URL
-      const qrCode = document.getElementById('qr-code');
-      QRCode.toCanvas(qrCode, data.mobileUrl, { width: 200 }, function(error) {
-        if (error) console.error('Error generating QR code:', error);
-      });
-      
-      // Set the URL text
-      qrUrl.textContent = data.mobileUrl;
-      
-      // Show the QR code overlay
-      qrOverlay.style.display = 'flex';
-    } else {
-      throw new Error('No mobile URL returned from piping server');
-    }
-  } catch (error) {
-    console.error('Error deploying to mobile:', error);
-    alert('Failed to deploy model to mobile. Please try again.');
-    
-    // Fallback to direct QR code generation if piping server fails
-    const qrCode = document.getElementById('qr-code');
-    QRCode.toCanvas(qrCode, currentModelSrc, { width: 200 }, function(error) {
+    // Generate QR code
+    QRCode.toCanvas(this.qrCanvas, viewableSite, { width: 200 }, (error) => {
       if (error) console.error('Error generating QR code:', error);
     });
     
-    qrUrl.textContent = currentModelSrc;
-    qrOverlay.style.display = 'flex';
+    // Show the URL text
+    this.qrUrl.textContent = viewableSite;
+    
+    // Show the overlay
+    this.qrOverlay.style.display = 'flex';
+    
+    // Update instructions to include refresh information
+    const instructionsEl = document.querySelector('.qr-container p');
+    if (instructionsEl) {
+      instructionsEl.innerHTML = 'Scan this code with your mobile device to view the model. After scanning, click the "Refresh Mobile" button to update changes.';
+    }
+    
+    // Show the refresh button if not already visible
+    if (this.refreshMobileBtn && this.isDeployed) {
+      this.refreshMobileBtn.style.display = 'block';
+    }
   }
-});
-
-// Close button functionality for QR code
-qrCloseButton.addEventListener('click', () => {
-  qrOverlay.style.display = 'none';
-});
-
-// Close QR overlay when clicking outside the QR container
-qrOverlay.addEventListener('click', (event) => {
-  if (event.target === qrOverlay) {
-    qrOverlay.style.display = 'none';
+  
+  closeModal() {
+    this.qrOverlay.style.display = 'none';
   }
-});
-
-// Extend the ESC key functionality to close QR overlay
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && qrOverlay.style.display === 'flex') {
-    qrOverlay.style.display = 'none';
+  
+  // Main deployment function
+  async deployToMobile() {
+    try {
+      console.log('Deploying model to mobile...');
+      
+      // Mark as deployed
+      this.isDeployed = true;
+      
+      // Update UI to show deployment is in progress
+      this.updateStatus('Preparing model for mobile view...', '#4285F4');
+      
+      // Generate the QR code and show the modal
+      this.openModal();
+      
+      // Start listening for mobile device connections
+      this.pingLoop();
+      
+      // If we have a refresh button, show it
+      if (this.refreshMobileBtn) {
+        this.refreshMobileBtn.style.display = 'block';
+      }
+      
+    } catch (error) {
+      console.error('Error deploying to mobile:', error);
+      this.updateStatus('Failed to deploy model to mobile. Please try again.', '#DC143C');
+    }
   }
+  
+  // Update status message
+  updateStatus(message, color = 'white') {
+    if (this.statusMessage) {
+      this.statusMessage.textContent = message;
+      this.statusMessage.style.color = color;
+      this.statusMessage.style.display = 'block';
+      
+      // Auto-hide success messages after 5 seconds
+      if (color === '#4285F4') {
+        setTimeout(() => {
+          this.statusMessage.style.display = 'none';
+        }, 5000);
+      }
+    }
+  }
+  
+  // POST helper function
+  async post(content, url) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        body: content,
+      });
+      
+      if (response.ok) {
+        console.log('Success posting to:', url);
+        return true;
+      } else {
+        console.error('Failed to post to:', url);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error in post request:', error);
+      return false;
+    }
+  }
+  
+  // GET with timeout helper
+  async getWithTimeout(url, timeout = 30000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        signal: controller.signal
+      });
+      clearTimeout(id);
+      return response;
+    } catch (error) {
+      clearTimeout(id);
+      throw error;
+    }
+  }
+  
+  // Get mobile operating system
+  getMobileOperatingSystem() {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    
+    // Windows Phone must come first because its UA also contains "Android"
+    if (/windows phone/i.test(userAgent)) {
+      return 'Windows Phone';
+    }
+    
+    if (/android/i.test(userAgent)) {
+      return 'Android';
+    }
+    
+    // iOS detection
+    if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
+      return 'iOS';
+    }
+    
+    return 'unknown';
+  }
+  
+  // Wait for a ping from a mobile device
+  async waitForPing() {
+    try {
+      const response = await this.getWithTimeout(this.mobilePingUrl);
+      
+      if (response.ok) {
+        const json = await response.json();
+        
+        // Add the session to our list if not already there
+        const sessionExists = this.sessionList.some(session => session.id === json.id);
+        if (!sessionExists) {
+          this.sessionList.push(json);
+        }
+        
+        // Update UI to show connection success
+        this.updateStatus('Mobile device connected! You can now view your model.', '#4285F4');
+        
+        // Only update if not currently updating
+        if (!this.isSendingData) {
+          this.refreshMobile();
+        }
+        
+        this.haveReceivedResponse = true;
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.log('Error waiting for ping:', error);
+      return false;
+    }
+  }
+  
+  // Continuously listen for pings from mobile devices
+  async pingLoop() {
+    try {
+      if (!await this.waitForPing()) {
+        // Wait a second before trying again
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    } catch (error) {
+      console.log('Error in ping loop:', error);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    // Continue the loop if we're still deployed
+    if (this.isDeployed) {
+      this.pingLoop();
+    }
+  }
+  
+  // Create a blob from a URL
+  async urlToBlob(url) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch url: ${url}`);
+      }
+      return await response.blob();
+    } catch (error) {
+      console.error('Error converting URL to blob:', error);
+      throw error;
+    }
+  }
+  
+  // Refresh the model on connected mobile devices
+  async refreshMobile() {
+    if (this.isSendingData || !this.isDeployed || this.sessionList.length === 0) {
+      return;
+    }
+    
+    try {
+      console.log('Refreshing mobile view...');
+      this.isSendingData = true;
+      this.updateStatus('Sending data to mobile device. Textured models will take some time.', 'white');
+      
+      // Set a timeout to reset sending state
+      setTimeout(() => {
+        this.isSendingData = false;
+      }, this.REFRESH_DELAY);
+      
+      // Get current model info from global variables (defined in gallery.js)
+      const modelUrl = window.currentModelSrc;
+      const modelTitle = window.currentModelTitle;
+      
+      if (!modelUrl) {
+        throw new Error('No model URL available');
+      }
+      
+      // Create a unique ID for this update
+      const updateId = this.getRandomInt(1e+20);
+      
+      // Create a screenshot/poster of the current model viewer state
+      const modalViewer = document.getElementById('modalModelViewer');
+      let posterBlob;
+      
+      if (modalViewer) {
+        // If possible, get a proper poster from model-viewer
+        if (typeof modalViewer.toDataURL === 'function') {
+          const dataUrl = await modalViewer.toDataURL();
+          posterBlob = await (await fetch(dataUrl)).blob();
+        } else {
+          // Fallback to a basic blob
+          posterBlob = new Blob(['placeholder'], { type: 'image/png' });
+        }
+      } else {
+        posterBlob = new Blob(['placeholder'], { type: 'image/png' });
+      }
+      
+      // Get the model data as a blob
+      const modelBlob = await this.urlToBlob(modelUrl);
+      
+      // Package the model data and configuration
+      const modelConfig = {
+        title: modelTitle,
+        ar: true,
+        arModes: this.defaultToSceneViewer ? 
+          'scene-viewer webxr quick-look' : 
+          'webxr scene-viewer quick-look',
+        autoRotate: true,
+        cameraControls: true,
+        shadowIntensity: 1
+      };
+      
+      // For each connected mobile session, send the updated data
+      for (const session of this.sessionList) {
+        // Create a packet with all the necessary info
+        const packet = {
+          updatedContent: {
+            gltfChanged: true,
+            gltfId: updateId,
+            stateChanged: true,
+            posterId: updateId,
+            envChanged: false,
+            envIsHdr: false
+          },
+          snippet: {
+            config: modelConfig,
+            arConfig: {
+              ar: true,
+              arModes: modelConfig.arModes
+            },
+            extraAttributes: {},
+            hotspots: []
+          },
+          urls: {
+            gltf: modelUrl,
+            env: undefined
+          }
+        };
+        
+        // Send the packet to the session
+        const sessionUrl = this.getSessionUrl(session.id);
+        await this.post(JSON.stringify(packet), sessionUrl);
+        
+        // Send poster image
+        const posterUrl = this.posterToSession(session.id, updateId);
+        await this.post(posterBlob, posterUrl);
+        
+        // Send model data
+        const modelSessionUrl = this.gltfToSession(session.id, updateId);
+        await this.post(modelBlob, modelSessionUrl);
+        
+        // Mark session as not stale
+        session.isStale = false;
+      }
+      
+      this.contentHasChanged = false;
+      this.updateStatus('Model successfully refreshed on mobile device!', '#4285F4');
+      
+    } catch (error) {
+      console.error('Error refreshing mobile view:', error);
+      this.updateStatus('Failed to refresh mobile view. Please try again.', '#DC143C');
+    } finally {
+      this.isSendingData = false;
+    }
+  }
+  
+  // Toggle AR mode between scene-viewer priority and webxr priority
+  toggleArMode(useSceneViewer) {
+    this.defaultToSceneViewer = useSceneViewer;
+    console.log(`AR mode set to ${this.defaultToSceneViewer ? 'scene-viewer' : 'webxr'} priority`);
+  }
+}
+
+// Initialize the mobile deployment functionality when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  window.mobileDeployment = new MobileDeployment();
+  window.mobileDeployment.init();
 });
