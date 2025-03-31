@@ -1,0 +1,118 @@
+/* Mobile View Styles */
+
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f5f5f5;
+}
+
+/* App container */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* Model viewer container */
+.mvContainer {
+  display: flex;
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+/* Model viewer element */
+model-viewer {
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+  background-color: #eee;
+}
+
+model-viewer:active {
+  cursor: -webkit-grabbing;
+  cursor: -moz-grabbing;
+}
+
+/* Loading overlay */
+#overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+/* Toast notification */
+#snackbar-mobile {
+  visibility: hidden;
+  min-width: 250px;
+  margin-left: -125px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 4px;
+  padding: 16px;
+  position: fixed;
+  z-index: 1000;
+  left: 50%;
+  bottom: 30px;
+  font-size: 14px;
+}
+
+#snackbar-mobile.show {
+  visibility: visible;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+  from {bottom: 0; opacity: 0;} 
+  to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadeout {
+  from {bottom: 30px; opacity: 1;} 
+  to {bottom: 0; opacity: 0;}
+}
+
+/* AR button styling enhancements */
+:not(:defined) > * {
+  display: none;
+}
+
+model-viewer::part(default-ar-button) {
+  background-color: #4285F4;
+  border-radius: 4px;
+  border: none;
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  height: 36px;
+  width: auto;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 14px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
