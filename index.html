@@ -18,7 +18,7 @@
     }
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
       max-width: 1200px;
       margin: 0 auto;
@@ -28,27 +28,57 @@
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      cursor: pointer; /* Add pointer cursor */
-      transition: transform 0.3s ease; /* Add smooth transition */
+      cursor: pointer;
+      transition: transform 0.3s ease;
     }
     .model-card:hover {
-      transform: translateY(-5px); /* Add hover effect */
+      transform: translateY(-5px);
     }
-    model-viewer {
+    
+    /* 9:16 aspect ratio container */
+    .model-container {
+      position: relative;
       width: 100%;
-      height: 300px;
+      padding-top: 177.78%; /* 16:9 = 56.25%, 9:16 = 177.78% */
+    }
+    
+    model-viewer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background-color: #fafafa;
     }
+    
     .model-info {
       padding: 15px;
     }
+    
     h2 {
       margin-top: 0;
       margin-bottom: 10px;
     }
+    
     p {
       color: #666;
-      margin: 0;
+      margin: 0 0 15px 0;
+    }
+    
+    .download-btn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-block;
+    }
+    
+    .download-btn:hover {
+      background-color: #45a049;
     }
     
     /* Modal/Overlay styles */
@@ -64,6 +94,7 @@
       justify-content: center;
       align-items: center;
     }
+    
     .modal {
       width: 90%;
       height: 90%;
@@ -72,10 +103,13 @@
       overflow: hidden;
       position: relative;
     }
+    
     .modal model-viewer {
       width: 100%;
       height: 100%;
+      position: relative;
     }
+    
     .close-button {
       position: absolute;
       top: 15px;
@@ -92,6 +126,25 @@
       border: none;
       z-index: 1010;
     }
+    
+    .modal-download-btn {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 16px;
+      z-index: 1010;
+    }
+    
+    .modal-download-btn:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
@@ -99,79 +152,93 @@
   <div class="gallery">
     <!-- Your original model -->
     <div class="model-card" data-model="./models/31_10_2024.glb" data-title="My Model" data-desc="Original 3D model">
-      <model-viewer
-        src="./models/31_10_2024.glb"
-        alt="Original 3D model"
-        auto-rotate
-        camera-controls
-        shadow-intensity="1">
-      </model-viewer>
+      <div class="model-container">
+        <model-viewer
+          src="./models/31_10_2024.glb"
+          alt="Original 3D model"
+          auto-rotate
+          camera-controls
+          shadow-intensity="1">
+        </model-viewer>
+      </div>
       <div class="model-info">
         <h2>My Model</h2>
         <p>Original 3D model</p>
+        <a href="./models/31_10_2024.glb" download class="download-btn">Download</a>
       </div>
     </div>
-    <!-- Example model 1 -->
+    
+    <!-- Temple model -->
     <div class="model-card" data-model="./models/20230204temple-transformed.glb" data-title="Temple" data-desc="Example 3D model">
-      <model-viewer
-        src="./models/20230204temple-transformed.glb"
-        alt="Temple"
-        auto-rotate
-        camera-controls
-        shadow-intensity="1">
-      </model-viewer>
+      <div class="model-container">
+        <model-viewer
+          src="./models/20230204temple-transformed.glb"
+          alt="Temple"
+          auto-rotate
+          camera-controls
+          shadow-intensity="1">
+        </model-viewer>
+      </div>
       <div class="model-info">
         <h2>Temple</h2>
         <p>Example 3D model</p>
+        <a href="./models/20230204temple-transformed.glb" download class="download-btn">Download</a>
       </div>
     </div>
-    <!-- Example model 2 -->
+    
+    <!-- Hibiscus model -->
     <div class="model-card" data-model="./models/hibiscus.glb" data-title="Hibiscus" data-desc="Example 3D model">
-      <model-viewer
-        src="./models/hibiscus.glb"
-        alt="hibiscus"
-        auto-rotate
-        camera-controls
-        shadow-intensity="1">
-      </model-viewer>
+      <div class="model-container">
+        <model-viewer
+          src="./models/hibiscus.glb"
+          alt="hibiscus"
+          auto-rotate
+          camera-controls
+          shadow-intensity="1">
+        </model-viewer>
+      </div>
       <div class="model-info">
         <h2>Hibiscus</h2>
         <p>Example 3D model</p>
+        <a href="./models/hibiscus.glb" download class="download-btn">Download</a>
       </div>
     </div>
 
-        <!-- Example model 1 -->
-    <div class="model-card" data-model="https://cdn.glitch.me/fe683ccc-7c71-4551-94d5-171a2e238fcf/saraswati_flower.glb" data-title="Idol" data-desc="Example 3D model">
-      <model-viewer
-        src="https://cdn.glitch.me/fe683ccc-7c71-4551-94d5-171a2e238fcf/saraswati_flower.glb"
-        alt="Idol"
-        auto-rotate
-        camera-controls
-        shadow-intensity="1">
-      </model-viewer>
+    <!-- Idol model from external source -->
+    <div class="model-card" data-model="https://cdn.glitch.me/fe683ccc-7c71-4551-94d5-171a2e238fcf/saraswati_flower.glb" data-title="Idol" data-desc="Saraswati 3D model">
+      <div class="model-container">
+        <model-viewer
+          src="https://cdn.glitch.me/fe683ccc-7c71-4551-94d5-171a2e238fcf/saraswati_flower.glb"
+          alt="Idol"
+          auto-rotate
+          camera-controls
+          shadow-intensity="1">
+        </model-viewer>
+      </div>
       <div class="model-info">
-        <h2>Temple</h2>
-        <p>Example 3D model</p>
+        <h2>Idol</h2>
+        <p>Saraswati 3D model</p>
+        <a href="https://cdn.glitch.me/fe683ccc-7c71-4551-94d5-171a2e238fcf/saraswati_flower.glb" download class="download-btn">Download</a>
       </div>
     </div>
 
-        <!-- Example model 1 -->
-    <div class="model-card" data-model="./models/bycycle.glb" data-title="Bycycle" data-desc="Example 3D model">
-      <model-viewer
-        src="./models/bycycle.glb"
-        alt="Bycycle"
-        auto-rotate
-        camera-controls
-        shadow-intensity="1">
-      </model-viewer>
+    <!-- Bicycle model -->
+    <div class="model-card" data-model="./models/bycycle.glb" data-title="Bicycle" data-desc="3D bicycle model">
+      <div class="model-container">
+        <model-viewer
+          src="./models/bycycle.glb"
+          alt="Bicycle"
+          auto-rotate
+          camera-controls
+          shadow-intensity="1">
+        </model-viewer>
+      </div>
       <div class="model-info">
-        <h2>Temple</h2>
-        <p>Example 3D model</p>
+        <h2>Bicycle</h2>
+        <p>3D bicycle model</p>
+        <a href="./models/bycycle.glb" download class="download-btn">Download</a>
       </div>
     </div>
-
-
-    
   </div>
 
   <!-- Modal overlay for enlarged model view -->
@@ -185,6 +252,7 @@
         ar
         ar-modes="webxr scene-viewer quick-look">
       </model-viewer>
+      <a id="modalDownloadBtn" href="#" download class="modal-download-btn">Download Model</a>
     </div>
   </div>
 
@@ -194,6 +262,14 @@
     const overlay = document.getElementById('modelOverlay');
     const modalViewer = document.getElementById('modalModelViewer');
     const closeButton = document.getElementById('closeButton');
+    const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+
+    // Prevent download buttons from triggering the card click
+    document.querySelectorAll('.download-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    });
 
     // Add click event to each model card
     modelCards.forEach(card => {
@@ -205,6 +281,10 @@
         // Set the source for the modal model viewer
         modalViewer.setAttribute('src', modelSrc);
         modalViewer.setAttribute('alt', modelTitle);
+        
+        // Update the download button in the modal
+        modalDownloadBtn.href = modelSrc;
+        modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
         
         // Show the overlay
         overlay.style.display = 'flex';
