@@ -129,8 +129,11 @@ class MobileDeployment {
       // Mark as deployed
       this.isDeployed = true;
       
+      // Update button to show connecting state
+      this.updateDeployButtonState('connecting');
+      
       // Update UI to show deployment is in progress
-      this.updateStatus('Preparing model for mobile view...', '#4285F4');
+      this.updateStatus('Connecting to piping server...', '#FFA500'); // Orange color for "in progress"
       
       // Generate the QR code and show the modal
       this.openModal();
@@ -143,9 +146,52 @@ class MobileDeployment {
         this.refreshMobileBtn.style.display = 'block';
       }
       
+      // After a short delay, update status to waiting for connections if no connections yet
+      setTimeout(() => {
+        if (this.sessionList.length === 0 && this.isDeployed) {
+          this.updateStatus('Piping server connected. Waiting for mobile device to scan QR code...', '#4285F4');
+          this.updateDeployButtonState('ready');
+        }
+      }, 2000);
+      
     } catch (error) {
       console.error('Error deploying to mobile:', error);
       this.updateStatus('Failed to deploy model to mobile. Please try again.', '#DC143C');
+      this.updateDeployButtonState('error');
+    }
+  }
+  
+  // Update deploy button state
+  updateDeployButtonState(state) {
+    if (!this.modalDeployBtn) return;
+    
+    // Reset all states
+    this.modalDeployBtn.classList.remove('connecting', 'ready', 'error', 'connected');
+    
+    switch (state) {
+      case 'connecting':
+        this.modalDeployBtn.classList.add('connecting');
+        this.modalDeployBtn.innerHTML = '<span>Connecting...</span>';
+        this.modalDeployBtn.disabled = true;
+        break;
+      case 'ready':
+        this.modalDeployBtn.classList.add('ready');
+        this.modalDeployBtn.innerHTML = '<span>Piping Server Ready</span>';
+        this.modalDeployBtn.disabled = false;
+        break;
+      case 'connected':
+        this.modalDeployBtn.classList.add('connected');
+        this.modalDeployBtn.innerHTML = '<span>Mobile Connected</span>';
+        this.modalDeployBtn.disabled = false;
+        break;
+      case 'error':
+        this.modalDeployBtn.classList.add('error');
+        this.modalDeployBtn.innerHTML = '<span>Connection Failed</span>';
+        this.modalDeployBtn.disabled = false;
+        break;
+      default:
+        this.modalDeployBtn.innerHTML = '<span>Deploy to Mobile</span>';
+        this.modalDeployBtn.disabled = false;
     }
   }
   
@@ -238,6 +284,9 @@ class MobileDeployment {
         if (!sessionExists) {
           this.sessionList.push(json);
         }
+        
+        // Update deploy button state to connected
+        this.updateDeployButtonState('connected');
         
         // Update UI to show connection success
         this.updateStatus('Mobile device connected! You can now view your model.', '#4285F4');
