@@ -1,4 +1,4 @@
-// Mobile deployment with QR code functionality
+// Mobile deployment with QR code functionality using Piping Server
 
 // Get QR code related elements
 const modalDeployBtn = document.getElementById('modalDeployBtn');
@@ -12,23 +12,51 @@ modalDeployBtn.addEventListener('click', async () => {
     // Generate a unique ID for this deployment
     const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
     
-    // Get the current model URL from the gallery.js
-    // Note: currentModelSrc and currentModelTitle are declared in gallery.js
+    // Use the Piping Server for deployment
+    const pipingServerUrl = 'https://piping.glitch.me/deploy';
     
-    // Generate QR code
+    // Get the current model URL
+    const modelUrl = currentModelSrc; // This is defined in gallery.js
+    
+    // Post the model URL to the piping server
+    const response = await fetch(pipingServerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ modelUrl })
+    });
+    
+    // Process the response from the piping server
+    const data = await response.json();
+    
+    if (data.mobileUrl) {
+      // Generate QR code with the mobile URL
+      const qrCode = document.getElementById('qr-code');
+      QRCode.toCanvas(qrCode, data.mobileUrl, { width: 200 }, function(error) {
+        if (error) console.error('Error generating QR code:', error);
+      });
+      
+      // Set the URL text
+      qrUrl.textContent = data.mobileUrl;
+      
+      // Show the QR code overlay
+      qrOverlay.style.display = 'flex';
+    } else {
+      throw new Error('No mobile URL returned from piping server');
+    }
+  } catch (error) {
+    console.error('Error deploying to mobile:', error);
+    alert('Failed to deploy model to mobile. Please try again.');
+    
+    // Fallback to direct QR code generation if piping server fails
     const qrCode = document.getElementById('qr-code');
     QRCode.toCanvas(qrCode, currentModelSrc, { width: 200 }, function(error) {
       if (error) console.error('Error generating QR code:', error);
     });
     
-    // Set the URL text
     qrUrl.textContent = currentModelSrc;
-    
-    // Show the QR code overlay
     qrOverlay.style.display = 'flex';
-  } catch (error) {
-    console.error('Error deploying to mobile:', error);
-    alert('Failed to deploy model to mobile. Please try again.');
   }
 });
 
