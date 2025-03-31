@@ -5,147 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>3D Model Gallery</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .model-card {
-      background-color: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-    .model-card:hover {
-      transform: translateY(-5px);
-    }
-    
-    /* 9:16 aspect ratio container */
-    .model-container {
-      position: relative;
-      width: 100%;
-      padding-top: 177.78%; /* 16:9 = 56.25%, 9:16 = 177.78% */
-    }
-    
-    model-viewer {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #fafafa;
-    }
-    
-    .model-info {
-      padding: 15px;
-    }
-    
-    h2 {
-      margin-top: 0;
-      margin-bottom: 10px;
-    }
-    
-    p {
-      color: #666;
-      margin: 0 0 15px 0;
-    }
-    
-    .download-btn {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
-      font-size: 14px;
-      display: inline-block;
-    }
-    
-    .download-btn:hover {
-      background-color: #45a049;
-    }
-    
-    /* Modal/Overlay styles */
-    .overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .modal {
-      width: 90%;
-      height: 90%;
-      background-color: white;
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-    }
-    
-    .modal model-viewer {
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-    
-    .close-button {
-      position: absolute;
-      top: 15px;
-      right: 15px;
-      width: 40px;
-      height: 40px;
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      font-size: 24px;
-      border: none;
-      z-index: 1010;
-    }
-    
-    .modal-download-btn {
-      position: absolute;
-      bottom: 15px;
-      right: 15px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
-      font-size: 16px;
-      z-index: 1010;
-    }
-    
-    .modal-download-btn:hover {
-      background-color: #45a049;
-    }
-  </style>
+  <!-- Load the QRCode library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <!-- External CSS -->
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <h1>Space</h1>
@@ -252,69 +115,26 @@
         ar
         ar-modes="webxr scene-viewer quick-look">
       </model-viewer>
-      <a id="modalDownloadBtn" href="#" download class="modal-download-btn">Download Model</a>
+      <div class="modal-button-container">
+        <a id="modalDownloadBtn" href="#" download class="modal-download-btn">Download</a>
+        <button id="modalDeployBtn" class="modal-deploy-btn">Deploy to Mobile</button>
+      </div>
     </div>
   </div>
 
-  <script>
-    // Get all model cards
-    const modelCards = document.querySelectorAll('.model-card');
-    const overlay = document.getElementById('modelOverlay');
-    const modalViewer = document.getElementById('modalModelViewer');
-    const closeButton = document.getElementById('closeButton');
-    const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+  <!-- QR Code overlay -->
+  <div class="qr-overlay" id="qrOverlay">
+    <div class="qr-container">
+      <h3>Scan QR Code</h3>
+      <p>Scan this code with your mobile device to view the model</p>
+      <canvas id="qr-code" width="200" height="200"></canvas>
+      <p id="qr-url" style="font-size: 12px; word-break: break-all;"></p>
+      <button class="qr-close" id="qrCloseButton">Close</button>
+    </div>
+  </div>
 
-    // Prevent download buttons from triggering the card click
-    document.querySelectorAll('.download-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    });
-
-    // Add click event to each model card
-    modelCards.forEach(card => {
-      card.addEventListener('click', () => {
-        // Get model data from the card
-        const modelSrc = card.getAttribute('data-model');
-        const modelTitle = card.getAttribute('data-title');
-        
-        // Set the source for the modal model viewer
-        modalViewer.setAttribute('src', modelSrc);
-        modalViewer.setAttribute('alt', modelTitle);
-        
-        // Update the download button in the modal
-        modalDownloadBtn.href = modelSrc;
-        modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
-        
-        // Show the overlay
-        overlay.style.display = 'flex';
-        
-        // Prevent body scrolling when modal is open
-        document.body.style.overflow = 'hidden';
-      });
-    });
-
-    // Close button functionality
-    closeButton.addEventListener('click', () => {
-      overlay.style.display = 'none';
-      document.body.style.overflow = 'auto';
-    });
-
-    // Close modal when clicking outside the modal content
-    overlay.addEventListener('click', (event) => {
-      if (event.target === overlay) {
-        overlay.style.display = 'none';
-        document.body.style.overflow = 'auto';
-      }
-    });
-
-    // Close modal when pressing ESC key
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && overlay.style.display === 'flex') {
-        overlay.style.display = 'none';
-        document.body.style.overflow = 'auto';
-      }
-    });
-  </script>
+  <!-- External JavaScript -->
+  <script src="js/gallery.js"></script>
+  <script src="js/qr-deploy.js"></script>
 </body>
 </html>
