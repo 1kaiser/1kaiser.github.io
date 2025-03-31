@@ -9,6 +9,79 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <!-- External CSS -->
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Added styles for mobile deployment UI -->
+  <style>
+    /* Status message styling */
+    #statusMessage {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      display: none;
+    }
+    
+    /* Mobile deployment button container */
+    .modal-button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    /* QR code container styling enhancements */
+    .qr-container {
+      background-color: white;
+      padding: 25px;
+      border-radius: 8px;
+      text-align: center;
+      max-width: 350px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .qr-container h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .qr-container p {
+      margin-bottom: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    /* Button styling */
+    .modal-deploy-btn, .modal-refresh-btn {
+      background-color: #4285F4;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .modal-deploy-btn:hover, .modal-refresh-btn:hover {
+      background-color: #3367D6;
+    }
+    
+    .modal-refresh-btn {
+      display: none;
+    }
+    
+    /* AR mode selector */
+    .ar-mode-selector {
+      margin-top: 15px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
   <h1>Space</h1>
@@ -117,18 +190,37 @@
       </model-viewer>
       <div class="modal-button-container">
         <a id="modalDownloadBtn" href="#" download class="modal-download-btn">Download</a>
-        <button id="modalDeployBtn" class="modal-deploy-btn">Deploy to Mobile</button>
+        <button id="modalDeployBtn" class="modal-deploy-btn">
+          <span>Deploy to Mobile</span>
+        </button>
+        <div id="statusMessage"></div>
       </div>
     </div>
   </div>
 
-  <!-- QR Code overlay -->
+  <!-- QR Code overlay with enhanced functionality -->
   <div class="qr-overlay" id="qrOverlay">
     <div class="qr-container">
-      <h3>Scan QR Code</h3>
-      <p>Scan this code with your mobile device to view the model</p>
+      <h3>Mobile View</h3>
+      <p>Scan this QR code with your mobile device to view the model</p>
       <canvas id="qr-code" width="200" height="200"></canvas>
       <p id="qr-url" style="font-size: 12px; word-break: break-all;"></p>
+      
+      <!-- Mobile refresh button -->
+      <button id="refreshMobileBtn" class="modal-refresh-btn">
+        Refresh Mobile
+      </button>
+      
+      <!-- AR mode selector -->
+      <div class="ar-mode-selector">
+        <input type="checkbox" id="arModeSelector" checked>
+        <label for="arModeSelector">Default AR Mode to Scene Viewer</label>
+      </div>
+      
+      <div style="margin-top: 15px; font-size: 12px; color: #666;">
+        This uses a third-party <a href="https://github.com/nwtgck/piping-server" target="_blank" style="color: #4285F4;">piping server</a> to deploy to your mobile device. This server does not store data.
+      </div>
+      
       <button class="qr-close" id="qrCloseButton">Close</button>
     </div>
   </div>
