@@ -12,12 +12,10 @@
       font-family: Arial, sans-serif;
       background-color: #f0f0f0;
     }
-
     h1 {
       text-align: center;
       margin-bottom: 30px;
     }
-
     .gallery {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -25,94 +23,185 @@
       max-width: 1200px;
       margin: 0 auto;
     }
-
     .model-card {
       background-color: #fff;
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      cursor: pointer; /* Add pointer cursor */
+      transition: transform 0.3s ease; /* Add smooth transition */
     }
-
+    .model-card:hover {
+      transform: translateY(-5px); /* Add hover effect */
+    }
     model-viewer {
       width: 100%;
       height: 300px;
       background-color: #fafafa;
     }
-
     .model-info {
       padding: 15px;
     }
-
     h2 {
       margin-top: 0;
       margin-bottom: 10px;
     }
-
     p {
       color: #666;
       margin: 0;
+    }
+    
+    /* Modal/Overlay styles */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal {
+      width: 90%;
+      height: 90%;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+    .modal model-viewer {
+      width: 100%;
+      height: 100%;
+    }
+    .close-button {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 24px;
+      border: none;
+      z-index: 1010;
     }
   </style>
 </head>
 <body>
   <h1>Space</h1>
-
   <div class="gallery">
     <!-- Your original model -->
-    <div class="model-card">
+    <div class="model-card" data-model="./models/31_10_2024.glb" data-title="My Model" data-desc="Original 3D model">
       <model-viewer
         src="./models/31_10_2024.glb"
         alt="Original 3D model"
         auto-rotate
         camera-controls
-        shadow-intensity="1"
-        ar
-        ar-modes="webxr scene-viewer quick-look">
+        shadow-intensity="1">
       </model-viewer>
       <div class="model-info">
         <h2>My Model</h2>
         <p>Original 3D model</p>
       </div>
     </div>
-
     <!-- Example model 1 -->
-    <div class="model-card">
+    <div class="model-card" data-model="./models/20230204temple-transformed.glb" data-title="Temple" data-desc="Example 3D model">
       <model-viewer
         src="./models/20230204temple-transformed.glb"
         alt="Temple"
         auto-rotate
         camera-controls
-        shadow-intensity="1"
-        ar
-        ar-modes="webxr scene-viewer quick-look">
+        shadow-intensity="1">
       </model-viewer>
       <div class="model-info">
-        <h2>Astronaut</h2>
+        <h2>Temple</h2>
         <p>Example 3D model</p>
       </div>
     </div>
-
     <!-- Example model 2 -->
-    <div class="model-card">
+    <div class="model-card" data-model="./models/hibiscus.glb" data-title="Hibiscus" data-desc="Example 3D model">
       <model-viewer
         src="./models/hibiscus.glb"
         alt="hibiscus"
         auto-rotate
         camera-controls
-        shadow-intensity="1"
-        ar
-        ar-modes="webxr scene-viewer quick-look">
+        shadow-intensity="1">
       </model-viewer>
       <div class="model-info">
-        <h2>Robot</h2>
+        <h2>Hibiscus</h2>
         <p>Example 3D model</p>
       </div>
     </div>
   </div>
 
+  <!-- Modal overlay for enlarged model view -->
+  <div class="overlay" id="modelOverlay">
+    <div class="modal">
+      <button class="close-button" id="closeButton">×</button>
+      <model-viewer
+        id="modalModelViewer"
+        camera-controls
+        shadow-intensity="1"
+        ar
+        ar-modes="webxr scene-viewer quick-look">
+      </model-viewer>
+    </div>
+  </div>
+
   <script>
-    // Optional: Add QR code functionality
-    // This can be added later if needed
+    // Get all model cards
+    const modelCards = document.querySelectorAll('.model-card');
+    const overlay = document.getElementById('modelOverlay');
+    const modalViewer = document.getElementById('modalModelViewer');
+    const closeButton = document.getElementById('closeButton');
+
+    // Add click event to each model card
+    modelCards.forEach(card => {
+      card.addEventListener('click', () => {
+        // Get model data from the card
+        const modelSrc = card.getAttribute('data-model');
+        const modelTitle = card.getAttribute('data-title');
+        
+        // Set the source for the modal model viewer
+        modalViewer.setAttribute('src', modelSrc);
+        modalViewer.setAttribute('alt', modelTitle);
+        
+        // Show the overlay
+        overlay.style.display = 'flex';
+        
+        // Prevent body scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+      });
+    });
+
+    // Close button functionality
+    closeButton.addEventListener('click', () => {
+      overlay.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    });
+
+    // Close modal when clicking outside the modal content
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay) {
+        overlay.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+    });
+
+    // Close modal when pressing ESC key
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && overlay.style.display === 'flex') {
+        overlay.style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+    });
   </script>
 </body>
 </html>
