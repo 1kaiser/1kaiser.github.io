@@ -8,8 +8,22 @@ const closeButton = document.getElementById('closeButton');
 const modalDownloadBtn = document.getElementById('modalDownloadBtn');
 
 // Current model data - making it global so it can be accessed by QR code functionality
-let currentModelSrc = '';
-let currentModelTitle = '';
+window.currentModelSrc = '';
+window.currentModelTitle = '';
+
+// AR mode selector integration
+document.addEventListener('DOMContentLoaded', () => {
+  const arModeSelector = document.getElementById('arModeSelector');
+  
+  if (arModeSelector) {
+    arModeSelector.addEventListener('change', (e) => {
+      // If mobile deployment is initialized, update its AR mode
+      if (window.mobileDeployment) {
+        window.mobileDeployment.toggleArMode(e.target.checked);
+      }
+    });
+  }
+});
 
 // Prevent download buttons from triggering the card click
 document.querySelectorAll('.download-btn').forEach(btn => {
@@ -22,16 +36,28 @@ document.querySelectorAll('.download-btn').forEach(btn => {
 modelCards.forEach(card => {
   card.addEventListener('click', () => {
     // Get model data from the card
-    currentModelSrc = card.getAttribute('data-model');
-    currentModelTitle = card.getAttribute('data-title');
+    window.currentModelSrc = card.getAttribute('data-model');
+    window.currentModelTitle = card.getAttribute('data-title');
+    const modelDesc = card.getAttribute('data-desc');
     
     // Set the source for the modal model viewer
-    modalViewer.setAttribute('src', currentModelSrc);
-    modalViewer.setAttribute('alt', currentModelTitle);
+    modalViewer.setAttribute('src', window.currentModelSrc);
+    modalViewer.setAttribute('alt', window.currentModelTitle);
     
     // Update the download button in the modal
-    modalDownloadBtn.href = currentModelSrc;
-    modalDownloadBtn.setAttribute('download', currentModelTitle + '.glb');
+    modalDownloadBtn.href = window.currentModelSrc;
+    modalDownloadBtn.setAttribute('download', window.currentModelTitle + '.glb');
+    
+    // If mobile deployment is active and there are connected sessions, mark content as changed
+    if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
+      window.mobileDeployment.contentHasChanged = true;
+      
+      // Show refresh button if sessions exist
+      if (window.mobileDeployment.sessionList.length > 0) {
+        const refreshBtn = document.getElementById('refreshMobileBtn');
+        if (refreshBtn) refreshBtn.style.display = 'block';
+      }
+    }
     
     // Show the overlay
     overlay.style.display = 'flex';
