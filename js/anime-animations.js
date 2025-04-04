@@ -6,7 +6,7 @@ import {
   utils,
   createTimeline,
   eases
-} from './lib/anime.esm.js';
+} from '../lib/anime.esm.js';
 
 // Initialize animations when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -144,7 +144,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }, '-=300');
         
         // Call the original click handler
-        originalCardClick.call(this);
+        if (originalCardClick) {
+          originalCardClick.call(this);
+        } else {
+          // Fallback if original handler is not available
+          const currentModelSrc = card.getAttribute('data-model');
+          const currentModelTitle = card.getAttribute('data-title');
+          
+          // Update modal content
+          const modalViewer = document.getElementById('modalModelViewer');
+          const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+          
+          window.currentModelSrc = currentModelSrc;
+          window.currentModelTitle = currentModelTitle;
+          
+          modalViewer.setAttribute('src', currentModelSrc);
+          modalViewer.setAttribute('alt', currentModelTitle);
+          
+          modalDownloadBtn.href = currentModelSrc;
+          modalDownloadBtn.setAttribute('download', currentModelTitle + '.glb');
+        }
         
         // Prevent body scrolling when modal is open
         document.body.style.overflow = 'hidden';
@@ -178,6 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         overlay.style.display = 'none';
         document.body.style.overflow = 'auto';
+        
+        // Call original handler if available
+        if (originalCloseClick) {
+          originalCloseClick.call(this);
+        }
       }, 300);
     };
     
@@ -193,31 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
    * Setup animations for the QR overlay
    */
   function setupQROverlayAnimations(qrOverlay, qrContainer) {
-    // Get deploy button and QR close button
-    const deployBtn = document.getElementById('modalDeployBtn');
+    // Get QR close button
     const qrCloseButton = document.getElementById('qrCloseButton');
-    
-    // Enhanced open QR overlay animation
-    if (deployBtn && window.mobileDeployment) {
-      const originalDeployToMobile = window.mobileDeployment.deployToMobile;
-      
-      window.mobileDeployment.deployToMobile = function() {
-        // Call original function to set up QR code
-        originalDeployToMobile.call(this);
-        
-        // Reset container for animation
-        qrContainer.style.opacity = '0';
-        qrContainer.style.transform = 'scale(0.8)';
-        
-        // Animate the container
-        animate(qrContainer, {
-          opacity: [0, 1],
-          scale: [0.8, 1],
-          duration: 500,
-          easing: 'outExpo'
-        });
-      };
-    }
     
     // Enhanced close QR overlay animation
     if (qrCloseButton) {
@@ -230,6 +231,14 @@ document.addEventListener('DOMContentLoaded', () => {
           scale: [1, 0.8],
           duration: 300,
           easing: 'outQuad'
+        });
+        
+        // Animate the overlay
+        animate(qrOverlay, {
+          opacity: [1, 0],
+          duration: 300,
+          easing: 'outQuad',
+          delay: 100
         });
         
         // Hide overlay after animation completes
@@ -257,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function animateButtons() {
     // Get all buttons
-    const buttons = document.querySelectorAll('.download-btn, .modal-download-btn, .modal-deploy-btn, .qr-close');
+    const buttons = document.querySelectorAll('.download-btn, .modal-download-btn, .modal-deploy-btn, .qr-close, .modal-refresh-btn');
     
     // Add hover and click animations
     buttons.forEach(button => {
