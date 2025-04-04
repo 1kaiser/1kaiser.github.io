@@ -1,14 +1,13 @@
-// This is an enhanced version of the qr-deploy.js with Anime.js animations
-// It maintains all the original functionality while adding smooth animations
+// Enhanced QR deploy script with Anime.js animations
+// Replace the original qr-deploy.js with this file
 
-// Import Anime.js modules
 import {
   animate,
   stagger,
   utils,
   createTimeline,
   eases
-} from './lib/anime.esm.js';
+} from '../lib/anime.esm.js';
 
 class MobileDeployment {
   constructor() {
@@ -656,7 +655,7 @@ class MobileDeployment {
     }
   }
   
-  // The rest of the methods remain the same as original
+  // The rest of the methods remain similar to original
   async post(content, url) {
     try {
       const response = await fetch(url, {
