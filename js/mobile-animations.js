@@ -3,7 +3,8 @@
 import {
   animate,
   createTimeline,
-  utils
+  utils,
+  eases
 } from '../lib/anime.esm.js';
 
 // Initialize animations when DOM is loaded
@@ -36,38 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function enhanceLoadingOverlay() {
     if (!overlay) return;
     
-    // Replace the simple spinner with an animated one
-    const spinner = overlay.querySelector('.spinner');
-    if (spinner) {
-      spinner.innerHTML = `
-        <div class="loading-dots">
-          <div class="dot"></div>
-          <div class="dot"></div>
-          <div class="dot"></div>
-        </div>
-      `;
-      
-      // Add styles
-      const style = document.createElement('style');
-      style.textContent = `
-        .loading-dots {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 10px;
-        }
-        
-        .dot {
-          width: 15px;
-          height: 15px;
-          background-color: white;
-          border-radius: 50%;
-        }
-      `;
-      document.head.appendChild(style);
-      
-      // Animate dots
-      const dots = overlay.querySelectorAll('.dot');
+    // Animate the loading dots
+    const dots = overlay.querySelectorAll('.dot');
+    if (dots.length) {
       animate(dots, {
         scale: [0, 1, 0],
         opacity: [0.5, 1, 0.5],
@@ -78,12 +50,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     
-    // Add fade in/out animations to overlay
-    const originalShowOverlay = window.mobileView?.modelIsLoaded;
-    if (window.mobileView && originalShowOverlay) {
-      window.mobileView.modelIsLoaded = function() {
-        // Call original function
-        originalShowOverlay.call(this);
+    // Override the original modelIsLoaded function to add fade out animation
+    if (window.mobileView && window.mobileView.modelIsLoaded) {
+      const originalModelIsLoaded = window.mobileView.modelIsLoaded;
+      
+      window.mobileView.modelIsLoaded = async function() {
+        // Call original function first (for actual loading logic)
+        await originalModelIsLoaded.call(this);
         
         // Animate overlay fade out
         animate(overlay, {
@@ -93,6 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
           complete: () => {
             overlay.style.display = 'none';
           }
+        });
+        
+        // Animate model viewer appearance
+        animate(modelViewer, {
+          opacity: [0.5, 1],
+          scale: [0.9, 1],
+          duration: 800,
+          easing: 'outQuad'
         });
       };
     }
@@ -140,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
           easing: 'outQuad',
           complete: () => {
             toast.style.visibility = 'hidden';
+            toast.style.display = 'none';
           }
         });
       };
@@ -152,35 +134,48 @@ document.addEventListener('DOMContentLoaded', () => {
   function addModelLoadAnimation() {
     if (!modelViewer) return;
     
-    // Add load event listener
-    modelViewer.addEventListener('load', () => {
-      // Scale and fade in animation for the model
-      animate(modelViewer, {
-        opacity: [0.5, 1],
-        scale: [0.9, 1],
-        duration: 800,
-        easing: 'outQuad'
+    // Add load event listener if not already handled
+    if (!window.mobileView || !window.mobileView.modelIsLoaded) {
+      modelViewer.addEventListener('load', () => {
+        // Scale and fade in animation for the model
+        animate(modelViewer, {
+          opacity: [0.5, 1],
+          scale: [0.9, 1],
+          duration: 800,
+          easing: 'outQuad'
+        });
       });
-    });
+    }
     
     // Add animation for auto-rotation
     if (modelViewer.hasAttribute('auto-rotate')) {
       // This only adds a slight speed-up/slow-down effect to the auto-rotation
+      let currentRotationSpeed = 30;
+      
       setInterval(() => {
         // Check if model viewer exists and is defined
         if (modelViewer && modelViewer.getAttribute) {
-          // Get current rotation speed
+          // Get current rotation speed or use default
           const currentSpeed = modelViewer.getAttribute('rotation-per-second') || '30deg';
-          const speedValue = parseFloat(currentSpeed);
+          currentRotationSpeed = parseFloat(currentSpeed) || 30;
           
           // Animate between speeds for a more organic feel
-          if (speedValue <= 20) {
-            modelViewer.setAttribute('rotation-per-second', '40deg');
-          } else {
-            modelViewer.setAttribute('rotation-per-second', '20deg');
-          }
+          const newSpeed = currentRotationSpeed <= 20 ? 40 : 20;
+          
+          // Apply with animation
+          animate({
+            speed: currentRotationSpeed
+          }, {
+            speed: newSpeed,
+            duration: 2000,
+            easing: 'easeInOutSine',
+            update: function(anim) {
+              const speed = anim.animations[0].currentValue;
+              modelViewer.setAttribute('rotation-per-second', `${speed}deg`);
+            }
+          });
         }
-      }, 3000);
+      }, 5000);
     }
   }
   
@@ -206,4 +201,47 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }, 2000); // Delay to ensure shadow DOM is ready
+  
+  /**
+   * Enhance updateModelViewer function with animations
+   */
+  function enhanceUpdateModelViewer() {
+    if (!window.mobileView || !window.mobileView.updateModelViewer) return;
+    
+    const originalUpdateModelViewer = window.mobileView.updateModelViewer;
+    
+    window.mobileView.updateModelViewer = function(json) {
+      // Show loading state
+      if (overlay) {
+        overlay.style.display = 'flex';
+        animate(overlay, {
+          opacity: [0, 1],
+          duration: 300,
+          easing: 'outQuad'
+        });
+      }
+      
+      // Animate current model out if exists
+      if (modelViewer.src) {
+        animate(modelViewer, {
+          opacity: [1, 0.5],
+          scale: [1, 0.9],
+          duration: 300,
+          easing: 'outQuad',
+          complete: () => {
+            // Call original function after fade out
+            originalUpdateModelViewer.call(this, json);
+          }
+        });
+      } else {
+        // Call original function directly if no existing model
+        originalUpdateModelViewer.call(this, json);
+      }
+    };
+  }
+  
+  // Call enhancement functions with a slight delay to ensure window.mobileView is ready
+  setTimeout(() => {
+    enhanceUpdateModelViewer();
+  }, 500);
 });
