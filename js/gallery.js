@@ -1,7 +1,7 @@
-// Core gallery functionality
+// Core gallery functionality with event delegation for dynamic content
 
-// Get all model cards
-const modelCards = document.querySelectorAll('.model-card');
+// Get gallery container and modal elements
+const gallery = document.getElementById('modelGallery');
 const overlay = document.getElementById('modelOverlay');
 const modalViewer = document.getElementById('modalModelViewer');
 const closeButton = document.getElementById('closeButton');
@@ -25,20 +25,23 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Prevent download buttons from triggering the card click
-document.querySelectorAll('.download-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
-});
-
-// Add click event to each model card
-modelCards.forEach(card => {
-  card.addEventListener('click', () => {
-    // Get model data from the card
-    window.currentModelSrc = card.getAttribute('data-model');
-    window.currentModelTitle = card.getAttribute('data-title');
-    const modelDesc = card.getAttribute('data-desc');
+// Event delegation for dynamically generated model cards
+gallery.addEventListener('click', (event) => {
+  // Handle download button clicks - prevent propagation to card click
+  if (event.target.classList.contains('download-btn')) {
+    event.stopPropagation();
+    return;
+  }
+  
+  // Find the closest model card to the clicked element
+  const modelCard = event.target.closest('.model-card');
+  
+  // If a model card was clicked, open the modal
+  if (modelCard) {
+    // Get model data from the card attributes
+    window.currentModelSrc = modelCard.getAttribute('data-model');
+    window.currentModelTitle = modelCard.getAttribute('data-title');
+    const modelDesc = modelCard.getAttribute('data-desc');
     
     // Set the source for the modal model viewer
     modalViewer.setAttribute('src', window.currentModelSrc);
@@ -64,7 +67,7 @@ modelCards.forEach(card => {
     
     // Prevent body scrolling when modal is open
     document.body.style.overflow = 'hidden';
-  });
+  }
 });
 
 // Close button functionality for modal
@@ -90,3 +93,13 @@ document.addEventListener('keydown', (event) => {
     }
   }
 });
+
+// Function to initialize gallery event delegation (called after dynamic content is generated)
+function initializeGalleryEvents() {
+  // This function can be called if additional initialization is needed
+  // Currently, event delegation handles everything automatically
+  console.log('Gallery event delegation initialized for dynamic content');
+}
+
+// Export function for potential use by other scripts
+window.initializeGalleryEvents = initializeGalleryEvents;
