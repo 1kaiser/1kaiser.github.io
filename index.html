@@ -159,114 +159,8 @@
 </head>
 <body>
   <h1>Space</h1>
-  <div class="gallery">
-    <!-- Your original model -->
-    <div class="model-card" data-model="./models/31_10_2024.glb" data-title="My Model" data-desc="Original 3D model">
-      <div class="model-container">
-        <model-viewer
-          src="./models/31_10_2024.glb"
-          alt="Original 3D model"
-          auto-rotate
-          camera-controls
-          shadow-intensity="1">
-        </model-viewer>
-      </div>
-      <div class="model-info">
-        <h2>My Model</h2>
-        <p>Original 3D model</p>
-        <a href="./models/31_10_2024.glb" download class="download-btn">Download</a>
-      </div>
-    </div>
-    
-    <!-- Temple model -->
-    <div class="model-card" data-model="./models/20230204temple-transformed.glb" data-title="Temple" data-desc="Example 3D model">
-      <div class="model-container">
-        <model-viewer
-          src="./models/20230204temple-transformed.glb"
-          alt="Temple"
-          auto-rotate
-          camera-controls
-          shadow-intensity="1">
-        </model-viewer>
-      </div>
-      <div class="model-info">
-        <h2>Temple</h2>
-        <p>Example 3D model</p>
-        <a href="./models/20230204temple-transformed.glb" download class="download-btn">Download</a>
-      </div>
-    </div>
-    
-    <!-- Hibiscus model -->
-    <div class="model-card" data-model="./models/hibiscus.glb" data-title="Hibiscus" data-desc="Example 3D model">
-      <div class="model-container">
-        <model-viewer
-          src="./models/hibiscus.glb"
-          alt="hibiscus"
-          auto-rotate
-          camera-controls
-          shadow-intensity="1">
-        </model-viewer>
-      </div>
-      <div class="model-info">
-        <h2>Hibiscus</h2>
-        <p>Example 3D model</p>
-        <a href="./models/hibiscus.glb" download class="download-btn">Download</a>
-      </div>
-    </div>
-
-    <!-- momos model -->
-    <div class="model-card" data-model="./models/momos.glb" data-title="momos" data-desc="Example 3D model">
-      <div class="model-container">
-        <model-viewer
-          src="./models/momos.glb"
-          alt="momos"
-          auto-rotate
-          camera-controls
-          shadow-intensity="1">
-        </model-viewer>
-      </div>
-      <div class="model-info">
-        <h2>Momos</h2>
-        <p>Example 3D model</p>
-        <a href="./models/momos.glb" download class="download-btn">Download</a>
-      </div>
-    </div>
-    
-    <!-- Idol model from external source -->
-    <div class="model-card" data-model="https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb" data-title="Idol" data-desc="Saraswati 3D model">
-      <div class="model-container">
-        <model-viewer
-          src="https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb"
-          alt="Idol"
-          auto-rotate
-          camera-controls
-          shadow-intensity="1">
-        </model-viewer>
-      </div>
-      <div class="model-info">
-        <h2>Idol</h2>
-        <p>Saraswati 3D model</p>
-        <a href="https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb" download class="download-btn">Download</a>
-      </div>
-    </div>
-
-    <!-- Bicycle model -->
-    <div class="model-card" data-model="./models/bycycle.glb" data-title="Bicycle" data-desc="3D bicycle model">
-      <div class="model-container">
-        <model-viewer
-          src="./models/bycycle.glb"
-          alt="Bicycle"
-          auto-rotate
-          camera-controls
-          shadow-intensity="1">
-        </model-viewer>
-      </div>
-      <div class="model-info">
-        <h2>Bicycle</h2>
-        <p>3D bicycle model</p>
-        <a href="./models/bycycle.glb" download class="download-btn">Download</a>
-      </div>
-    </div>
+  <div class="gallery" id="modelGallery">
+    <!-- Model cards will be dynamically generated here -->
   </div>
 
   <!-- Modal overlay for enlarged model view -->
@@ -320,6 +214,116 @@
       <button class="qr-close" id="qrCloseButton">Close</button>
     </div>
   </div>
+
+  <script>
+    // Model data configuration - centralized for easy maintenance
+    const modelsConfig = [
+      {
+        url: "./models/31_10_2024.glb",
+        title: "My Model",
+        description: "Original 3D model",
+        alt: "Original 3D model"
+      },
+      {
+        url: "./models/20230204temple-transformed.glb",
+        title: "Temple",
+        description: "Example 3D model",
+        alt: "Temple"
+      },
+      {
+        url: "./models/hibiscus.glb",
+        title: "Hibiscus",
+        description: "Example 3D model",
+        alt: "hibiscus"
+      },
+      {
+        url: "./models/momos.glb",
+        title: "Momos",
+        description: "Example 3D model",
+        alt: "momos"
+      },
+      {
+        url: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
+        title: "Idol",
+        description: "Saraswati 3D model",
+        alt: "Idol"
+      },
+      {
+        url: "./models/bycycle.glb",
+        title: "Bicycle",
+        description: "3D bicycle model",
+        alt: "Bicycle"
+      }
+    ];
+
+    // Function to create a model card element
+    function createModelCard(modelData, index) {
+      const cardHtml = `
+        <div class="model-card" data-model="${modelData.url}" data-title="${modelData.title}" data-desc="${modelData.description}">
+          <div class="model-container">
+            <model-viewer
+              src="${modelData.url}"
+              alt="${modelData.alt}"
+              auto-rotate
+              camera-controls
+              shadow-intensity="1">
+            </model-viewer>
+          </div>
+          <div class="model-info">
+            <h2>${modelData.title}</h2>
+            <p>${modelData.description}</p>
+            <a href="${modelData.url}" download class="download-btn">Download</a>
+          </div>
+        </div>
+      `;
+      return cardHtml;
+    }
+
+    // Function to initialize the gallery
+    function initializeGallery() {
+      const gallery = document.getElementById('modelGallery');
+      
+      // Generate HTML for all model cards
+      const cardsHtml = modelsConfig.map((model, index) => createModelCard(model, index)).join('');
+      
+      // Insert all cards into the gallery
+      gallery.innerHTML = cardsHtml;
+    }
+
+    // Function to add a new model (for future extensibility)
+    function addModel(url, title, description, alt) {
+      modelsConfig.push({
+        url: url,
+        title: title,
+        description: description,
+        alt: alt
+      });
+      
+      // Regenerate the gallery
+      initializeGallery();
+    }
+
+    // Function to update a model by index
+    function updateModel(index, newModelData) {
+      if (index >= 0 && index < modelsConfig.length) {
+        modelsConfig[index] = { ...modelsConfig[index], ...newModelData };
+        initializeGallery();
+      }
+    }
+
+    // Function to remove a model by index
+    function removeModel(index) {
+      if (index >= 0 && index < modelsConfig.length) {
+        modelsConfig.splice(index, 1);
+        initializeGallery();
+      }
+    }
+
+    // Initialize the gallery when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeGallery();
+    });
+  </script>
 
   <!-- External JavaScript -->
   <script src="js/gallery.js"></script>
