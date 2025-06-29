@@ -215,131 +215,35 @@
     </div>
   </div>
 
+  <!-- Load models configuration first -->
+  <script src="models/models.js"></script>
+  
+  <!-- Minimal initialization script -->
   <script>
-    // Model data configuration - centralized for easy maintenance
-    const modelsConfig = [
-      {
-        url: "./models/31_10_2024.glb",
-        title: "My Model",
-        description: "Original 3D model",
-        alt: "Original 3D model"
-      },
-      {
-        url: "./models/20230204temple-transformed.glb",
-        title: "Temple",
-        description: "Example 3D model",
-        alt: "Temple"
-      },
-      {
-        url: "./models/hibiscus.glb",
-        title: "Hibiscus",
-        description: "Example 3D model",
-        alt: "hibiscus"
-      },
-      {
-        url: "./models/momos.glb",
-        title: "Momos",
-        description: "Example 3D model",
-        alt: "momos"
-      },
-      {
-        url: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
-        title: "Idol",
-        description: "Saraswati 3D model",
-        alt: "Idol"
-      },
-      {
-        url: "./models/bycycle.glb",
-        title: "Bicycle",
-        description: "3D bicycle model",
-        alt: "Bicycle"
-      },
-      {
-        url: "https://cdn.glitch.global/e71dfee6-422f-4ea9-a2a1-7c360807106f/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
-        title: "bhatura VegBiryani EggNoodles ChickenStrips",
-        description: "bhatura_VegBiryani_EggNoodles_ChickenStrips",
-        alt: "bhatura VegBiryani EggNoodles ChickenStrips"
-      },
-      {
-        url: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
-        title: "paneer sabji",
-        description: "paneer_sabji",
-        alt: "paneer sabji"
-      },
-      {
-        url: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
-        title: "Kaiser Roy",
-        description: "Kaiser_Roy",
-        alt: "Kaiser Roy"
-      }
-    ];
-
-    // Function to create a model card element
-    function createModelCard(modelData, index) {
-      const cardHtml = `
-        <div class="model-card" data-model="${modelData.url}" data-title="${modelData.title}" data-desc="${modelData.description}">
-          <div class="model-container">
-            <model-viewer
-              src="${modelData.url}"
-              alt="${modelData.alt}"
-              auto-rotate
-              camera-controls
-              shadow-intensity="1">
-            </model-viewer>
-          </div>
-          <div class="model-info">
-            <h2>${modelData.title}</h2>
-            <p>${modelData.description}</p>
-            <a href="${modelData.url}" download class="download-btn">Download</a>
-          </div>
-        </div>
-      `;
-      return cardHtml;
-    }
-
-    // Function to initialize the gallery
-    function initializeGallery() {
-      const gallery = document.getElementById('modelGallery');
-      
-      // Generate HTML for all model cards
-      const cardsHtml = modelsConfig.map((model, index) => createModelCard(model, index)).join('');
-      
-      // Insert all cards into the gallery
-      gallery.innerHTML = cardsHtml;
-    }
-
-    // Function to add a new model (for future extensibility)
-    function addModel(url, title, description, alt) {
-      modelsConfig.push({
-        url: url,
-        title: title,
-        description: description,
-        alt: alt
-      });
-      
-      // Regenerate the gallery
-      initializeGallery();
-    }
-
-    // Function to update a model by index
-    function updateModel(index, newModelData) {
-      if (index >= 0 && index < modelsConfig.length) {
-        modelsConfig[index] = { ...modelsConfig[index], ...newModelData };
-        initializeGallery();
-      }
-    }
-
-    // Function to remove a model by index
-    function removeModel(index) {
-      if (index >= 0 && index < modelsConfig.length) {
-        modelsConfig.splice(index, 1);
-        initializeGallery();
-      }
-    }
-
-    // Initialize the gallery when the page loads
+    // Simple fallback initialization if external script doesn't load
     document.addEventListener('DOMContentLoaded', function() {
-      initializeGallery();
+      // Check if models configuration was loaded
+      if (!window.modelsConfig || !window.initializeGallery) {
+        console.error('Models configuration not loaded. Please ensure models/models.js is accessible.');
+        
+        // Show error message in gallery
+        const gallery = document.getElementById('modelGallery');
+        if (gallery) {
+          gallery.innerHTML = `
+            <div style="text-align: center; padding: 50px; color: #666;">
+              <h2>Error Loading Models</h2>
+              <p>Could not load models configuration from models/models.js</p>
+              <p>Please check that the file exists and is accessible.</p>
+            </div>
+          `;
+        }
+        return;
+      }
+      
+      // Initialize the gallery if not already done
+      if (window.modelsConfig && window.initializeGallery) {
+        console.log('Gallery initialization verified');
+      }
     });
   </script>
 
