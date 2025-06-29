@@ -59,7 +59,7 @@ window.modelsConfig = [
     alt: "Kaiser Roy"
   },
   {
-    url: "https://github.com/1kaiser/1kaiser.github.io/releases/download/1/Chicken_Biryani.glb",
+    url: "./models/Chicken_Biryani.glb",
     title: "chicken biryani",
     description: "chicken biryani with eggs and potatoes",
     alt: "chicken biryani with eggs and potatoes"
