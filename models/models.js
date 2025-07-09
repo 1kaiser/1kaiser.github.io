@@ -250,4 +250,84 @@ if (document.readyState === 'loading') {
   }
 }
 
+
+// Add this to your models/models.js or create a new file: js/model-viewer-config.js
+
+// Enhanced model viewer configuration
+window.ModelViewerConfig = {
+  // Global model-viewer settings
+  setupModelViewer: function(modelViewer) {
+    // Handle loading errors gracefully
+    modelViewer.addEventListener('error', (event) => {
+      console.warn('Model viewer error:', event.detail);
+      // Try to recover by reloading
+      if (modelViewer.src) {
+        setTimeout(() => {
+          const originalSrc = modelViewer.src;
+          modelViewer.src = '';
+          modelViewer.src = originalSrc;
+        }, 1000);
+      }
+    });
+
+    // Enhanced loading feedback
+    modelViewer.addEventListener('load', () => {
+      console.log('✅ Model loaded successfully');
+    });
+
+    modelViewer.addEventListener('progress', (event) => {
+      const progress = event.detail.totalProgress;
+      console.log(`📊 Loading progress: ${(progress * 100).toFixed(1)}%`);
+    });
+  },
+
+  // Fix common GLB loading issues
+  fixGLBUrl: function(url) {
+    // Handle blob URLs and GitHub URLs
+    if (url.startsWith('blob:')) {
+      return url;
+    }
+    
+    // Ensure GitHub URLs are raw content
+    if (url.includes('github.com') && !url.includes('raw.githubusercontent.com')) {
+      return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+    }
+    
+    // Add cache busting for problematic URLs
+    if (url.includes('1kaiser.github.io')) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}_t=${Date.now()}`;
+    }
+    
+    return url;
+  }
+};
+
+// Auto-setup for all model viewers on page
+document.addEventListener('DOMContentLoaded', () => {
+  // Setup existing model viewers
+  document.querySelectorAll('model-viewer').forEach(mv => {
+    window.ModelViewerConfig.setupModelViewer(mv);
+  });
+
+  // Setup observer for dynamically added model viewers
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === 1) { // Element node
+          if (node.tagName === 'MODEL-VIEWER') {
+            window.ModelViewerConfig.setupModelViewer(node);
+          }
+          // Check children too
+          node.querySelectorAll?.('model-viewer').forEach(mv => {
+            window.ModelViewerConfig.setupModelViewer(mv);
+          });
+        }
+      });
+    });
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+
 console.log('Models configuration loaded:', window.modelsConfig.length, 'models available');
