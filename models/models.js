@@ -5,61 +5,61 @@
 // Main models configuration array
 window.modelsConfig = [
   {
-    src: "./models/31_10_2024.glb",
+    url: "./models/31_10_2024.glb",
     title: "My Model",
     description: "Original 3D model",
     alt: "Original 3D model"
   },
   {
-    src: "./models/20230204temple-transformed.glb",
+    url: "./models/20230204temple-transformed.glb",
     title: "Temple",
     description: "Example 3D model",
     alt: "Temple"
   },
   {
-    src: "./models/hibiscus.glb",
+    url: "./models/hibiscus.glb",
     title: "Hibiscus",
     description: "Example 3D model",
     alt: "hibiscus"
   },
   {
-    src: "./models/momos.glb",
+    url: "./models/momos.glb",
     title: "Momos",
     description: "Example 3D model",
     alt: "momos"
   },
   {
-    src: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
+    url: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
     title: "Idol",
     description: "Saraswati 3D model",
     alt: "Idol"
   },
   {
-    src: "./models/bycycle.glb",
+    url: "./models/bycycle.glb",
     title: "Bicycle",
     description: "3D bicycle model",
     alt: "Bicycle"
   },
   {
-    src: "https://cdn.glitch.global/e71dfee6-422f-4ea9-a2a1-7c360807106f/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
+    url: "https://cdn.glitch.global/e71dfee6-422f-4ea9-a2a1-7c360807106f/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
     title: "bhatura VegBiryani EggNoodles ChickenStrips",
     description: "bhatura_VegBiryani_EggNoodles_ChickenStrips",
     alt: "bhatura VegBiryani EggNoodles ChickenStrips"
   },
   {
-    src: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
+    url: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
     title: "paneer sabji",
     description: "paneer_sabji",
     alt: "paneer sabji"
   },
   {
-    src: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
+    url: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
     title: "Kaiser Roy",
     description: "Kaiser_Roy",
     alt: "Kaiser Roy"
   },
   {
-    src: "./models/Chicken_Biryani.glb",
+    url: "./models/Chicken_Biryani.glb",
     title: "chicken biryani",
     description: "chicken biryani with eggs and potatoes",
     alt: "chicken biryani with eggs and potatoes"
@@ -85,7 +85,7 @@ window.ModelManager = {
   // Add a new model to the configuration
   addModel: function(url, title, description, alt) {
     const newModel = {
-      src: url,
+      url: url,
       title: title,
       description: description,
       alt: alt || title
