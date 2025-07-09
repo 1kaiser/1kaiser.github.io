@@ -1,48 +1,129 @@
 /**
- * Google Space Opera Mobile View Implementation
- * Direct JavaScript translation from TypeScript
- * Handles CORS issues for GitHub Pages deployment
+ * Updated Google Space Opera Mobile View Implementation
+ * Fixed to use working piping servers from nwtgck's implementation
+ * Handles server selection and fallback automatically
  */
 
-// ===== UTILITY FUNCTIONS (from utils.ts) =====
-const DOMAIN = 'https://piping.glitch.me/';
+// ===== PIPING SERVER CONFIGURATION =====
+const PIPING_SERVERS = [
+  'https://ppng.io/',           // Primary - usually most reliable
+  'https://piping.onrender.com/', // Secondary - good fallback
+  'https://piping-server.herokuapp.com/', // Tertiary - if available
+  'https://pipes.sh/'           // Additional option
+];
 
+// Global server state
+let CURRENT_DOMAIN = PIPING_SERVERS[0]; // Start with first server
+let TESTED_SERVERS = new Map(); // Cache test results
+
+// ===== UTILITY FUNCTIONS =====
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-// URL builders - exact copies from Google's utils.ts
+// URL builders - updated to use dynamic domain
 function getSessionUrl(pipeId, sessionId) {
-  return `${DOMAIN}${pipeId}-${sessionId}`;
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionId}`;
 }
 
 function getPingUrl(pipeId) {
-  return `${DOMAIN}ping-${pipeId}`;
+  return `${CURRENT_DOMAIN}ping-${pipeId}`;
 }
 
 function posterToSession(pipeId, sessionID, modelId) {
-  return `${DOMAIN}${pipeId}-${sessionID}-${modelId}-poster`;
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-${modelId}-poster`;
 }
 
 function gltfToSession(pipeId, sessionID, modelId) {
-  return `${DOMAIN}${pipeId}-${sessionID}-${modelId}`;
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-${modelId}`;
 }
 
 function envToSession(pipeId, sessionID, envIsHdr) {
   const addOn = envIsHdr ? '#.hdr' : '';
-  return `${DOMAIN}${pipeId}-${sessionID}-env${addOn}`;
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-env${addOn}`;
 }
 
-// CORS-enabled POST function
+// ===== SERVER TESTING AND SELECTION =====
+async function testPipingServer(serverUrl) {
+  const testId = getRandomInt(1e+10);
+  const testPath = `test-${testId}`;
+  const testUrl = `${serverUrl}${testPath}`;
+  
+  try {
+    console.log(`🔍 Testing piping server: ${serverUrl}`);
+    
+    // Test with a simple HEAD request first
+    const headResponse = await fetch(testUrl, { 
+      method: 'HEAD', 
+      mode: 'cors',
+      signal: AbortSignal.timeout(5000)
+    });
+    
+    // If HEAD works, test POST capability
+    if (headResponse.status < 500) {
+      const postResponse = await fetch(testUrl, {
+        method: 'POST',
+        body: JSON.stringify({test: 'connectivity'}),
+        mode: 'cors',
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (postResponse.ok || postResponse.status === 404) {
+        console.log(`✅ Server working: ${serverUrl}`);
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.log(`❌ Server failed: ${serverUrl} - ${error.message}`);
+    return false;
+  }
+}
+
+async function findWorkingPipingServer() {
+  // Check if we have a cached working server
+  for (const [server, result] of TESTED_SERVERS.entries()) {
+    if (result.working && (Date.now() - result.timestamp) < 300000) { // 5 min cache
+      console.log(`🎯 Using cached working server: ${server}`);
+      CURRENT_DOMAIN = server;
+      return server;
+    }
+  }
+  
+  // Test servers in order
+  for (const server of PIPING_SERVERS) {
+    const isWorking = await testPipingServer(server);
+    TESTED_SERVERS.set(server, {
+      working: isWorking,
+      timestamp: Date.now()
+    });
+    
+    if (isWorking) {
+      CURRENT_DOMAIN = server;
+      console.log(`🌟 Selected working server: ${server}`);
+      return server;
+    }
+  }
+  
+  console.error('❌ No working piping servers found');
+  return null;
+}
+
+// Enhanced POST function with retry logic
 async function post(content, url) {
+  let lastError;
+  
+  // Try current server first
   try {
     const response = await fetch(url, {
       method: 'POST',
       body: content,
-      mode: 'cors', // Explicit CORS mode
+      mode: 'cors',
       headers: {
         'Content-Type': typeof content === 'string' ? 'application/json' : 'application/octet-stream'
-      }
+      },
+      signal: AbortSignal.timeout(30000)
     });
     
     if (response.ok) {
@@ -52,34 +133,101 @@ async function post(content, url) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
   } catch (error) {
-    console.error('❌ POST Failed:', url, error);
-    throw error;
+    lastError = error;
+    console.warn('⚠️ POST failed with current server, trying alternatives...');
   }
+  
+  // If current server fails, try to find a working one
+  const workingServer = await findWorkingPipingServer();
+  if (workingServer && workingServer !== CURRENT_DOMAIN) {
+    // Retry with new server
+    const newUrl = url.replace(CURRENT_DOMAIN, workingServer);
+    try {
+      const response = await fetch(newUrl, {
+        method: 'POST',
+        body: content,
+        mode: 'cors',
+        headers: {
+          'Content-Type': typeof content === 'string' ? 'application/json' : 'application/octet-stream'
+        },
+        signal: AbortSignal.timeout(30000)
+      });
+      
+      if (response.ok) {
+        console.log('✅ POST Success with alternative server:', newUrl);
+        return response;
+      }
+    } catch (retryError) {
+      console.error('❌ Retry also failed:', retryError);
+    }
+  }
+  
+  console.error('❌ All POST attempts failed:', lastError);
+  throw lastError;
 }
 
-// CORS-enabled GET with timeout (exact copy from Google's implementation)
+// Enhanced GET function with retry logic
 async function getWithTimeout(url, timeout = 30000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
+  let lastError;
+  
+  // Try current server first
   try {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
     const response = await fetch(url, {
       method: 'GET', 
       signal: controller.signal,
-      mode: 'cors' // Explicit CORS mode
+      mode: 'cors'
     });
+    
     clearTimeout(id);
-    return response;
+    
+    if (response.ok) {
+      return response;
+    } else if (response.status === 404) {
+      // 404 is expected for waiting requests
+      return response;
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
   } catch (error) {
-    clearTimeout(id);
-    throw error;
+    lastError = error;
+    
+    // Don't retry for timeout/abort errors in GET (normal for piping)
+    if (error.name === 'AbortError') {
+      throw error;
+    }
   }
+  
+  // If server seems down, try to find working alternative
+  const workingServer = await findWorkingPipingServer();
+  if (workingServer && workingServer !== CURRENT_DOMAIN) {
+    const newUrl = url.replace(CURRENT_DOMAIN, workingServer);
+    try {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(newUrl, {
+        method: 'GET', 
+        signal: controller.signal,
+        mode: 'cors'
+      });
+      
+      clearTimeout(id);
+      console.log('✅ GET Success with alternative server');
+      return response;
+    } catch (retryError) {
+      console.error('❌ GET retry failed:', retryError);
+    }
+  }
+  
+  throw lastError;
 }
 
 function getMobileOperatingSystem() {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
 
-  // Windows Phone must come first because its UA also contains "Android"
   if (/windows phone/i.test(userAgent)) {
     return 'Windows Phone';
   }
@@ -88,7 +236,6 @@ function getMobileOperatingSystem() {
     return 'Android';
   }
 
-  // iOS detection from: http://stackoverflow.com/a/9039885/177710
   if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
     return 'iOS';
   }
@@ -96,10 +243,10 @@ function getMobileOperatingSystem() {
   return 'unknown';
 }
 
-// ===== MOBILE DEPLOYMENT CLASS (from open_mobile_view.ts) =====
+// ===== MOBILE DEPLOYMENT CLASS =====
 class GoogleMobileDeployment {
   constructor() {
-    // State variables (exact match to Google's implementation)
+    // State variables
     this.pipeId = getRandomInt(1e+20);
     this.isDeployed = false;
     this.isDeployable = false;
@@ -114,7 +261,7 @@ class GoogleMobileDeployment {
     this.urls = { gltf: '', env: '' };
     this.lastUrlsSent = { gltf: '', env: '' };
     
-    // Snippet state (model viewer configuration)
+    // Snippet state
     this.snippet = {
       config: {},
       arConfig: {},
@@ -130,8 +277,35 @@ class GoogleMobileDeployment {
     // DOM elements
     this.elements = this.initializeElements();
     
-    // Initialize
-    this.init();
+    // Initialize server connection
+    this.initializeServer();
+  }
+
+  async initializeServer() {
+    console.log('🚀 Initializing piping server connection...');
+    this.updateStatus('Finding working piping server...', 'info');
+    
+    const workingServer = await findWorkingPipingServer();
+    
+    if (workingServer) {
+      this.updateStatus(`Connected to: ${workingServer}`, 'success');
+      console.log(`✅ Successfully connected to: ${workingServer}`);
+      
+      // Update ping URL with working server
+      this.mobilePingUrl = getPingUrl(this.pipeId);
+      
+      // Initialize event listeners after server is ready
+      this.init();
+    } else {
+      this.updateStatus('❌ No working piping servers available. Please try again later.', 'error');
+      console.error('❌ Failed to find working piping server');
+      
+      // Disable deploy button
+      if (this.elements.modalDeployBtn) {
+        this.elements.modalDeployBtn.disabled = true;
+        this.elements.modalDeployBtn.textContent = 'Servers Unavailable';
+      }
+    }
   }
 
   initializeElements() {
@@ -183,13 +357,13 @@ class GoogleMobileDeployment {
     console.log('🔧 Google Mobile Deployment initialized');
   }
 
-  // Get viewable site URL (exact copy from Google's implementation)
+  // Get viewable site URL
   get viewableSite() {
     const path = window.location.origin + window.location.pathname;
     return `${path}view/?id=${this.pipeId}`;
   }
 
-  // Check if we can refresh (exact logic from Google's implementation)
+  // Check if we can refresh
   get canRefresh() {
     return this.isDeployed && this.haveReceivedResponse &&
            !this.isSendingData && this.contentHasChanged;
@@ -197,17 +371,14 @@ class GoogleMobileDeployment {
 
   // Update current state based on gallery selection
   updateState() {
-    // Get current model info from global variables
     const gltfURL = window.currentModelSrc;
     this.isDeployable = gltfURL !== undefined;
     
-    // Update URLs
     this.urls = {
       gltf: gltfURL,
-      env: undefined // Environment images not implemented yet
+      env: undefined
     };
 
-    // Update snippet with current model configuration
     this.snippet = {
       config: {
         ar: true,
@@ -228,7 +399,7 @@ class GoogleMobileDeployment {
     this.contentHasChanged = this.getContentHasChanged();
   }
 
-  // Check if content has changed (exact logic from Google's implementation)
+  // Check if content has changed
   getContentHasChanged() {
     return this.stateHasChanged() || this.isNewModel() ||
            this.isNewSource(this.urls.env, this.lastUrlsSent.env);
@@ -251,7 +422,7 @@ class GoogleMobileDeployment {
            this.urls.env.substr(this.urls.env.length - 4) === '.hdr';
   }
 
-  // Get updated content flags (exact copy from Google's implementation)
+  // Get updated content flags
   getUpdatedContent() {
     return {
       gltfChanged: this.isNewModel(),
@@ -263,7 +434,7 @@ class GoogleMobileDeployment {
     };
   }
 
-  // Get stale content (forces everything to update)
+  // Get stale content
   getStaleContent() {
     return {
       gltfChanged: true,
@@ -276,7 +447,7 @@ class GoogleMobileDeployment {
     };
   }
 
-  // Initial deployment (exact copy from Google's implementation)
+  // Initial deployment
   onInitialDeploy() {
     this.updateState();
     
@@ -288,16 +459,15 @@ class GoogleMobileDeployment {
     this.openModal();
     this.isDeployed = true;
     
-    // Set default AR modes if not set
     if (this.snippet.arConfig.arModes === undefined) {
       this.snippet.arConfig.arModes = 'webxr scene-viewer quick-look';
     }
     
     this.pingLoop();
-    this.updateStatus('QR code generated. Scan with your mobile device.', 'info');
+    this.updateStatus(`QR code generated. Using server: ${CURRENT_DOMAIN}`, 'info');
   }
 
-  // Open QR modal (exact copy from Google's implementation)
+  // Open QR modal
   openModal() {
     if (!this.elements.qrCanvas || !window.QRCode) {
       this.updateStatus('QR code functionality not available', 'error');
@@ -312,9 +482,12 @@ class GoogleMobileDeployment {
       }
     });
 
-    // Show URL
+    // Show URL and server info
     if (this.elements.qrUrl) {
-      this.elements.qrUrl.textContent = this.viewableSite;
+      this.elements.qrUrl.innerHTML = `
+        <div style="margin-bottom: 10px;">${this.viewableSite}</div>
+        <div style="font-size: 10px; color: #666;">Using: ${CURRENT_DOMAIN}</div>
+      `;
     }
 
     // Show overlay
@@ -334,7 +507,7 @@ class GoogleMobileDeployment {
     }
   }
 
-  // Ping loop (exact copy from Google's implementation)
+  // Ping loop with enhanced error handling
   async pingLoop() {
     if (!this.isDeployed) return;
 
@@ -345,14 +518,24 @@ class GoogleMobileDeployment {
       }
     } catch (error) {
       console.log('Ping error:', error);
+      
+      // If it's a server error, try to find working server
+      if (error.message.includes('Failed to fetch') || error.message.includes('HTTP 5')) {
+        this.updateStatus('Server connection lost, finding alternative...', 'error');
+        const newServer = await findWorkingPipingServer();
+        if (newServer) {
+          this.mobilePingUrl = getPingUrl(this.pipeId);
+          this.updateStatus(`Reconnected to: ${newServer}`, 'success');
+        }
+      }
+      
       await this.delay(1000);
     }
     
-    // Continue loop
     this.pingLoop();
   }
 
-  // Wait for ping (exact copy from Google's implementation)
+  // Wait for ping
   async waitForPing() {
     try {
       const response = await getWithTimeout(this.mobilePingUrl);
@@ -361,7 +544,6 @@ class GoogleMobileDeployment {
         const json = await response.json();
         this.sessionList.push(json);
         
-        // Only update if not currently updating
         if (!this.isSendingData) {
           this.postInfo();
         }
@@ -373,15 +555,14 @@ class GoogleMobileDeployment {
       
       return false;
     } catch (error) {
-      // Handle CORS errors gracefully
-      if (error.message.includes('CORS')) {
-        this.updateStatus('CORS error: Try running from localhost or use HTTPS', 'error');
+      if (error.name === 'AbortError') {
+        return false; // Normal timeout, not an error
       }
-      return false;
+      throw error;
     }
   }
 
-  // Post info to mobile (exact copy from Google's implementation)
+  // Post info to mobile
   async postInfo() {
     if (this.isSendingData) {
       console.log('Already sending data, skipping...');
@@ -391,8 +572,8 @@ class GoogleMobileDeployment {
     console.log('📤 Posting info to mobile devices...');
     this.isSendingData = true;
     this.updateRefreshButton('sending');
+    this.updateStatus('Syncing with mobile devices...', 'info');
     
-    // Auto-reset after delay
     setTimeout(() => {
       this.isSendingData = false;
       this.updateRefreshButton('ready');
@@ -404,17 +585,14 @@ class GoogleMobileDeployment {
       const updatedContent = this.getUpdatedContent();
       const staleContent = this.getStaleContent();
 
-      // Check if any sessions are stale
       let haveStale = false;
       for (let session of this.sessionList) {
         haveStale = haveStale || session.isStale;
       }
 
-      // Get model data
       const gltfBlob = (updatedContent.gltfChanged || (haveStale && staleContent.gltfChanged)) ?
         await this.exportModelScene() : undefined;
 
-      // Get environment data (not implemented yet)
       let envBlob;
       const { env } = this.urls;
       if (env != null && env !== 'neutral' && env !== 'legacy' &&
@@ -429,15 +607,12 @@ class GoogleMobileDeployment {
         }
       }
 
-      // Create poster
       const posterBlob = await this.createPoster();
 
-      // Send to all sessions
       for (let session of sessionList) {
         await this.sendSessionContent(session, updatedContent, posterBlob, gltfBlob, envBlob);
       }
 
-      // Update last sent state
       this.lastSnippetSent = { ...this.snippet };
       this.lastUrlsSent.env = env;
       this.lastUrlsSent.gltf = this.urls.gltf;
@@ -448,12 +623,12 @@ class GoogleMobileDeployment {
 
     } catch (error) {
       console.error('❌ Failed to post info:', error);
-      this.updateStatus('Failed to sync with mobile devices', 'error');
+      this.updateStatus(`Failed to sync: ${error.message}`, 'error');
       this.updateRefreshButton('error');
     }
   }
 
-  // Send content to individual session (exact copy from Google's implementation)
+  // Send content to individual session
   async sendSessionContent(session, updatedContent, posterBlob, gltfBlob, envBlob) {
     if (session.isStale) {
       updatedContent = this.getStaleContent();
@@ -467,18 +642,13 @@ class GoogleMobileDeployment {
     };
 
     try {
-      // Send packet
       await post(JSON.stringify(packet), getSessionUrl(this.pipeId, session.id));
-
-      // Send poster
       await post(posterBlob, posterToSession(this.pipeId, session.id, updatedContent.posterId));
 
-      // Send model if changed
       if (updatedContent.gltfChanged && gltfBlob) {
         await post(gltfBlob, gltfToSession(this.pipeId, session.id, updatedContent.gltfId));
       }
 
-      // Send environment if changed
       if (updatedContent.envChanged && envBlob) {
         await post(envBlob, envToSession(this.pipeId, session.id, updatedContent.envIsHdr));
       }
@@ -499,7 +669,6 @@ class GoogleMobileDeployment {
       return await modalViewer.exportScene();
     }
     
-    // Fallback: fetch the model directly
     if (this.urls.gltf) {
       const response = await fetch(this.urls.gltf);
       if (response.ok) {
@@ -523,7 +692,6 @@ class GoogleMobileDeployment {
       console.warn('Could not create poster image:', error);
     }
     
-    // Return placeholder
     return new Blob(['poster'], { type: 'image/jpeg' });
   }
 
@@ -584,101 +752,32 @@ class GoogleMobileDeployment {
   }
 }
 
-// ===== ALTERNATIVE PIPING SERVERS FOR CORS ISSUES =====
-const ALTERNATIVE_PIPING_SERVERS = [
-  'https://piping.glitch.me/',
-  'https://ppng.io/',
-  'https://piping-server.herokuapp.com/',
-  'https://pipes.sh/'
-];
-
-// Function to test which piping server works
-async function findWorkingPipingServer() {
-  for (const server of ALTERNATIVE_PIPING_SERVERS) {
-    try {
-      console.log(`🔍 Testing piping server: ${server}`);
-      const response = await fetch(server, { 
-        method: 'HEAD', 
-        mode: 'cors',
-        signal: AbortSignal.timeout(5000)
-      });
-      
-      if (response.ok || response.status < 500) {
-        console.log(`✅ Working server found: ${server}`);
-        return server;
-      }
-    } catch (error) {
-      console.log(`❌ Server failed: ${server} - ${error.message}`);
-    }
-  }
-  
-  console.error('❌ No working piping servers found');
-  return null;
-}
-
-// ===== CORS PROXY FALLBACK =====
-class CORSProxyManager {
-  constructor() {
-    this.proxies = [
-      'https://api.allorigins.win/raw?url=',
-      'https://cors-anywhere.herokuapp.com/',
-      'https://thingproxy.freeboard.io/fetch/'
-    ];
-    this.currentProxy = 0;
-  }
-
-  async proxyFetch(url, options = {}) {
-    for (let i = 0; i < this.proxies.length; i++) {
-      try {
-        const proxy = this.proxies[(this.currentProxy + i) % this.proxies.length];
-        const proxyUrl = proxy + encodeURIComponent(url);
-        
-        console.log(`🌐 Trying CORS proxy: ${proxy}`);
-        const response = await fetch(proxyUrl, options);
-        
-        if (response.ok) {
-          this.currentProxy = (this.currentProxy + i) % this.proxies.length;
-          console.log(`✅ CORS proxy success: ${proxy}`);
-          return response;
-        }
-      } catch (error) {
-        console.log(`❌ CORS proxy failed: ${this.proxies[(this.currentProxy + i) % this.proxies.length]}`);
-      }
-    }
-    
-    throw new Error('All CORS proxies failed');
-  }
-}
-
-// Initialize when DOM is ready
+// ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log('🚀 Initializing Google Mobile Deployment...');
+    console.log('🚀 Initializing Google Mobile Deployment with updated servers...');
     
-    // Test piping server connectivity
-    const workingServer = await findWorkingPipingServer();
+    // Initialize the mobile deployment (it will handle server selection internally)
+    window.mobileDeployment = new GoogleMobileDeployment();
     
-    if (workingServer) {
-      // Override DOMAIN if we found a working alternative
-      if (workingServer !== DOMAIN) {
-        console.log(`🔄 Switching to working server: ${workingServer}`);
-        // You would need to update the DOMAIN constant here
-      }
-      
-      window.mobileDeployment = new GoogleMobileDeployment();
-      console.log('✅ Google Mobile Deployment initialized successfully');
-    } else {
-      console.error('❌ No piping servers available. CORS issues detected.');
-      
-      // Show user-friendly error
-      const statusEl = document.getElementById('statusMessage');
-      if (statusEl) {
-        statusEl.textContent = 'Mobile deployment unavailable due to CORS restrictions. Please run from localhost or use HTTPS.';
-        statusEl.style.color = '#EA4335';
-        statusEl.style.display = 'block';
-      }
-    }
   } catch (error) {
     console.error('❌ Failed to initialize Google Mobile Deployment:', error);
+    
+    // Show user-friendly error
+    const statusEl = document.getElementById('statusMessage');
+    if (statusEl) {
+      statusEl.textContent = 'Failed to initialize mobile deployment. Please refresh and try again.';
+      statusEl.style.color = '#EA4335';
+      statusEl.style.display = 'block';
+    }
   }
 });
+
+// Export for debugging
+window.PipingServerUtils = {
+  PIPING_SERVERS,
+  CURRENT_DOMAIN,
+  testPipingServer,
+  findWorkingPipingServer,
+  TESTED_SERVERS
+};
