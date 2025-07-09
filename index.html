@@ -1,14 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- Existing meta tags -->
+  <!-- Security meta tags -->
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://piping.glitch.me https://*.piping.glitch.me https://api.allorigins.win https://cors-anywhere.herokuapp.com;">
-  <!-- Rest of head -->
+  <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://ppng.io https://piping.onrender.com https://piping-server.herokuapp.com https://pipes.sh https://*.piping.glitch.me https://api.allorigins.win https://cors-anywhere.herokuapp.com;">
   
   <title>3D Model Gallery</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -16,8 +14,35 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <!-- External CSS -->
   <link rel="stylesheet" href="css/styles.css">
-  <!-- Added styles for mobile deployment UI -->
+  
+  <!-- Enhanced styles for server status and mobile deployment UI -->
   <style>
+    /* Server status indicator */
+    .server-status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .server-status.connected {
+      background: rgba(52, 168, 83, 0.9);
+    }
+    
+    .server-status.disconnected {
+      background: rgba(234, 67, 53, 0.9);
+    }
+    
+    .server-status.testing {
+      background: rgba(255, 165, 0, 0.9);
+    }
+
     /* Status message styling */
     #statusMessage {
       margin-top: 10px;
@@ -76,7 +101,7 @@
     
     /* Button states */
     .modal-deploy-btn.connecting {
-      background-color: #FFA500; /* Orange for connecting */
+      background-color: #FFA500;
       position: relative;
       cursor: wait;
     }
@@ -98,15 +123,15 @@
     }
     
     .modal-deploy-btn.ready {
-      background-color: #34A853; /* Green for ready */
+      background-color: #34A853;
     }
     
     .modal-deploy-btn.connected {
-      background-color: #4285F4; /* Blue for connected */
+      background-color: #4285F4;
     }
     
     .modal-deploy-btn.error {
-      background-color: #EA4335; /* Red for error */
+      background-color: #EA4335;
     }
     
     .modal-deploy-btn:hover:not(:disabled), .modal-refresh-btn:hover:not(:disabled) {
@@ -121,7 +146,7 @@
     
     .modal-refresh-btn {
       display: none;
-      background-color: #34A853; /* Green for refresh */
+      background-color: #34A853;
     }
     
     /* AR mode selector */
@@ -162,9 +187,24 @@
       50% { opacity: 1; }
       100% { opacity: 0.5; }
     }
+
+    /* Server info in QR container */
+    .server-info {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
+  <!-- Server status indicator -->
+  <div class="server-status" id="serverStatus">
+    <span id="serverStatusText">Checking servers...</span>
+  </div>
+
   <h1>Space</h1>
   <div class="gallery" id="modelGallery">
     <!-- Model cards will be dynamically generated here -->
@@ -214,8 +254,12 @@
         <label for="arModeSelector">Default AR Mode to Scene Viewer</label>
       </div>
       
-      <div style="margin-top: 15px; font-size: 12px; color: #666;">
-        This uses a third-party <a href="https://github.com/nwtgck/piping-server" target="_blank" style="color: #4285F4;">piping server</a> to deploy to your mobile device. This server does not store data.
+      <!-- Server info -->
+      <div class="server-info">
+        <div id="serverInfo">Using automatic server selection</div>
+        <div style="margin-top: 5px;">
+          This uses <a href="https://github.com/nwtgck/piping-server" target="_blank" style="color: #4285F4;">piping servers</a> that do not store data.
+        </div>
       </div>
       
       <button class="qr-close" id="qrCloseButton">Close</button>
@@ -251,13 +295,52 @@
       if (window.modelsConfig && window.initializeGallery) {
         console.log('Gallery initialization verified');
       }
+
+      // Initialize server status monitoring
+      initializeServerStatus();
     });
+
+    // Server status monitoring
+    function initializeServerStatus() {
+      const statusElement = document.getElementById('serverStatus');
+      const statusText = document.getElementById('serverStatusText');
+      
+      if (!statusElement || !statusText) return;
+
+      // Show status indicator
+      statusElement.style.display = 'block';
+      statusElement.className = 'server-status testing';
+      statusText.textContent = 'Testing servers...';
+
+      // Monitor deployment system initialization
+      const checkStatus = () => {
+        if (window.mobileDeployment) {
+          const currentServer = window.PipingServerUtils?.CURRENT_DOMAIN;
+          if (currentServer) {
+            statusElement.className = 'server-status connected';
+            statusText.textContent = `Connected: ${currentServer.replace('https://', '').replace('/', '')}`;
+            
+            // Update server info in QR modal
+            const serverInfo = document.getElementById('serverInfo');
+            if (serverInfo) {
+              serverInfo.textContent = `Using: ${currentServer}`;
+            }
+          } else {
+            statusElement.className = 'server-status disconnected';
+            statusText.textContent = 'No servers available';
+          }
+        } else {
+          setTimeout(checkStatus, 1000);
+        }
+      };
+
+      checkStatus();
+    }
   </script>
 
-  <!-- External JavaScript -->
+  <!-- External JavaScript (Updated versions) -->
   <script src="js/gallery.js"></script>
   <script src="js/qr-deploy.js"></script>
-  <!-- Add this script to view/index.html -->
-  <script src="mobile-view.js"></script>
+  <script src="view/mobile_view.js"></script>
 </body>
 </html>
