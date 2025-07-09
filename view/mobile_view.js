@@ -1,68 +1,45 @@
 /**
- * Google Space Opera Mobile View Implementation
- * Direct JavaScript translation from mobile_view.ts
- * Runs on mobile devices to receive and display 3D models via piping
+ * Updated Google Space Opera Mobile View Implementation
+ * Fixed to use working piping servers with automatic fallback
+ * Handles server selection and connectivity issues
  */
 
-// ===== CONSTANTS AND UTILITIES =====
-const DOMAIN = 'https://piping.glitch.me/';
-const TOAST_TIME = 3000; // 3 seconds
+// ===== PIPING SERVER CONFIGURATION =====
+const PIPING_SERVERS = [
+  'https://ppng.io/',           // Primary - usually most reliable
+  'https://piping.onrender.com/', // Secondary - good fallback  
+  'https://piping-server.herokuapp.com/', // Tertiary
+  'https://pipes.sh/'           // Additional option
+];
 
-// Utility functions (exact copies from Google's utils.ts)
+// Global state
+let CURRENT_DOMAIN = PIPING_SERVERS[0];
+let TESTED_SERVERS = new Map();
+
+// ===== UTILITY FUNCTIONS =====
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
 function getSessionUrl(pipeId, sessionId) {
-  return `${DOMAIN}${pipeId}-${sessionId}`;
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionId}`;
 }
 
 function getPingUrl(pipeId) {
-  return `${DOMAIN}ping-${pipeId}`;
+  return `${CURRENT_DOMAIN}ping-${pipeId}`;
 }
 
 function posterToSession(pipeId, sessionID, modelId) {
-  return `${DOMAIN}${pipeId}-${sessionID}-${modelId}-poster`;
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-${modelId}-poster`;
 }
 
 function gltfToSession(pipeId, sessionID, modelId) {
-  return `${DOMAIN}${pipeId}-${sessionID}-${modelId}`;
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-${modelId}`;
 }
 
 function envToSession(pipeId, sessionID, envIsHdr) {
   const addOn = envIsHdr ? '#.hdr' : '';
-  return `${DOMAIN}${pipeId}-${sessionID}-env${addOn}`;
-}
-
-async function post(content, url) {
-  const response = await fetch(url, {
-    method: 'POST',
-    body: content,
-  });
-  
-  if (response.ok) {
-    console.log('✅ POST Success:', url);
-  } else {
-    console.error('❌ POST Failed:', url);
-    throw new Error(`Failed to post: ${url}`);
-  }
-}
-
-async function getWithTimeout(url, timeout = 30000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      signal: controller.signal
-    });
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    throw error;
-  }
+  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-env${addOn}`;
 }
 
 function getMobileOperatingSystem() {
@@ -83,11 +60,99 @@ function getMobileOperatingSystem() {
   return 'unknown';
 }
 
-function timePasses(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+// ===== SERVER TESTING AND SELECTION =====
+async function testPipingServer(serverUrl) {
+  try {
+    console.log(`🔍 Testing mobile piping server: ${serverUrl}`);
+    
+    const testResponse = await fetch(serverUrl, { 
+      method: 'HEAD', 
+      mode: 'cors',
+      signal: AbortSignal.timeout(5000)
+    });
+    
+    if (testResponse.status < 500) {
+      console.log(`✅ Mobile server working: ${serverUrl}`);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.log(`❌ Mobile server failed: ${serverUrl} - ${error.message}`);
+    return false;
+  }
 }
 
-// ===== MOBILE VIEW CLASS (from mobile_view.ts) =====
+async function findWorkingPipingServer() {
+  // Check cached results first
+  for (const [server, result] of TESTED_SERVERS.entries()) {
+    if (result.working && (Date.now() - result.timestamp) < 300000) {
+      console.log(`🎯 Using cached working server: ${server}`);
+      CURRENT_DOMAIN = server;
+      return server;
+    }
+  }
+  
+  // Test servers
+  for (const server of PIPING_SERVERS) {
+    const isWorking = await testPipingServer(server);
+    TESTED_SERVERS.set(server, {
+      working: isWorking,
+      timestamp: Date.now()
+    });
+    
+    if (isWorking) {
+      CURRENT_DOMAIN = server;
+      console.log(`🌟 Mobile selected working server: ${server}`);
+      return server;
+    }
+  }
+  
+  console.error('❌ No working piping servers found for mobile');
+  return null;
+}
+
+// Enhanced fetch functions
+async function post(content, url) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: content,
+      mode: 'cors',
+      signal: AbortSignal.timeout(30000)
+    });
+    
+    if (response.ok) {
+      console.log('✅ Mobile POST Success:', url);
+    } else {
+      console.error('❌ Mobile POST Failed:', url, response.status);
+      throw new Error(`Failed to post: ${url}`);
+    }
+  } catch (error) {
+    console.error('❌ Mobile POST Error:', error);
+    throw error;
+  }
+}
+
+async function getWithTimeout(url, timeout = 30000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+      mode: 'cors'
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
+// ===== MOBILE VIEW CLASS =====
 class GoogleMobileView {
   constructor() {
     // DOM Elements
@@ -95,7 +160,7 @@ class GoogleMobileView {
     this.overlay = document.getElementById('overlay');
     this.toastElement = document.getElementById('snackbar-mobile');
     
-    // State (exact match to Google's implementation)
+    // State
     this.modelViewerUrl = '';
     this.posterUrl = '';
     this.currentBlob = undefined;
@@ -110,11 +175,13 @@ class GoogleMobileView {
     this.envImageUrl = undefined;
     
     // Piping configuration
-    this.pipeId = window.location.search.replace('?id=', '');
-    this.mobilePingUrl = getPingUrl(this.pipeId);
+    this.pipeId = this.getUrlParam('id');
     this.sessionId = getRandomInt(1e+20);
-    this.sessionUrl = getSessionUrl(this.pipeId, this.sessionId);
     this.sessionOs = getMobileOperatingSystem();
+    
+    // URLs will be set after server is found
+    this.mobilePingUrl = '';
+    this.sessionUrl = '';
     
     // Toast state
     this.toastClassName = '';
@@ -126,62 +193,94 @@ class GoogleMobileView {
       os: this.sessionOs
     });
     
-    // Initialize
+    // Initialize with server discovery
     this.initialize();
   }
 
-  initialize() {
+  getUrlParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  }
+
+  async initialize() {
     if (!this.modelViewer) {
       console.error('❌ Model viewer element not found');
+      this.showToast('Error: Model viewer not found');
       return;
     }
     
     if (!this.pipeId) {
       console.error('❌ No pipe ID found in URL');
-      this.showToast('Error: No connection ID found in URL');
+      this.showToast('Error: No connection ID found in URL. Please scan QR code again.');
       return;
     }
+
+    // Show loading overlay
+    if (this.overlay) {
+      this.overlay.style.display = 'flex';
+    }
+
+    // Find working server
+    this.showToast('Connecting to server...');
+    const workingServer = await findWorkingPipingServer();
+    
+    if (!workingServer) {
+      this.showToast('❌ Cannot connect to any servers. Please try again later.');
+      if (this.overlay) {
+        this.overlay.innerHTML = `
+          <div style="text-align: center; color: white; padding: 20px;">
+            <h2>Connection Error</h2>
+            <p>Cannot connect to piping servers.</p>
+            <p>Please check your internet connection and try scanning the QR code again.</p>
+            <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 4px;">
+              Retry
+            </button>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // Set URLs with working server
+    this.mobilePingUrl = getPingUrl(this.pipeId);
+    this.sessionUrl = getSessionUrl(this.pipeId, this.sessionId);
+    
+    this.showToast(`Connected to: ${workingServer.replace('https://', '').replace('/', '')}`);
 
     // Set up event listeners
     this.modelViewer.addEventListener('load', () => this.modelIsLoaded());
     
-    // Show overlay initially
-    if (this.overlay) {
-      this.overlay.style.display = 'flex';
-    }
-    
-    // Start the communication process
+    // Start communication
+    console.log('📡 Starting mobile communication...');
     this.ping();
     this.triggerFetchLoop();
     
     console.log('✅ Mobile view initialized successfully');
   }
 
-  // Update state from received data (exact copy from Google's implementation)
+  // Update state from received data
   updateState(snippet, urls) {
     this.editorUrls = urls;
     this.hotspots = snippet.hotspots || [];
-
-    // Set all of the other relevant snippet information
     this.arConfig = snippet.arConfig || {};
     this.config = snippet.config || {};
     this.extraAttributes = snippet.extraAttributes || {};
     this.bestPractices = snippet.bestPractices;
     
-    console.log('📊 State updated:', {
+    console.log('📊 Mobile state updated:', {
       config: this.config,
       arConfig: this.arConfig,
       urls: urls
     });
   }
 
-  // Scene Viewer mode check (exact copy from Google's implementation)
+  // Scene Viewer mode check
   sceneViewerMode() {
     return this.arConfig.ar &&
            this.arConfig.arModes?.split(' ')[0] === 'scene-viewer';
   }
 
-  // Repost GLTF for scene-viewer (exact copy from Google's implementation)
+  // Repost GLTF for scene-viewer
   repostGLTF = async () => {
     try {
       if (this.sessionOs === 'Android' && this.currentBlob) {
@@ -193,7 +292,7 @@ class GoogleMobileView {
     }
   };
 
-  // Wait for data from editor (exact copy from Google's implementation)
+  // Wait for data from editor
   waitForData(json) {
     const updatedContent = json.updatedContent;
     
@@ -219,7 +318,7 @@ class GoogleMobileView {
         environmentImage :
         envToSession(this.pipeId, this.sessionId, updatedContent.envIsHdr);
 
-    // Update model viewer attributes
+    // Update model viewer
     this.updateModelViewer();
 
     // Set up AR button for scene-viewer
@@ -251,7 +350,7 @@ class GoogleMobileView {
       this.modelViewer.environmentImage = this.envImageUrl;
     }
 
-    // Apply configuration (exact mapping from Google's implementation)
+    // Apply configuration
     const { config, arConfig } = this;
     
     if (config.autoRotate !== undefined) this.modelViewer.autoRotate = config.autoRotate;
@@ -281,17 +380,14 @@ class GoogleMobileView {
     console.log('🔄 Model viewer updated with new configuration');
   }
 
-  // Set up scene-viewer button (exact copy from Google's implementation)
+  // Set up scene-viewer button
   setupSceneViewerButton() {
     try {
       const arButton = this.modelViewer.shadowRoot?.querySelector('button[slot="ar-button"]') ||
                       this.modelViewer.shadowRoot?.getElementById('default-ar-button');
       
       if (arButton) {
-        // Remove existing listeners to prevent duplicates
         arButton.removeEventListener('click', this.repostGLTF);
-        
-        // Add new listener for scene-viewer POST
         arButton.addEventListener('click', this.repostGLTF);
         console.log('🎯 Scene-viewer button configured');
       }
@@ -300,37 +396,39 @@ class GoogleMobileView {
     }
   }
 
-  // Initialize toast (exact copy from Google's implementation)
+  // Initialize toast
   initializeToast(json) {
-    let body = json.gltfChanged ? 'gltf model, ' : '';
-    body = json.envChanged ? body.concat('environment image, ') : body;
-    body = json.stateChanged ? body.concat('snippet, ') : body;
-    body = body.slice(0, body.length - 2).concat('.');
+    let body = json.gltfChanged ? 'model, ' : '';
+    body = json.envChanged ? body.concat('environment, ') : body;
+    body = json.stateChanged ? body.concat('settings, ') : body;
+    body = body.slice(0, body.length - 2);
     this.toastBody = `Loading ${body}`;
     this.showToast(this.toastBody);
   }
 
   // Show toast notification
   showToast(message) {
-    if (!this.toastElement) return;
+    if (!this.toastElement) {
+      console.log('📢 Toast (no element):', message);
+      return;
+    }
     
     this.toastElement.textContent = message;
     this.toastElement.className = 'show';
     
     setTimeout(() => {
       this.toastElement.className = '';
-    }, TOAST_TIME);
+    }, 3000);
     
     console.log('📢 Toast:', message);
   }
 
-  // Fetch loop to get updates from editor (exact copy from Google's implementation)
+  // Fetch loop with retry logic
   async fetchLoop() {
     try {
       const response = await getWithTimeout(this.sessionUrl);
       
       if (response.ok) {
-        // Show poster while loading new data
         if (this.modelViewer) {
           this.modelViewer.showPoster();
         }
@@ -346,27 +444,39 @@ class GoogleMobileView {
       }
     } catch (error) {
       console.error('❌ Error in fetch loop:', error);
+      
+      // If it's a server connectivity error, try to find a working server
+      if (error.message.includes('Failed to fetch') || error.name === 'AbortError') {
+        console.log('🔄 Attempting to find alternative server...');
+        const newServer = await findWorkingPipingServer();
+        if (newServer && newServer !== CURRENT_DOMAIN) {
+          this.sessionUrl = getSessionUrl(this.pipeId, this.sessionId);
+          this.showToast(`Reconnected to: ${newServer.replace('https://', '').replace('/', '')}`);
+          return false; // Try again with new server
+        }
+      }
+      
       return false;
     }
   }
 
-  // Continuous fetch loop (exact copy from Google's implementation)
+  // Continuous fetch loop
   async triggerFetchLoop() {
     try {
       const success = await this.fetchLoop();
       if (!success) {
-        await timePasses(1000);
+        await this.delay(1000);
       }
     } catch (error) {
       console.error('❌ Error triggering fetch:', error);
-      await timePasses(1000);
+      await this.delay(1000);
     }
     
     // Continue the loop
     this.triggerFetchLoop();
   }
 
-  // Model loaded handler (exact copy from Google's implementation)
+  // Model loaded handler
   async modelIsLoaded() {
     console.log('📱 Model loaded on mobile device');
     
@@ -375,7 +485,6 @@ class GoogleMobileView {
       try {
         this.currentBlob = await this.modelViewer.exportScene();
         
-        // Post the blob to the URL for scene-viewer
         if (this.modelViewerUrl) {
           await post(this.currentBlob, this.modelViewerUrl);
           console.log('📤 Scene exported and posted for scene-viewer');
@@ -385,7 +494,7 @@ class GoogleMobileView {
       }
     }
     
-    // Update camera (exact copy from Google's implementation)
+    // Update camera
     this.modelViewer.cameraOrbit = 'auto auto auto';
     const { cameraOrbit } = this.config;
     if (cameraOrbit) {
@@ -397,7 +506,7 @@ class GoogleMobileView {
     console.log('✅ Model setup completed');
   }
 
-  // Ping the editor (exact copy from Google's implementation)
+  // Ping the editor
   async ping() {
     const ping = {
       os: getMobileOperatingSystem(),
@@ -414,6 +523,11 @@ class GoogleMobileView {
     }
   }
 
+  // Utility delay function
+  delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   // Get current statistics
   getStats() {
     return {
@@ -422,88 +536,34 @@ class GoogleMobileView {
       sessionOs: this.sessionOs,
       modelViewerUrl: this.modelViewerUrl,
       isLoaded: !!this.modelViewer?.loaded,
-      arMode: this.arConfig.arModes
+      arMode: this.arConfig.arModes,
+      currentServer: CURRENT_DOMAIN
     };
   }
 }
 
-// ===== ALTERNATIVE MOBILE VIEW FOR CORS ISSUES =====
-class CORSFallbackMobileView extends GoogleMobileView {
-  constructor() {
-    super();
-    this.corsProxies = [
-      'https://api.allorigins.win/raw?url=',
-      'https://cors-anywhere.herokuapp.com/',
-      'https://thingproxy.freeboard.io/fetch/'
-    ];
-    this.currentProxy = 0;
-  }
-
-  async getWithTimeout(url, timeout = 30000) {
-    // Try direct fetch first
-    try {
-      return await super.getWithTimeout(url, timeout);
-    } catch (error) {
-      if (error.message.includes('CORS')) {
-        console.log('🌐 CORS error detected, trying proxy...');
-        return await this.proxyFetch(url, timeout);
-      }
-      throw error;
-    }
-  }
-
-  async proxyFetch(url, timeout) {
-    for (let i = 0; i < this.corsProxies.length; i++) {
-      try {
-        const proxy = this.corsProxies[(this.currentProxy + i) % this.corsProxies.length];
-        const proxyUrl = proxy + encodeURIComponent(url);
-        
-        console.log(`🌐 Trying CORS proxy: ${proxy}`);
-        const response = await fetch(proxyUrl, {
-          method: 'GET',
-          signal: AbortSignal.timeout(timeout)
-        });
-        
-        if (response.ok) {
-          this.currentProxy = (this.currentProxy + i) % this.corsProxies.length;
-          console.log(`✅ CORS proxy success: ${proxy}`);
-          return response;
-        }
-      } catch (error) {
-        console.log(`❌ CORS proxy failed: ${this.corsProxies[(this.currentProxy + i) % this.corsProxies.length]}`);
-      }
-    }
-    
-    throw new Error('All CORS proxies failed');
-  }
-}
-
 // ===== INITIALIZATION =====
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
   try {
-    console.log('🚀 Initializing Google Mobile View...');
+    console.log('🚀 Initializing Mobile View with updated servers...');
     
     // Check if we're in the mobile view page
     if (!window.location.search.includes('id=')) {
       console.warn('⚠️ No pipe ID in URL - this page should be accessed via QR code');
+      document.body.innerHTML = `
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px;">
+          <div>
+            <h2>Invalid URL</h2>
+            <p>This page should be accessed by scanning a QR code from the editor.</p>
+            <p>Please return to the main page and use the "Deploy to Mobile" feature.</p>
+          </div>
+        </div>
+      `;
       return;
     }
     
-    // Test if CORS is an issue
-    fetch('https://piping.glitch.me/', { method: 'HEAD', mode: 'cors' })
-      .then(() => {
-        console.log('✅ CORS OK - using direct connection');
-        window.mobileView = new GoogleMobileView();
-      })
-      .catch(error => {
-        if (error.message.includes('CORS')) {
-          console.log('🌐 CORS detected - using fallback with proxies');
-          window.mobileView = new CORSFallbackMobileView();
-        } else {
-          console.log('✅ Network error (not CORS) - using direct connection');
-          window.mobileView = new GoogleMobileView();
-        }
-      });
+    // Initialize mobile view
+    window.mobileView = new GoogleMobileView();
     
   } catch (error) {
     console.error('❌ Failed to initialize mobile view:', error);
@@ -513,9 +573,12 @@ window.addEventListener('DOMContentLoaded', () => {
     if (overlay) {
       overlay.innerHTML = `
         <div style="text-align: center; color: white; padding: 20px;">
-          <h2>Connection Error</h2>
-          <p>Failed to connect to the editor.</p>
-          <p>Please try refreshing or scanning the QR code again.</p>
+          <h2>Initialization Error</h2>
+          <p>Failed to initialize mobile view.</p>
+          <p>Error: ${error.message}</p>
+          <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 4px;">
+            Retry
+          </button>
         </div>
       `;
     }
@@ -523,6 +586,10 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Export for debugging
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { GoogleMobileView, CORSFallbackMobileView };
-}
+window.MobilePipingUtils = {
+  PIPING_SERVERS,
+  CURRENT_DOMAIN,
+  testPipingServer,
+  findWorkingPipingServer,
+  TESTED_SERVERS
+};
