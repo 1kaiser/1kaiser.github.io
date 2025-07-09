@@ -1,3 +1,191 @@
+// Add this to the beginning of your js/qr-deploy.js file
+
+// Enhanced error handling for CSP and model loading issues
+const ErrorHandler = {
+  // Track CSP violations
+  cspViolations: new Set(),
+  
+  // Initialize error monitoring
+  init() {
+    // Monitor CSP violations
+    document.addEventListener('securitypolicyviolation', (e) => {
+      const violation = `${e.violatedDirective}: ${e.blockedURI}`;
+      this.cspViolations.add(violation);
+      console.warn('🛡️ CSP Violation:', violation);
+      
+      // Provide user-friendly feedback for piping server blocks
+      if (e.blockedURI.includes('piping') || e.blockedURI.includes('ppng.io')) {
+        this.showCSPError('Piping server blocked by security policy');
+      }
+    });
+
+    // Monitor model loading errors
+    window.addEventListener('error', (e) => {
+      if (e.message && e.message.includes('GLTFLoader')) {
+        console.warn('🎯 Model loading error:', e.message);
+        this.handleModelError(e);
+      }
+    });
+
+    // Monitor unhandled promise rejections
+    window.addEventListener('unhandledrejection', (e) => {
+      if (e.reason && e.reason.message) {
+        if (e.reason.message.includes('CSP') || e.reason.message.includes('security policy')) {
+          this.showCSPError('Content blocked by security policy');
+        }
+        if (e.reason.message.includes('draco') || e.reason.message.includes('GLTF')) {
+          this.handleModelError(e);
+        }
+      }
+    });
+  },
+
+  // Handle CSP errors
+  showCSPError(message) {
+    const statusEl = document.getElementById('statusMessage');
+    if (statusEl) {
+      statusEl.textContent = `⚠️ ${message}. Check browser console for details.`;
+      statusEl.style.color = '#FF9800';
+      statusEl.style.display = 'block';
+    }
+  },
+
+  // Handle model loading errors
+  handleModelError(error) {
+    console.warn('🎯 Handling model error:', error);
+    
+    // Try to refresh model viewers
+    document.querySelectorAll('model-viewer').forEach(mv => {
+      if (mv.src && !mv.dataset.errorRetried) {
+        mv.dataset.errorRetried = 'true';
+        this.retryModelLoad(mv);
+      }
+    });
+  },
+
+  // Retry model loading with fallback strategies
+  retryModelLoad(modelViewer) {
+    const originalSrc = modelViewer.src;
+    
+    console.log('🔄 Retrying model load:', originalSrc);
+    
+    // Strategy 1: Simple reload
+    setTimeout(() => {
+      modelViewer.src = '';
+      setTimeout(() => {
+        modelViewer.src = originalSrc;
+      }, 200);
+    }, 1000);
+
+    // Strategy 2: If still failing, try without auto-rotate
+    setTimeout(() => {
+      if (modelViewer.loadingState === 'error') {
+        modelViewer.autoRotate = false;
+        modelViewer.src = originalSrc;
+      }
+    }, 3000);
+  },
+
+  // Get error summary
+  getSummary() {
+    return {
+      cspViolations: Array.from(this.cspViolations),
+      violationCount: this.cspViolations.size
+    };
+  }
+};
+
+// Initialize error handling
+ErrorHandler.init();
+
+// Enhanced POST function with better error handling
+async function post(content, url) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: content,
+      mode: 'cors',
+      headers: {
+        'Content-Type': typeof content === 'string' ? 'application/json' : 'application/octet-stream'
+      },
+      signal: AbortSignal.timeout(30000)
+    });
+    
+    if (response.ok) {
+      console.log('✅ POST Success:', url);
+      return response;
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+  } catch (error) {
+    // Enhanced error reporting
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      console.error('🌐 Network error - possible CSP violation or server down:', url);
+      ErrorHandler.showCSPError('Network request blocked or server unavailable');
+    } else if (error.name === 'AbortError') {
+      console.error('⏱️ Request timeout:', url);
+    } else {
+      console.error('❌ POST Failed:', url, error);
+    }
+    throw error;
+  }
+}
+
+// Enhanced export model scene with error handling
+async function exportModelScene() {
+  try {
+    const modalViewer = document.getElementById('modalModelViewer');
+    if (!modalViewer) {
+      throw new Error('Modal viewer not found');
+    }
+    
+    // Check if model is loaded
+    if (!modalViewer.loaded) {
+      console.warn('⚠️ Model not loaded yet, waiting...');
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('Model load timeout')), 10000);
+        modalViewer.addEventListener('load', () => {
+          clearTimeout(timeout);
+          resolve();
+        }, { once: true });
+      });
+    }
+
+    // Try export with fallback
+    if (typeof modalViewer.exportScene === 'function') {
+      const blob = await modalViewer.exportScene();
+      console.log('✅ Scene exported successfully, size:', blob.size);
+      return blob;
+    }
+    
+    throw new Error('exportScene not available');
+    
+  } catch (error) {
+    console.warn('⚠️ Scene export failed, using fallback:', error.message);
+    
+    // Fallback: fetch the original model
+    if (window.currentModelSrc) {
+      try {
+        const response = await fetch(window.currentModelSrc);
+        if (response.ok) {
+          const blob = await response.blob();
+          console.log('✅ Using original model as fallback, size:', blob.size);
+          return blob;
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback also failed:', fallbackError);
+      }
+    }
+    
+    // Last resort: empty blob
+    console.warn('🚨 Using empty blob as last resort');
+    return new Blob(['model export failed'], { type: 'application/octet-stream' });
+  }
+}
+
+// Export error handler for debugging
+window.DeploymentErrorHandler = ErrorHandler;
+
 /**
  * Updated Google Space Opera Mobile View Implementation
  * Fixed to use working piping servers from nwtgck's implementation
