@@ -33,6 +33,45 @@
     worker-src 'self' data: blob:;
   ">
   <title>3D Model Gallery</title>
+  <!-- Add this to your index.html head section, before the model-viewer script -->
+  
+  <!-- Draco Decoder Support -->
+  <script>
+  // Configure Draco decoder before model-viewer loads
+  window.ModelViewerElement = window.ModelViewerElement || {};
+  window.ModelViewerElement.dracoDecoderLocation = 'https://unpkg.com/three@0.152.0/examples/js/libs/draco/';
+  
+  // Alternative: Use Google's CDN for Draco
+  // window.ModelViewerElement.dracoDecoderLocation = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
+  
+  // Enhanced error handling for model-viewer
+  window.addEventListener('DOMContentLoaded', () => {
+    // Global error handler for model loading
+    window.addEventListener('unhandledrejection', (event) => {
+      if (event.reason && event.reason.message && event.reason.message.includes('draco')) {
+        console.warn('🔧 Draco decoder issue detected, attempting fallback...');
+        event.preventDefault(); // Prevent console spam
+        
+        // Try to find and reload the problematic model viewer
+        document.querySelectorAll('model-viewer').forEach(mv => {
+          if (mv.src && !mv.dataset.dracoRetried) {
+            mv.dataset.dracoRetried = 'true';
+            const originalSrc = mv.src;
+            setTimeout(() => {
+              mv.src = '';
+              setTimeout(() => {
+                mv.src = originalSrc;
+              }, 100);
+            }, 500);
+          }
+        });
+      }
+    });
+  });
+  </script>
+  
+  <!-- Model Viewer with Draco support -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.3.0/dist/model-viewer.min.js"></script>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <!-- Load the QRCode library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
