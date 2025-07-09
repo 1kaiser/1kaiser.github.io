@@ -122,7 +122,7 @@
         const GITHUB_USER = '1kaiser';
         const GITHUB_REPO = '1kaiser.github.io';
         const GITHUB_BRANCH = 'main';
-        const PIPING_SERVER = 'https://ppng.io/'; // Using the selected public server
+        const PIPING_SERVER = 'https://ppng.io/';
 
         const fileListEl = document.getElementById('file-list');
         const statusEl = document.getElementById('status');
@@ -130,56 +130,119 @@
         const qrCodeEl = document.getElementById('qr-code');
         const mobileLinkEl = document.getElementById('mobile-link');
 
-        // --- Main Functions ---
+        const modelsConfig = [
+          {
+            url: "./models/31_10_2024.glb",
+            title: "My Model",
+            description: "Original 3D model",
+            alt: "Original 3D model"
+          },
+          {
+            url: "./models/20230204temple-transformed.glb",
+            title: "Temple",
+            description: "Example 3D model",
+            alt: "Temple"
+          },
+          {
+            url: "./models/hibiscus.glb",
+            title: "Hibiscus",
+            description: "Example 3D model",
+            alt: "hibiscus"
+          },
+          {
+            url: "./models/momos.glb",
+            title: "Momos",
+            description: "Example 3D model",
+            alt: "momos"
+          },
+          {
+            url: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
+            title: "Idol",
+            description: "Saraswati 3D model",
+            alt: "Idol"
+          },
+          {
+            url: "./models/bycycle.glb",
+            title: "Bicycle",
+            description: "3D bicycle model",
+            alt: "Bicycle"
+          },
+          {
+            url: "https://cdn.glitch.global/e71dfee6-422f-4ea9-a2a1-7c360807106f/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
+            title: "bhatura VegBiryani EggNoodles ChickenStrips",
+            description: "bhatura_VegBiryani_EggNoodles_ChickenStrips",
+            alt: "bhatura VegBiryani EggNoodles ChickenStrips"
+          },
+          {
+            url: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
+            title: "paneer sabji",
+            description: "paneer_sabji",
+            alt: "paneer sabji"
+          },
+          {
+            url: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
+            title: "Kaiser Roy",
+            description: "Kaiser_Roy",
+            alt: "Kaiser Roy"
+          },
+          {
+            url: "./models/Chicken_Biryani.glb",
+            title: "chicken biryani",
+            description: "chicken biryani with eggs and potatoes",
+            alt: "chicken biryani with eggs and potatoes"
+          }
+        ];
+
 
         /**
-         * Fetches GLB files from the GitHub repo and populates the list.
+         * Populates the file list from the modelsConfig array.
          */
         async function loadGlbFiles() {
             try {
-                const api_url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/`;
-                const response = await fetch(api_url);
-                if (!response.ok) throw new Error(`GitHub API error: ${response.statusText}`);
-                
-                const files = await response.json();
-                const glbFiles = files.filter(file => file.name.endsWith('.glb')).map(file => file.name);
-
-                if (glbFiles.length === 0) {
-                    fileListEl.innerHTML = '<li>No .glb files found in the repository root.</li>';
+                if (modelsConfig.length === 0) {
+                    fileListEl.innerHTML = '<li>No models found in configuration.</li>';
                     return;
                 }
 
                 fileListEl.innerHTML = ''; // Clear list
-                glbFiles.forEach(fileName => {
+                modelsConfig.forEach(model => {
                     const li = document.createElement('li');
-                    li.textContent = fileName;
-                    li.onclick = () => pipeFile(fileName);
+                    li.textContent = model.title;
+
+                    let fileUrl;
+                    if (model.url.startsWith('./')) {
+                        const path = model.url.substring(2); // Remove "./"
+                        fileUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
+                    } else {
+                        fileUrl = model.url;
+                    }
+
+                    li.onclick = () => pipeFile(fileUrl, model.title);
                     fileListEl.appendChild(li);
                 });
 
             } catch (error) {
-                console.error('Error loading file list:', error);
-                statusEl.textContent = 'Error: Could not load file list from GitHub.';
+                console.error('Error loading model list:', error);
+                statusEl.textContent = 'Error: Could not load model list.';
                 statusEl.style.color = '#D8000C';
             }
         }
 
         /**
-         * Fetches a file from GitHub and pipes it to the piping server.
+         * Fetches a file and pipes it to the piping server.
          */
-        async function pipeFile(fileName) {
+        async function pipeFile(fileUrl, modelTitle) {
             qrContainerEl.style.display = 'none';
-            statusEl.textContent = `Fetching '${fileName}' from GitHub...`;
+            statusEl.textContent = `Fetching '${modelTitle}'...`;
             statusEl.style.color = '#00529B';
 
-            const fileUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${fileName}`;
             const pipeId = `model-${Date.now()}`;
             const pipeUrl = `${PIPING_SERVER}${pipeId}`;
 
             try {
                 const fileResponse = await fetch(fileUrl);
                 if (!fileResponse.ok) throw new Error(`File not found: ${fileResponse.status}`);
-                
+
                 const fileBlob = await fileResponse.blob();
 
                 statusEl.textContent = `Piping file to mobile... Please wait.`;
@@ -192,16 +255,16 @@
                    statusEl.textContent = 'Error during piping. Please try again.';
                    statusEl.style.color = '#D8000C';
                 });
-                
+
                 const viewerUrl = `https://modelviewer.dev/editor/import/?src=${encodeURIComponent(pipeUrl)}&ar=true`;
-                
+
                 displayQrCode(viewerUrl);
                 statusEl.textContent = `Ready! Scan the QR code with your mobile device.`;
                 statusEl.style.color = '#4F8A10';
 
             } catch (error) {
                 console.error('Error fetching file:', error);
-                statusEl.textContent = `Error: Could not fetch '${fileName}'.`;
+                statusEl.textContent = `Error: Could not fetch '${modelTitle}'.`;
                 statusEl.style.color = '#D8000C';
             }
         }
