@@ -154,34 +154,32 @@ if (galleryDisplay) {
         }
       }
 
-      // Add event listener for when the model in the card has loaded
-      if (cardModelViewer) {
-        cardModelViewer.addEventListener('load', () => {
-          console.log(`Model ${modelUrl} loaded in card, preparing and opening modal.`);
-
-          // Now that the card model has loaded, set up and show the modal
-          if (modalViewer) {
-            modalViewer.setAttribute('src', modelUrl);
-            modalViewer.setAttribute('alt', window.currentModelTitle);
-          }
-
-          if (overlay) {
-            overlay.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-          }
-        }, { once: true }); // { once: true } ensures this listener only fires once for this specific load
-      } else {
-        // Fallback if cardModelViewer somehow isn't found, open modal immediately (old behavior)
-        // This case should ideally not be hit if HTML structure is correct
-        console.warn('Card model viewer not found, opening modal immediately.');
+      // Function to open the modal (to avoid code duplication)
+      const openModalWithModel = () => {
+        console.log(`Model ${modelUrl} is ready or loaded in card, preparing and opening modal.`);
         if (modalViewer) {
-            modalViewer.setAttribute('src', modelUrl);
-            modalViewer.setAttribute('alt', window.currentModelTitle);
+          modalViewer.setAttribute('src', modelUrl);
+          modalViewer.setAttribute('alt', window.currentModelTitle);
         }
         if (overlay) {
-            overlay.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+          overlay.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
         }
+      };
+
+      // Check if the card's model-viewer is already loaded with the correct src
+      if (cardModelViewer && cardModelViewer.loaded && cardModelViewer.src === modelUrl) {
+        // If already loaded and src is correct, open modal immediately
+        openModalWithModel();
+      } else if (cardModelViewer) {
+        // Otherwise, if src is different or not loaded, ensure src is set and wait for it to load
+        // The src attribute might have already been set just above this block if it was new
+        // This event listener will handle the case where it's still loading
+        cardModelViewer.addEventListener('load', openModalWithModel, { once: true });
+      } else {
+        // Fallback if cardModelViewer somehow isn't found (shouldn't happen)
+        console.warn('Card model viewer not found, opening modal immediately (fallback).');
+        openModalWithModel();
       }
     }
   });
