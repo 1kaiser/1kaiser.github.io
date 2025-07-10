@@ -140,8 +140,8 @@ if (galleryDisplay) {
       }
 
       // Set up the modal viewer
-      modalViewer.setAttribute('src', modelUrl);
-      modalViewer.setAttribute('alt', window.currentModelTitle);
+      // modalViewer.setAttribute('src', modelUrl); // Moved to load event listener
+      // modalViewer.setAttribute('alt', window.currentModelTitle); // Moved to load event listener
 
       modalDownloadBtn.href = modelUrl;
       modalDownloadBtn.setAttribute('download', window.currentModelTitle + '.glb');
@@ -154,8 +154,35 @@ if (galleryDisplay) {
         }
       }
 
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
+      // Add event listener for when the model in the card has loaded
+      if (cardModelViewer) {
+        cardModelViewer.addEventListener('load', () => {
+          console.log(`Model ${modelUrl} loaded in card, preparing and opening modal.`);
+
+          // Now that the card model has loaded, set up and show the modal
+          if (modalViewer) {
+            modalViewer.setAttribute('src', modelUrl);
+            modalViewer.setAttribute('alt', window.currentModelTitle);
+          }
+
+          if (overlay) {
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+          }
+        }, { once: true }); // { once: true } ensures this listener only fires once for this specific load
+      } else {
+        // Fallback if cardModelViewer somehow isn't found, open modal immediately (old behavior)
+        // This case should ideally not be hit if HTML structure is correct
+        console.warn('Card model viewer not found, opening modal immediately.');
+        if (modalViewer) {
+            modalViewer.setAttribute('src', modelUrl);
+            modalViewer.setAttribute('alt', window.currentModelTitle);
+        }
+        if (overlay) {
+            overlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+      }
     }
   });
 } else {
@@ -166,8 +193,12 @@ if (galleryDisplay) {
 // Close button functionality for modal
 if (closeButton) {
   closeButton.addEventListener('click', () => {
-    overlay.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
     document.body.style.overflow = 'auto';
+    if (modalViewer) {
+      modalViewer.src = ''; // Clear the source
+      console.log('Modal closed by button, src cleared.');
+    }
   });
 }
 
@@ -177,6 +208,10 @@ if (overlay) {
     if (event.target === overlay) {
       overlay.style.display = 'none';
       document.body.style.overflow = 'auto';
+      if (modalViewer) {
+        modalViewer.src = ''; // Clear the source
+        console.log('Modal closed by overlay click, src cleared.');
+      }
     }
   });
 }
@@ -187,6 +222,10 @@ document.addEventListener('keydown', (event) => {
     if (overlay && overlay.style.display === 'flex') { // Check if overlay exists
       overlay.style.display = 'none';
       document.body.style.overflow = 'auto';
+      if (modalViewer) {
+        modalViewer.src = ''; // Clear the source
+        console.log('Modal closed by ESC key, src cleared.');
+      }
     }
   }
 });
