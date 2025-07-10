@@ -21,6 +21,7 @@ This repository hosts a 3D Model Gallery web application.
     *   The modal window now intelligently waits for the selected 3D model to finish loading in its gallery card before appearing, providing a smoother experience.
     *   Fixed an issue where the modal might not reopen correctly for the same model or could briefly show a previously viewed model; the modal's content is now reliably updated on each interaction.
 *   **Camera Controls**: Confirmed that camera orbit controls are consistently available and functional in the modal viewer, even with repeated opening and closing or model changes.
+*   **Code Refactoring**: Consolidated common piping server utilities into a shared `js/piping-utils.js` module, reducing code duplication in `js/qr-deploy.js` and `view/mobile_view.js`.
 
 ## Current Folder Structure
 
@@ -35,7 +36,8 @@ This repository hosts a 3D Model Gallery web application.
 │   └── styles.css
 ├── js/
 │   ├── app.js
-│   └── qr-deploy.js
+│   ├── qr-deploy.js
+│   └── piping-utils.js  <-- New
 ├── models/
 │   ├── 20230204temple-transformed.glb
 │   ├── 31_10_2024.glb
@@ -55,14 +57,14 @@ This repository hosts a 3D Model Gallery web application.
 ## TODO
 
 -   **Refactor Mobile View Page (`view/index.html`)**:
-    -   [ ] Replace the embedded JavaScript in `view/index.html` with a script tag linking to the external `view/mobile_view.js`. This will allow the mobile page to use the more robust server selection logic.
-    -   [ ] Move inline CSS from `view/index.html` to a dedicated external CSS file (e.g., `view/mobile-styles.css`) and link it.
+    -   [X] Replace the embedded JavaScript in `view/index.html` with a script tag linking to the external `view/mobile_view.js`. *(Done in a previous step)*
+    -   [X] Move inline CSS from `view/index.html` to a dedicated external CSS file (`view/mobile-view.css`). *(Done in a previous step)*
 -   **Consolidate Piping Server Utilities**:
-    -   [ ] Create a shared JavaScript module (e.g., `js/piping-utils.js`).
-    -   [ ] Move common piping server constants (e.g., `PIPING_SERVERS`) and utility functions (e.g., `findWorkingPipingServer`, `post`, `getWithTimeout`) from `js/qr-deploy.js` and `view/mobile_view.js` into this shared module.
-    -   [ ] Update `js/qr-deploy.js` and `view/mobile_view.js` to use this shared module.
+    -   [X] Create a shared JavaScript module (`js/piping-utils.js`).
+    -   [X] Move common piping server constants and utility functions into this shared module.
+    -   [X] Update `js/qr-deploy.js` and `view/mobile_view.js` to use this shared module.
 -   **CSS Review**:
-    -   [ ] Conduct a thorough review of all CSS (`css/styles.css` and any new CSS for the mobile view) to identify and remove any remaining redundancies or style overlaps.
+    -   [ ] Conduct a thorough review of all CSS (`css/styles.css` and `view/mobile-view.css`) to identify and remove any remaining redundancies or style overlaps.
 -   **Testing**:
     -   [ ] Perform comprehensive cross-browser and cross-device testing of all application features.
 -   **Documentation**:
