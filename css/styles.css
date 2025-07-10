@@ -79,28 +79,10 @@ model-viewer {
   width: 100%;
   height: 100%;
   background-color: #fafafa; /* Default background */
+  --progress-bar-height: 5px;
+  --progress-bar-color: #007bff; /* Blue color for the bar */
+  --progress-mask: #efefef; /* Light grey for the track/background of the bar */
 }
-
-/* Progress bar for model-viewer */
-.model-viewer-loading-progress-bar {
-    display: block;
-    width: 100%;
-    height: 5px;
-    background-color: #eee;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    z-index: 1; /* Ensure it's above the poster but below controls */
-}
-
-.model-viewer-loading-progress-bar::bar {
-    display: block;
-    width: 0%; /* Initial width */
-    height: 100%;
-    background-color: #007bff; /* Progress color */
-    transition: width 0.1s ease-out;
-}
-
 
 .model-info {
   padding: 15px;

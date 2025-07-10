@@ -205,7 +205,6 @@ window.createModelCard = function(modelData, index) {
           auto-rotate
           camera-controls
           shadow-intensity="1">
-          <div class="model-viewer-loading-progress-bar" slot="progress-bar"></div>
         </model-viewer>
       </div>
       <div class="model-info">
