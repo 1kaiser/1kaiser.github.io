@@ -128,14 +128,22 @@ if (galleryDisplay) {
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
-      window.currentModelSrc = modelCard.getAttribute('data-model');
-      window.currentModelTitle = modelCard.getAttribute('data-title');
-      // const modelDesc = modelCard.getAttribute('data-desc'); // modelDesc not used
+      const modelUrl = modelCard.dataset.modelUrl; // Get URL from data-model-url
+      window.currentModelTitle = modelCard.dataset.title;
+      window.currentModelSrc = modelUrl; // Keep this updated for download and QR deploy
 
-      modalViewer.setAttribute('src', window.currentModelSrc);
+      // Lazy load the model in the card itself
+      const cardModelViewer = modelCard.querySelector('model-viewer');
+      if (cardModelViewer && (!cardModelViewer.src || cardModelViewer.src !== modelUrl)) {
+        console.log(`Loading model in card: ${modelUrl}`);
+        cardModelViewer.src = modelUrl;
+      }
+
+      // Set up the modal viewer
+      modalViewer.setAttribute('src', modelUrl);
       modalViewer.setAttribute('alt', window.currentModelTitle);
 
-      modalDownloadBtn.href = window.currentModelSrc;
+      modalDownloadBtn.href = modelUrl;
       modalDownloadBtn.setAttribute('download', window.currentModelTitle + '.glb');
 
       if (window.mobileDeployment && window.mobileDeployment.isDeployed) {

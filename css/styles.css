@@ -11,14 +11,40 @@ h1 {
   margin-bottom: 30px;
 }
 
-/* Gallery grid layout */
+/* Gallery horizontal strip layout */
 .gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden; /* Prevent vertical scrollbar on the gallery itself */
+  gap: 20px; /* Maintains spacing between cards */
+  padding: 20px; /* Add some padding so cards don't touch edges */
+  /* max-width: 100%; /* Allow it to take full width for scrolling */
+  /* margin: 0 auto; /* Centering might not be desired for a full-width scroller */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #ccc #f0f0f0; /* For Firefox */
 }
+
+/* Styling for Webkit scrollbars (Chrome, Safari, Edge) */
+.gallery::-webkit-scrollbar {
+  height: 8px;
+}
+
+.gallery::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.gallery::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.gallery::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
 
 /* Model card styles */
 .model-card {
@@ -28,17 +54,22 @@ h1 {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.3s ease;
+  width: 280px; /* Fixed width for cards in the horizontal strip */
+  flex-shrink: 0; /* Prevent cards from shrinking */
+  display: flex; /* To help with internal alignment if needed */
+  flex-direction: column; /* Ensure content within card stacks vertically */
 }
 
 .model-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-5px) scale(1.02); /* Slightly enhance hover */
 }
 
 /* 9:16 aspect ratio container */
 .model-container {
   position: relative;
   width: 100%;
-  padding-top: 177.78%; /* 16:9 = 56.25%, 9:16 = 177.78% */
+  padding-top: 133.33%; /* Adjusted for a 4:3 like aspect ratio for cards, or adjust as needed */
+                         /* Original was 177.78% for 9:16, which might be too tall for horizontal cards */
 }
 
 model-viewer {
@@ -47,8 +78,29 @@ model-viewer {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #fafafa;
+  background-color: #fafafa; /* Default background */
 }
+
+/* Progress bar for model-viewer */
+.model-viewer-loading-progress-bar {
+    display: block;
+    width: 100%;
+    height: 5px;
+    background-color: #eee;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 1; /* Ensure it's above the poster but below controls */
+}
+
+.model-viewer-loading-progress-bar::bar {
+    display: block;
+    width: 0%; /* Initial width */
+    height: 100%;
+    background-color: #007bff; /* Progress color */
+    transition: width 0.1s ease-out;
+}
+
 
 .model-info {
   padding: 15px;
