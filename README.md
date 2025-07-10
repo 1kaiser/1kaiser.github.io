@@ -6,17 +6,17 @@ This repository hosts a 3D Model Gallery web application.
 
 This project leverages several key technologies and AI assistance:
 
-*   [![Jules AI Logo](https://github.com/google-labs-code/jules-awesome-list/blob/main/assets/jules-readme.png?raw=true "AI Development Assistance by Jules")](https://developers.google.com/community/jules)
+*   <a href="https://developers.google.com/community/jules" target="_blank" rel="noopener noreferrer"><img src="https://github.com/google-labs-code/jules-awesome-list/blob/main/assets/jules-readme.png?raw=true" alt="Jules AI Logo" title="AI Development Assistance by Jules" width="40"></a>
     **AI Development Assistance**: Initial development, refactoring, feature implementation, and debugging significantly aided by Jules (a large language model from Google).
 
-*   [![Model Viewer Logo](https://avatars.githubusercontent.com/u/58423709?s=40&v=4 "Google <model-viewer>")](https://modelviewer.dev/)
-    **[Google `<model-viewer>`](https://modelviewer.dev/)**: For rendering 3D models interactively on the web and enabling AR experiences.
+*   <a href="https://modelviewer.dev/" target="_blank" rel="noopener noreferrer"><img src="https://modelviewer.dev/assets/ic_modelviewer.svg" alt="Model Viewer Icon" title="Google <model-viewer>" width="40"></a>
+    **[Google `<model-viewer>`](https://modelviewer.dev/)**: For rendering 3D models interactively on the web and enabling AR experiences. *(Note: SVG logo, display size may still vary slightly even with width attribute in some viewers.)*
 
-*   [![Three.js Logo](https://threejs.org/files/logo.svg "Three.js")](https://threejs.org/)
-    **[Three.js](https://threejs.org/)**: The powerful WebGL library that `<model-viewer>` is built upon for 3D graphics rendering. *(Note: SVG logo, display size and rendering may vary across Markdown viewers.)*
+*   <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer"><img src="https://threejs.org/files/logo.svg" alt="Three.js Logo" title="Three.js" width="40"></a>
+    **[Three.js](https://threejs.org/)**: The powerful WebGL library that `<model-viewer>` is built upon for 3D graphics rendering. *(Note: SVG logo, display size may still vary slightly even with width attribute in some viewers.)*
 
-*   [![Draco 3D Logo](https://google.github.io/draco/artwork/draco3d-vert-360x274.png "Google Draco")](https://google.github.io/draco/)
-    **[Google Draco](https://google.github.io/draco/)**: For 3D graphics compression, helping reduce the size of the 3D models. *(Note: The provided logo might be large; its display will depend on the Markdown renderer's handling of image sizes.)*
+*   <a href="https://google.github.io/draco/" target="_blank" rel="noopener noreferrer"><img src="https://google.github.io/draco/artwork/draco3d-vert-360x274.png" alt="Draco 3D Logo" title="Google Draco" width="40"></a>
+    **[Google Draco](https://google.github.io/draco/)**: For 3D graphics compression, helping reduce the size of the 3D models.
 
 *   **[Piping Server](https://github.com/nwtgck/piping-server)**: Used to facilitate the real-time transfer of model data for the 'Deploy to Mobile' QR code feature. (Textual acknowledgement as no distinct project logo).
 
