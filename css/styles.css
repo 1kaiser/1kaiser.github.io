@@ -129,8 +129,8 @@ p {
 
 .modal-button-container {
   position: absolute;
-  bottom: 15px;
-  right: 15px;
+  top: 15px;
+  left: 15px;
   display: flex;
   gap: 10px;
   z-index: 1010;
