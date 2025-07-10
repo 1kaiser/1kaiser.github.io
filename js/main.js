@@ -62,10 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // For now, let's assume initializeGallery handles if modelsConfig is missing,
   // or that this ordering is intentional.
   if (window.modelsConfig && typeof window.initializeGallery === 'function') {
-       console.log('Gallery initialization verified by main.js');
-       // initializeGallery(); // This is already called by models.js if DOMContentLoaded
+    console.log('Calling initializeGallery from main.js');
+    window.initializeGallery(); // Explicitly call it here
+  } else {
+    // This case should ideally be caught by the check above,
+    // but as a fallback if modelsConfig exists but initializeGallery doesn't for some reason.
+    console.error('initializeGallery function not found, though modelsConfig might exist. Gallery cannot be initialized by main.js.');
   }
-
 
   // Initialize server status monitoring
   initializeServerStatus();

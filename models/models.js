@@ -236,21 +236,6 @@ window.initializeGallery = function() {
   console.log(`Gallery initialized with ${window.modelsConfig.length} models`);
 };
 
-// Auto-initialize when DOM is ready (if gallery element exists)
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('modelGallery')) {
-      window.initializeGallery();
-    }
-  });
-} else {
-  // DOM is already ready
-  if (document.getElementById('modelGallery')) {
-    window.initializeGallery();
-  }
-}
-
-
 // Add this to your models/models.js or create a new file: js/model-viewer-config.js
 
 // Enhanced model viewer configuration
