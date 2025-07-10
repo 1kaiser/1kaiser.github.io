@@ -4,153 +4,8 @@
  * Handles server selection and connectivity issues
  */
 
-// ===== PIPING SERVER CONFIGURATION =====
-const PIPING_SERVERS = [
-  'https://ppng.io/',           // Primary - usually most reliable
-  'https://piping.onrender.com/', // Secondary - good fallback  
-  'https://piping-server.herokuapp.com/', // Tertiary
-  'https://pipes.sh/'           // Additional option
-];
-
-// Global state
-let CURRENT_DOMAIN = PIPING_SERVERS[0];
-let TESTED_SERVERS = new Map();
-
-// ===== UTILITY FUNCTIONS =====
-function getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
-}
-
-function getSessionUrl(pipeId, sessionId) {
-  return `${CURRENT_DOMAIN}${pipeId}-${sessionId}`;
-}
-
-function getPingUrl(pipeId) {
-  return `${CURRENT_DOMAIN}ping-${pipeId}`;
-}
-
-function posterToSession(pipeId, sessionID, modelId) {
-  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-${modelId}-poster`;
-}
-
-function gltfToSession(pipeId, sessionID, modelId) {
-  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-${modelId}`;
-}
-
-function envToSession(pipeId, sessionID, envIsHdr) {
-  const addOn = envIsHdr ? '#.hdr' : '';
-  return `${CURRENT_DOMAIN}${pipeId}-${sessionID}-env${addOn}`;
-}
-
-function getMobileOperatingSystem() {
-  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-
-  if (/windows phone/i.test(userAgent)) {
-    return 'Windows Phone';
-  }
-
-  if (/android/i.test(userAgent)) {
-    return 'Android';
-  }
-
-  if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
-    return 'iOS';
-  }
-
-  return 'unknown';
-}
-
-// ===== SERVER TESTING AND SELECTION =====
-async function testPipingServer(serverUrl) {
-  try {
-    console.log(`🔍 Testing mobile piping server: ${serverUrl}`);
-    
-    const testResponse = await fetch(serverUrl, { 
-      method: 'HEAD', 
-      mode: 'cors',
-      signal: AbortSignal.timeout(5000)
-    });
-    
-    if (testResponse.status < 500) {
-      console.log(`✅ Mobile server working: ${serverUrl}`);
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    console.log(`❌ Mobile server failed: ${serverUrl} - ${error.message}`);
-    return false;
-  }
-}
-
-async function findWorkingPipingServer() {
-  // Check cached results first
-  for (const [server, result] of TESTED_SERVERS.entries()) {
-    if (result.working && (Date.now() - result.timestamp) < 300000) {
-      console.log(`🎯 Using cached working server: ${server}`);
-      CURRENT_DOMAIN = server;
-      return server;
-    }
-  }
-  
-  // Test servers
-  for (const server of PIPING_SERVERS) {
-    const isWorking = await testPipingServer(server);
-    TESTED_SERVERS.set(server, {
-      working: isWorking,
-      timestamp: Date.now()
-    });
-    
-    if (isWorking) {
-      CURRENT_DOMAIN = server;
-      console.log(`🌟 Mobile selected working server: ${server}`);
-      return server;
-    }
-  }
-  
-  console.error('❌ No working piping servers found for mobile');
-  return null;
-}
-
-// Enhanced fetch functions
-async function post(content, url) {
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      body: content,
-      mode: 'cors',
-      signal: AbortSignal.timeout(30000)
-    });
-    
-    if (response.ok) {
-      console.log('✅ Mobile POST Success:', url);
-    } else {
-      console.error('❌ Mobile POST Failed:', url, response.status);
-      throw new Error(`Failed to post: ${url}`);
-    }
-  } catch (error) {
-    console.error('❌ Mobile POST Error:', error);
-    throw error;
-  }
-}
-
-async function getWithTimeout(url, timeout = 30000) {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
-
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      signal: controller.signal,
-      mode: 'cors'
-    });
-    clearTimeout(id);
-    return response;
-  } catch (error) {
-    clearTimeout(id);
-    throw error;
-  }
-}
+// js/piping-utils.js should be loaded before this script.
+// It defines window.PipingUtils which contains the necessary functions and constants.
 
 // ===== MOBILE VIEW CLASS =====
 class GoogleMobileView {
@@ -176,12 +31,12 @@ class GoogleMobileView {
     
     // Piping configuration
     this.pipeId = this.getUrlParam('id');
-    this.sessionId = getRandomInt(1e+20);
-    this.sessionOs = getMobileOperatingSystem();
+    this.sessionId = PipingUtils.getRandomInt(1e+20); // Use util
+    this.sessionOs = PipingUtils.getMobileOperatingSystem(); // Use util
     
     // URLs will be set after server is found
-    this.mobilePingUrl = '';
-    this.sessionUrl = '';
+    this.mobilePingUrl = ''; // Will be set in initialize
+    this.sessionUrl = '';    // Will be set in initialize
     
     // Toast state
     this.toastClassName = '';
@@ -222,30 +77,23 @@ class GoogleMobileView {
 
     // Find working server
     this.showToast('Connecting to server...');
-    const workingServer = await findWorkingPipingServer();
-    
-    if (!workingServer) {
-      this.showToast('❌ Cannot connect to any servers. Please try again later.');
-      if (this.overlay) {
-        this.overlay.innerHTML = `
-          <div style="text-align: center; color: white; padding: 20px;">
-            <h2>Connection Error</h2>
-            <p>Cannot connect to piping servers.</p>
-            <p>Please check your internet connection and try scanning the QR code again.</p>
-            <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #4285F4; color: white; border: none; border-radius: 4px;">
-              Retry
-            </button>
-          </div>
-        `;
-      }
-      return;
+    // Use PipingUtils.findWorkingPipingServer() which sets PipingUtils_CURRENT_DOMAIN
+    const foundServer = await PipingUtils.findWorkingPipingServer();
+    const currentPipingDomain = PipingUtils.getCurrentDomain(); // Get the domain chosen by the util
+
+    if (!foundServer) { // findWorkingPipingServer returns null if no *tested* server worked, but sets a default
+      this.showToast(`⚠️ No servers passed tests. Using default: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
+      // Proceeding with default server
+    } else {
+      this.showToast(`Connected to: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
     }
 
-    // Set URLs with working server
-    this.mobilePingUrl = getPingUrl(this.pipeId);
-    this.sessionUrl = getSessionUrl(this.pipeId, this.sessionId);
+    // Set URLs with working/default server from PipingUtils
+    this.mobilePingUrl = PipingUtils.getPingUrl(this.pipeId);
+    this.sessionUrl = PipingUtils.getSessionUrl(this.pipeId, this.sessionId);
     
-    this.showToast(`Connected to: ${workingServer.replace('https://', '').replace('/', '')}`);
+    console.log(`Mobile Ping URL: ${this.mobilePingUrl}`);
+    console.log(`Mobile Session URL: ${this.sessionUrl}`);
 
     // Set up event listeners
     this.modelViewer.addEventListener('load', () => this.modelIsLoaded());
@@ -284,7 +132,8 @@ class GoogleMobileView {
   repostGLTF = async () => {
     try {
       if (this.sessionOs === 'Android' && this.currentBlob) {
-        await post(this.currentBlob, this.modelViewerUrl);
+        // Use PipingUtils.post or a more robust post from this script if it needs specific error handling
+        await PipingUtils.post(this.currentBlob, this.modelViewerUrl);
         console.log('📤 Model reposted for scene-viewer');
       }
     } catch (error) {
@@ -303,20 +152,20 @@ class GoogleMobileView {
 
     this.updateState(json.snippet, json.urls);
 
-    // Set poster URL
-    this.posterUrl = posterToSession(this.pipeId, this.sessionId, updatedContent.posterId);
+    // Set poster URL using PipingUtils
+    this.posterUrl = PipingUtils.posterToSession(this.pipeId, this.sessionId, updatedContent.posterId);
 
-    // Set model URL if changed
+    // Set model URL if changed using PipingUtils
     if (updatedContent.gltfChanged) {
-      this.modelViewerUrl = gltfToSession(this.pipeId, this.sessionId, updatedContent.gltfId);
+      this.modelViewerUrl = PipingUtils.gltfToSession(this.pipeId, this.sessionId, updatedContent.gltfId);
     }
 
-    // Set environment image URL
+    // Set environment image URL using PipingUtils
     const { environmentImage } = this.config;
     this.envImageUrl = environmentImage == null ||
             environmentImage === 'neutral' || environmentImage === 'legacy' ?
         environmentImage :
-        envToSession(this.pipeId, this.sessionId, updatedContent.envIsHdr);
+        PipingUtils.envToSession(this.pipeId, this.sessionId, updatedContent.envIsHdr);
 
     // Update model viewer
     this.updateModelViewer();
@@ -426,7 +275,8 @@ class GoogleMobileView {
   // Fetch loop with retry logic
   async fetchLoop() {
     try {
-      const response = await getWithTimeout(this.sessionUrl);
+      // Use PipingUtils.getWithTimeout or a local version if more complex error handling is needed
+      const response = await PipingUtils.getWithTimeout(this.sessionUrl);
       
       if (response.ok) {
         if (this.modelViewer) {
@@ -439,24 +289,34 @@ class GoogleMobileView {
         
         return true;
       } else {
-        console.error('❌ Error fetching update:', response);
+        console.error('❌ Error fetching update from mobile view:', response.status, response.statusText, this.sessionUrl);
+        // Potentially try to find a new server if response indicates server failure (e.g. 5xx)
+        if (response.status >= 500 && response.status < 600) {
+            const newServer = await PipingUtils.findWorkingPipingServer();
+            if (newServer) { // Check if a new server was actually found and is different
+                 const currentPipingDomain = PipingUtils.getCurrentDomain();
+                 this.sessionUrl = PipingUtils.getSessionUrl(this.pipeId, this.sessionId); // Rebuild URL with new domain
+                 this.showToast(`Reconnected to: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
+                 return false; // Indicate failure to trigger retry in triggerFetchLoop
+            }
+        }
         return false;
       }
     } catch (error) {
-      console.error('❌ Error in fetch loop:', error);
-      
-      // If it's a server connectivity error, try to find a working server
-      if (error.message.includes('Failed to fetch') || error.name === 'AbortError') {
-        console.log('🔄 Attempting to find alternative server...');
-        const newServer = await findWorkingPipingServer();
-        if (newServer && newServer !== CURRENT_DOMAIN) {
-          this.sessionUrl = getSessionUrl(this.pipeId, this.sessionId);
-          this.showToast(`Reconnected to: ${newServer.replace('https://', '').replace('/', '')}`);
-          return false; // Try again with new server
+      console.error('❌ Exception in mobile view fetchLoop:', error);
+      // This catch block might be hit for network errors or AbortError from timeout
+      // If it's a network error, try to find a new server.
+      if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) { // Generic network error
+        const newServer = await PipingUtils.findWorkingPipingServer();
+        if (newServer) {
+            const currentPipingDomain = PipingUtils.getCurrentDomain();
+            this.sessionUrl = PipingUtils.getSessionUrl(this.pipeId, this.sessionId);
+            this.showToast(`Re-attempting connection via: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
+            return false; // Indicate failure to trigger retry
         }
       }
-      
-      return false;
+      // For AbortError (timeout), typically we just want to try again without server change.
+      return false; // Indicate failure to trigger retry
     }
   }
 
@@ -515,7 +375,8 @@ class GoogleMobileView {
     };
     
     try {
-      await post(JSON.stringify(ping), this.mobilePingUrl);
+      // Use PipingUtils.post or a more robust post from this script if it needs specific error handling
+      await PipingUtils.post(JSON.stringify(ping), this.mobilePingUrl);
       console.log('📡 Ping sent to editor');
     } catch (error) {
       console.error('❌ Failed to send ping:', error);
@@ -523,7 +384,7 @@ class GoogleMobileView {
     }
   }
 
-  // Utility delay function
+  // Utility delay function - can be kept here or moved to a general util if needed elsewhere
   delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
