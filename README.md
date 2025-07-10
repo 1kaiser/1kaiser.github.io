@@ -2,6 +2,19 @@
 
 This repository hosts a 3D Model Gallery web application.
 
+## Key Features
+
+*   **3D Model Display**: View various 3D models (GLB format).
+*   **Interactive Gallery**:
+    *   **Horizontal Scrolling Strip**: Browse models in a horizontally scrolling list.
+    *   **Click-to-Load Models**: 3D models are loaded on demand when clicked, optimizing initial page load performance.
+*   **Modal View**: Click on a model to see an enlarged view in a modal window.
+*   **Download Models**: Download the source `.glb` file for each model.
+*   **Deploy to Mobile (QR Code)**: Generate a QR code to easily view models on a mobile device, often enabling AR views.
+    *   Uses piping servers for data transfer without permanent server-side storage.
+    *   Supports AR mode selection (Scene Viewer default).
+*   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
+
 ## Current Folder Structure
 
 ```ascii
