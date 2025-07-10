@@ -543,30 +543,25 @@ class GoogleMobileView {
 }
 
 // ===== INITIALIZATION =====
-window.addEventListener('DOMContentLoaded', async () => {
-  try {
-    console.log('🚀 Initializing Mobile View with updated servers...');
-    
-    // Check if we're in the mobile view page
-    if (!window.location.search.includes('id=')) {
-      console.warn('⚠️ No pipe ID in URL - this page should be accessed via QR code');
-      document.body.innerHTML = `
-        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px;">
-          <div>
-            <h2>Invalid URL</h2>
-            <p>This page should be accessed by scanning a QR code from the editor.</p>
-            <p>Please return to the main page and use the "Deploy to Mobile" feature.</p>
-          </div>
-        </div>
-      `;
-      return;
-    }
-    
-    // Initialize mobile view
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.search.includes('id=')) {
+    console.log('🚀 Initializing GoogleMobileView for view/index.html');
     window.mobileView = new GoogleMobileView();
-    
-  } catch (error) {
-    console.error('❌ Failed to initialize mobile view:', error);
+  } else {
+    console.warn('Mobile view loaded without an ID in the URL. Features may not work. Displaying error.');
+    // Optionally, display an error to the user on the page
+    document.body.innerHTML = '<div style="padding: 20px; text-align: center; font-family: sans-serif;"><h2>Error: Missing Information</h2><p>This mobile view page requires an ID to load content. Please access it by scanning a QR code from the main gallery.</p></div>';
+  }
+});
+
+// Export for debugging
+window.MobilePipingUtils = {
+  PIPING_SERVERS,
+  CURRENT_DOMAIN,
+  testPipingServer,
+  findWorkingPipingServer,
+  TESTED_SERVERS
+};
     
     // Show error in UI
     const overlay = document.getElementById('overlay');
