@@ -158,6 +158,10 @@ if (galleryDisplay) {
       const openModalWithModel = () => {
         console.log(`Model ${modelUrl} is ready or loaded in card, preparing and opening modal.`);
         if (modalViewer) {
+          // Set a default camera orbit BEFORE setting the new src
+          // This can help ensure the camera system is reset/re-initialized
+          modalViewer.cameraOrbit = '0deg 75deg 105%'; // Default starting orbit
+
           modalViewer.setAttribute('src', modelUrl);
           modalViewer.setAttribute('alt', window.currentModelTitle);
         }
