@@ -15,6 +15,13 @@ This repository hosts a 3D Model Gallery web application.
     *   Supports AR mode selection (Scene Viewer default).
 *   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
 
+## Recent Improvements
+
+*   **Enhanced Modal UX (User Experience)**:
+    *   The modal window now intelligently waits for the selected 3D model to finish loading in its gallery card before appearing, providing a smoother experience.
+    *   Fixed an issue where the modal might not reopen correctly for the same model or could briefly show a previously viewed model; the modal's content is now reliably updated on each interaction.
+*   **Camera Controls**: Confirmed that camera orbit controls are consistently available and functional in the modal viewer, even with repeated opening and closing or model changes.
+
 ## Current Folder Structure
 
 ```ascii
