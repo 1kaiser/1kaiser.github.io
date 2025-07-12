@@ -44,9 +44,12 @@
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- Server status indicator -->
-  <div class="server-status" id="serverStatus">
-    <span id="serverStatusText">Checking servers...</span>
+  <!-- Draggable Server Status Window -->
+  <div id="serverStatusWindow" class="draggable-window">
+    <div id="serverStatusHeader" class="draggable-header">Server Status</div>
+    <div id="serverStatusContent">
+        <span id="serverStatusText">Connecting...</span>
+    </div>
   </div>
 
   <h1>Space</h1>
