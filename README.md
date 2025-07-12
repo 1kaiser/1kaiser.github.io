@@ -32,9 +32,11 @@ This project leverages several key technologies and AI assistance:
     *   Uses piping servers for data transfer without permanent server-side storage.
     *   Supports AR mode selection (Scene Viewer default).
 *   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
+*   **CV Page**: A dedicated page to showcase a curriculum vitae.
 
 ## Recent Improvements
 
+*   **CV Page**: Added a new CV page with placeholder content.
 *   **Mobile View Page Refactor (`view/index.html`)**:
     *   Externalized all inline CSS into a dedicated `view/mobile-view.css` file, cleaning up the HTML structure.
     *   Replaced the embedded JavaScript logic with the more robust and feature-rich external `view/mobile_view.js`, enhancing the reliability and capabilities of the mobile viewing page.
@@ -48,6 +50,10 @@ This project leverages several key technologies and AI assistance:
 
 ```ascii
 .
+├── cv/
+│   ├── cv.css
+│   ├── cv.html
+│   └── cv.js
 ├── css/
 │   └── styles.css
 ├── js/
