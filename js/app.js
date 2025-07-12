@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   initializeServerStatus();
+  initializeDraggableWindow();
 
   // AR mode selector integration (moved from gallery.js DOMContentLoaded)
   const arModeSelector = document.getElementById('arModeSelector');
@@ -70,36 +71,40 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Server status monitoring (from main.js)
+// Server status monitoring (from main.js) - Adapted for new draggable window
 function initializeServerStatus() {
-  const statusElement = document.getElementById('serverStatus');
+  const statusWindow = document.getElementById('serverStatusWindow');
   const statusText = document.getElementById('serverStatusText');
 
-  if (!statusElement || !statusText) return;
+  if (!statusWindow || !statusText) return;
 
-  statusElement.style.display = 'block';
-  statusElement.className = 'server-status testing';
-  statusText.textContent = 'Testing servers...';
+  statusWindow.style.display = 'block'; // Make the window visible
+  statusWindow.className = 'draggable-window testing'; // Set initial class for styling
+  statusText.textContent = 'Initializing...';
 
-  const checkStatus = () => {
+  // Since we removed server testing, we just show the hardcoded server.
+  // The logic to check for mobileDeployment is still relevant if qr-deploy.js needs to load.
+  // A cleaner way might be for qr-deploy.js to call a status update function itself.
+  // For now, this polling is a simple way to wait for it.
+
+  const checkDeploymentStatus = () => {
     if (window.mobileDeployment) {
-      const currentServer = window.PipingServerUtils?.CURRENT_DOMAIN;
-      if (currentServer) {
-        statusElement.className = 'server-status connected';
-        statusText.textContent = `Connected: ${currentServer.replace('https://', '').replace('/', '')}`;
+        const currentPipingDomain = PipingUtils.getCurrentDomain();
+        statusWindow.className = 'draggable-window connected';
+        statusText.textContent = `Using: ${currentPipingDomain.replace('https://', '').replace('/', '')}`;
+
+        // Also update the info in the QR modal if it exists
         const serverInfo = document.getElementById('serverInfo');
         if (serverInfo) {
-          serverInfo.textContent = `Using: ${currentServer}`;
+          serverInfo.textContent = `Using: ${currentPipingDomain}`;
         }
-      } else {
-        statusElement.className = 'server-status disconnected';
-        statusText.textContent = 'No servers available';
-      }
     } else {
-      setTimeout(checkStatus, 1000);
+        // If qr-deploy.js hasn't loaded window.mobileDeployment yet, check again.
+        setTimeout(checkDeploymentStatus, 500);
     }
   };
-  checkStatus();
+
+  checkDeploymentStatus();
 }
 
 // Content from js/gallery.js
@@ -240,3 +245,56 @@ function initializeGalleryEvents() {
 window.initializeGalleryEvents = initializeGalleryEvents; // Export if needed elsewhere, though likely not.
 
 console.log('app.js loaded');
+
+// ===== Draggable Window Logic =====
+function makeDraggable(element, handle) {
+  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+
+  const dragMouseDown = (e) => {
+    e = e || window.event;
+    e.preventDefault();
+    // Get the mouse cursor position at startup
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    document.onmouseup = closeDragElement;
+    // Call a function whenever the cursor moves
+    document.onmousemove = elementDrag;
+  };
+
+  const elementDrag = (e) => {
+    e = e || window.event;
+    e.preventDefault();
+    // Calculate the new cursor position
+    pos1 = pos3 - e.clientX;
+    pos2 = pos4 - e.clientY;
+    pos3 = e.clientX;
+    pos4 = e.clientY;
+    // Set the element's new position
+    element.style.top = (element.offsetTop - pos2) + "px";
+    element.style.left = (element.offsetLeft - pos1) + "px";
+  };
+
+  const closeDragElement = () => {
+    // Stop moving when mouse button is released
+    document.onmouseup = null;
+    document.onmousemove = null;
+  };
+
+  if (handle) {
+    // If present, the header is where you move the DIV from
+    handle.onmousedown = dragMouseDown;
+  } else {
+    // Otherwise, move the DIV from anywhere inside the DIV
+    element.onmousedown = dragMouseDown;
+  }
+}
+
+// Make the server status window draggable
+// This is called in the main DOMContentLoaded listener
+function initializeDraggableWindow() {
+    const statusWindow = document.getElementById('serverStatusWindow');
+    const statusHeader = document.getElementById('serverStatusHeader');
+    if (statusWindow && statusHeader) {
+        makeDraggable(statusWindow, statusHeader);
+    }
+}
