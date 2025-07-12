@@ -198,19 +198,14 @@ window.DeploymentErrorHandler = ErrorHandler;
 // and retry logic remain here as they are specific to this deployment context.
 // Simpler base versions are in PipingUtils if ever needed.
 
-// Enhanced POST function with better error handling and retry logic
-async function post(content, url) { // This 'post' is specific to qr-deploy's needs
-  let currentPipingDomain = PipingUtils.getCurrentDomain(); // Get domain from util
-  let attemptUrl = url;
+// The complex post and getWithTimeout functions are now simplified as there's no server fallback logic.
+// We can use the simpler versions from PipingUtils directly or keep these local ones if we
+// want to maintain the tight integration with ErrorHandler. Let's keep them local for now
+// but remove the retry/fallback logic.
 
-  // If the URL doesn't already have a domain, prepend the current piping domain
-  // This logic might need adjustment if `url` can sometimes be absolute.
-  // Assuming `url` is often a path that needs the domain.
-  // For now, the URL construction helpers from PipingUtils should be used to generate full URLs.
-  // This means `url` passed to this post function should already be a full URL.
-
+async function post(content, url) {
   try {
-    const response = await fetch(attemptUrl, {
+    const response = await fetch(url, {
       method: 'POST',
       body: content,
       mode: 'cors',
@@ -221,115 +216,38 @@ async function post(content, url) { // This 'post' is specific to qr-deploy's ne
     });
     
     if (response.ok) {
-      console.log('✅ POST Success:', attemptUrl);
+      console.log('✅ POST Success:', url);
       return response;
     } else {
-      throw new Error(`HTTP ${response.status}: ${response.statusText} from URL ${attemptUrl}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
   } catch (error) {
-    console.warn(`⚠️ POST failed with ${currentPipingDomain}: ${attemptUrl}`, error);
-    // Try to find a new working server
-    const newWorkingServer = await PipingUtils.findWorkingPipingServer();
-    if (newWorkingServer && newWorkingServer !== currentPipingDomain) {
-      console.log(`🔄 Retrying POST with new server: ${newWorkingServer}`);
-      // Reconstruct the URL with the new domain if the original URL was based on the old domain
-      // This assumes the URL structure allows simple replacement.
-      // It's safer if URLs are always constructed fresh using PipingUtils.getXUrl() functions.
-      // For this refactor, let's assume `url` is the original full path and we reconstruct it.
-      // This part is tricky if `url` was not originally formed with `currentPipingDomain`.
-      // The URL helpers (getSessionUrl etc.) should be used to get the correct new URL.
-      // This retry logic needs to be robust.
-      // For now, we'll assume the URL path part needs to be extracted and prepended with new server.
-      // This is a simplification. A better way is to re-generate the URL using the new domain.
-      let originalPath = "";
-      try {
-        originalPath = new URL(url).pathname + new URL(url).search + new URL(url).hash;
-      } catch(e) { /* if url is not absolute */ originalPath = url; }
-      
-      const newAttemptUrl = newWorkingServer + originalPath.substring(1); // Assuming path starts with / after domain
-
-      try {
-        const retryResponse = await fetch(newAttemptUrl, {
-          method: 'POST',
-          body: content,
-          mode: 'cors',
-          headers: { 'Content-Type': typeof content === 'string' ? 'application/json' : 'application/octet-stream'},
-          signal: AbortSignal.timeout(30000)
-        });
-        if (retryResponse.ok) {
-          console.log('✅ POST Success with alternative server:', newAttemptUrl);
-          return retryResponse;
-        } else {
-           throw new Error(`HTTP ${retryResponse.status}: ${retryResponse.statusText} from URL ${newAttemptUrl} (retry)`);
-        }
-      } catch (retryError) {
-        console.error('❌ POST Retry also failed:', retryError);
-        if (ErrorHandler && typeof ErrorHandler.showCSPError === 'function' && retryError.name === 'TypeError' && retryError.message.includes('Failed to fetch')) {
-            ErrorHandler.showCSPError('Network request blocked or server unavailable on retry.');
-        }
-        throw retryError; // Throw the error from the retry attempt
-      }
-    } else if (!newWorkingServer) {
-        console.error('❌ No alternative working server found for POST.');
+    console.error(`❌ POST Failed for ${url}:`, error);
+    if (ErrorHandler && error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      ErrorHandler.showCSPError('Network request blocked or server unavailable.');
     }
-    // If newWorkingServer is the same as currentPipingDomain, or no new server, throw original error
-    if (ErrorHandler && typeof ErrorHandler.showCSPError === 'function' && error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        ErrorHandler.showCSPError('Network request blocked or server unavailable.');
-    }
-    throw error; // Throw the original error
+    throw error;
   }
 }
 
-// Enhanced GET function with retry logic
-async function getWithTimeout(url, timeout = 30000) { // This 'getWithTimeout' is specific to qr-deploy's needs
-  let currentPipingDomain = PipingUtils.getCurrentDomain();
-  let attemptUrl = url;
-
+async function getWithTimeout(url, timeout = 30000) {
   try {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
-    const response = await fetch(attemptUrl, { method: 'GET', signal: controller.signal, mode: 'cors' });
+    const response = await fetch(url, { method: 'GET', signal: controller.signal, mode: 'cors' });
     clearTimeout(id);
     
-    if (response.ok || response.status === 404) { // 404 is expected for piping GETs
+    if (response.ok || response.status === 404) {
       return response;
     } else {
-      throw new Error(`HTTP ${response.status}: ${response.statusText} from URL ${attemptUrl}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
   } catch (error) {
-    console.warn(`⚠️ GET failed or timed out with ${currentPipingDomain}: ${attemptUrl}`, error);
-    if (error.name === 'AbortError') { // Don't retry client-side timeouts for GET
-        throw error;
+    console.error(`❌ GET Failed or Timed Out for ${url}:`, error);
+    if (ErrorHandler && error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      ErrorHandler.showCSPError('Network request blocked or server unavailable.');
     }
-
-    const newWorkingServer = await PipingUtils.findWorkingPipingServer();
-    if (newWorkingServer && newWorkingServer !== currentPipingDomain) {
-      console.log(`🔄 Retrying GET with new server: ${newWorkingServer}`);
-      let originalPath = "";
-      try {
-        originalPath = new URL(url).pathname + new URL(url).search + new URL(url).hash;
-      } catch(e) { originalPath = url; }
-      const newAttemptUrl = newWorkingServer + originalPath.substring(1);
-
-      try {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-        const retryResponse = await fetch(newAttemptUrl, { method: 'GET', signal: controller.signal, mode: 'cors'});
-        clearTimeout(id);
-        if (retryResponse.ok || retryResponse.status === 404) {
-          console.log('✅ GET Success with alternative server:', newAttemptUrl);
-          return retryResponse;
-        } else {
-          throw new Error(`HTTP ${retryResponse.status}: ${retryResponse.statusText} from URL ${newAttemptUrl} (retry)`);
-        }
-      } catch (retryError) {
-        console.error('❌ GET Retry also failed:', retryError);
-        throw retryError;
-      }
-    } else if (!newWorkingServer) {
-        console.error('❌ No alternative working server found for GET.');
-    }
-    throw error; // Throw original error if no retry or retry failed
+    throw error;
   }
 }
 
@@ -373,33 +291,17 @@ class GoogleMobileDeployment {
   }
 
   async initializeServer() {
+    // This method is now much simpler as we are not testing servers.
     console.log('🚀 Initializing piping server connection...');
-    this.updateStatus('Finding working piping server...', 'info');
+    const currentPipingDomain = PipingUtils.getCurrentDomain();
+    this.updateStatus(`Using server: ${currentPipingDomain}`, 'success');
+    console.log(`✅ Using hardcoded server: ${currentPipingDomain}`);
     
-    const workingServer = await findWorkingPipingServer();
-    // PipingUtils.findWorkingPipingServer() now sets PipingUtils_CURRENT_DOMAIN internally
-    // and also returns the server. We can use PipingUtils.getCurrentDomain() or the returned value.
+    // Set ping URL with the fixed server
+    this.mobilePingUrl = PipingUtils.getPingUrl(this.pipeId);
     
-    if (workingServer) { // newWorkingServer will be null if no server passed tests, but a default is set in PipingUtils
-      const currentPipingDomain = PipingUtils.getCurrentDomain(); // Get the domain set by findWorkingPipingServer
-      this.updateStatus(`Connected to: ${currentPipingDomain}`, 'success');
-      console.log(`✅ Successfully connected to: ${currentPipingDomain}`);
-      
-      // Update ping URL with working server
-      this.mobilePingUrl = PipingUtils.getPingUrl(this.pipeId); // Use util
-      
-      // Initialize event listeners after server is ready
-      this.init();
-    } else {
-      this.updateStatus('❌ No working piping servers available. Please try again later.', 'error');
-      console.error('❌ Failed to find working piping server');
-      
-      // Disable deploy button
-      if (this.elements.modalDeployBtn) {
-        this.elements.modalDeployBtn.disabled = true;
-        this.elements.modalDeployBtn.textContent = 'Servers Unavailable';
-      }
-    }
+    // Proceed with initialization
+    this.init();
   }
 
   initializeElements() {
@@ -612,18 +514,10 @@ class GoogleMobileDeployment {
       }
     } catch (error) {
       console.log('Ping error:', error);
-      
-      // If it's a server error, try to find working server
-      if (error.message.includes('Failed to fetch') || error.message.includes('HTTP 5')) {
-        this.updateStatus('Server connection lost, finding alternative...', 'error');
-        const newServer = await findWorkingPipingServer();
-        if (newServer) {
-          this.mobilePingUrl = getPingUrl(this.pipeId);
-          this.updateStatus(`Reconnected to: ${newServer}`, 'success');
-        }
-      }
-      
-      await this.delay(1000);
+      // Since there's no server fallback, we just log the error and wait before trying again.
+      // We could add a status update here to inform the user of a connection issue.
+      this.updateStatus('Connection issue. Retrying...', 'error');
+      await this.delay(5000); // Wait longer if there's an error
     }
     
     this.pingLoop();

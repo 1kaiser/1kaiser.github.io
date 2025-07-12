@@ -65,6 +65,7 @@ class GoogleMobileView {
     }
     
     if (!this.pipeId) {
+      // This is now handled by the DOMContentLoaded listener, but keeping a check here is safe.
       console.error('❌ No pipe ID found in URL');
       this.showToast('Error: No connection ID found in URL. Please scan QR code again.');
       return;
@@ -75,20 +76,11 @@ class GoogleMobileView {
       this.overlay.style.display = 'flex';
     }
 
-    // Find working server
-    this.showToast('Connecting to server...');
-    // Use PipingUtils.findWorkingPipingServer() which sets PipingUtils_CURRENT_DOMAIN
-    const foundServer = await PipingUtils.findWorkingPipingServer();
-    const currentPipingDomain = PipingUtils.getCurrentDomain(); // Get the domain chosen by the util
+    // Server is now fixed, no need to find/test.
+    const currentPipingDomain = PipingUtils.getCurrentDomain();
+    this.showToast(`Connecting via: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
 
-    if (!foundServer) { // findWorkingPipingServer returns null if no *tested* server worked, but sets a default
-      this.showToast(`⚠️ No servers passed tests. Using default: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
-      // Proceeding with default server
-    } else {
-      this.showToast(`Connected to: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
-    }
-
-    // Set URLs with working/default server from PipingUtils
+    // Set URLs with fixed server from PipingUtils
     this.mobilePingUrl = PipingUtils.getPingUrl(this.pipeId);
     this.sessionUrl = PipingUtils.getSessionUrl(this.pipeId, this.sessionId);
     
@@ -272,10 +264,9 @@ class GoogleMobileView {
     console.log('📢 Toast:', message);
   }
 
-  // Fetch loop with retry logic
+  // Fetch loop (simplified, no server fallback logic)
   async fetchLoop() {
     try {
-      // Use PipingUtils.getWithTimeout or a local version if more complex error handling is needed
       const response = await PipingUtils.getWithTimeout(this.sessionUrl);
       
       if (response.ok) {
@@ -290,33 +281,13 @@ class GoogleMobileView {
         return true;
       } else {
         console.error('❌ Error fetching update from mobile view:', response.status, response.statusText, this.sessionUrl);
-        // Potentially try to find a new server if response indicates server failure (e.g. 5xx)
-        if (response.status >= 500 && response.status < 600) {
-            const newServer = await PipingUtils.findWorkingPipingServer();
-            if (newServer) { // Check if a new server was actually found and is different
-                 const currentPipingDomain = PipingUtils.getCurrentDomain();
-                 this.sessionUrl = PipingUtils.getSessionUrl(this.pipeId, this.sessionId); // Rebuild URL with new domain
-                 this.showToast(`Reconnected to: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
-                 return false; // Indicate failure to trigger retry in triggerFetchLoop
-            }
-        }
+        // No server fallback, so just return false to retry after a delay
         return false;
       }
     } catch (error) {
       console.error('❌ Exception in mobile view fetchLoop:', error);
-      // This catch block might be hit for network errors or AbortError from timeout
-      // If it's a network error, try to find a new server.
-      if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) { // Generic network error
-        const newServer = await PipingUtils.findWorkingPipingServer();
-        if (newServer) {
-            const currentPipingDomain = PipingUtils.getCurrentDomain();
-            this.sessionUrl = PipingUtils.getSessionUrl(this.pipeId, this.sessionId);
-            this.showToast(`Re-attempting connection via: ${currentPipingDomain.replace('https://', '').replace('/', '')}`);
-            return false; // Indicate failure to trigger retry
-        }
-      }
-      // For AbortError (timeout), typically we just want to try again without server change.
-      return false; // Indicate failure to trigger retry
+      // No server fallback, just return false to retry after a delay
+      return false;
     }
   }
 
