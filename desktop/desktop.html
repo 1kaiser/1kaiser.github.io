@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Security meta tags -->
+  <meta name="referrer" content="no-referrer">
+  <!-- Replace the existing CSP meta tag with this more permissive one -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;
+    connect-src 'self'
+      https://ppng.io
+      https://piping.onrender.com
+      https://piping-server.herokuapp.com
+      https://pipes.sh
+      https://piping.glitch.me
+      https://*.piping.glitch.me
+      https://api.allorigins.win
+      https://cors-anywhere.herokuapp.com
+      https://cdn.glitch.me
+      https://cdn.glitch.global
+      https://*.github.io
+      https://*.githubusercontent.com
+      data: blob:;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval'
+      https://unpkg.com
+      https://cdn.jsdelivr.net
+      https://cdnjs.cloudflare.com;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: blob: https:;
+    media-src 'self' data: blob: https:;
+    worker-src 'self' data: blob:;
+  ">
+  <title>Desktop</title>
+  <link rel="stylesheet" href="desktop.css">
+  <link rel="stylesheet" href="../css/styles.css">
+  <!-- Model Viewer with Draco support -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.3.0/dist/model-viewer.min.js"></script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <!-- Load the QRCode library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+</head>
+<body>
+  <button id="add-window-btn">Add Window</button>
+  <div id="windows-container"></div>
+
+  <!-- Load models configuration first -->
+  <script src="../models/models.js"></script>
+
+  <!-- External JavaScript (Updated versions) -->
+  <script src="../js/piping-utils.js"></script>
+  <script src="../js/qr-deploy.js"></script>
+  <script src="../js/app.js" defer></script>
+  <script src="desktop.js"></script>
+</body>
+</html>
