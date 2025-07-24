@@ -110,7 +110,6 @@ function initializeServerStatus() {
 // Content from js/gallery.js
 // Get gallery container and modal elements
 const galleryDisplay = document.getElementById('modelGallery'); // Renamed to avoid conflict with main.js's gallery var in DOMContentLoaded
-const overlay = document.getElementById('modelOverlay');
 const modalViewer = document.getElementById('modalModelViewer');
 const closeButton = document.getElementById('closeButton');
 const modalDownloadBtn = document.getElementById('modalDownloadBtn');
@@ -191,10 +190,6 @@ if (galleryDisplay) {
         });
       });
     }
-    if (overlay) {
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
   };
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
@@ -204,39 +199,15 @@ if (galleryDisplay) {
 // Close button functionality for modal
 if (closeButton) {
   closeButton.addEventListener('click', () => {
-    if (overlay) overlay.style.display = 'none';
-    document.body.style.overflow = 'auto';
+    window2.style.display = 'none';
+    window1.style.display = 'block';
+    window1Btn.classList.add('active');
+    window2Btn.classList.remove('active');
     if (modalViewer) {
       modalViewer.src = ''; // Clear the source
     }
   });
 }
-
-// Close modal when clicking outside the modal content
-if (overlay) {
-  overlay.addEventListener('click', (event) => {
-    if (event.target === overlay) {
-      overlay.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      if (modalViewer) {
-        modalViewer.src = ''; // Clear the source
-      }
-    }
-  });
-}
-
-// Close modal when pressing ESC key
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') {
-    if (overlay && overlay.style.display === 'flex') { // Check if overlay exists
-      overlay.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      if (modalViewer) {
-        modalViewer.src = ''; // Clear the source
-      }
-    }
-  }
-});
 
 // Function to initialize gallery event delegation (from gallery.js)
 // This function seems mostly for logging purposes as event delegation handles dynamic content.

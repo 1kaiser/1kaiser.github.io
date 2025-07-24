@@ -464,3 +464,9 @@ p {
 .window-controls button.active {
   background: #ccc;
 }
+
+.test-link {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
