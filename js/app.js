@@ -134,34 +134,44 @@ if (galleryDisplay) {
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
       const modelUrl = modelCard.dataset.modelUrl;
-      const cardModelViewer = modelCard.querySelector('model-viewer');
+      const modelTitle = modelCard.dataset.title;
 
-      // If the model is cached, open the modal
-      if (modelCard.classList.contains('cached')) {
-        openModalWithModel(modelUrl, modelCard.dataset.title);
-        return;
-      }
+      // Show loading indicator
+      modelCard.classList.add('loading');
 
-      // First click: download and cache the model
-      modelCard.classList.add('caching');
+      // Fetch and cache the model, then open the viewer
       caches.open('models-cache').then(cache => {
         cache.match(modelUrl).then(response => {
-          if (!response) {
-            fetch(modelUrl).then(response => {
-              cache.put(modelUrl, response);
-              modelCard.classList.remove('caching');
-              modelCard.classList.add('cached');
-            });
+          if (response) {
+            // Model is cached, open immediately
+            modelCard.classList.remove('loading');
+            showModelInViewer(modelUrl, modelTitle);
           } else {
-            modelCard.classList.remove('caching');
-            modelCard.classList.add('cached');
+            // Model not cached, fetch and then open
+            fetch(modelUrl)
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Network response was not ok');
+                }
+                return response.clone();
+              })
+              .then(response => cache.put(modelUrl, response))
+              .then(() => {
+                modelCard.classList.remove('loading');
+                showModelInViewer(modelUrl, modelTitle);
+              })
+              .catch(error => {
+                console.error('Error fetching or caching model:', error);
+                modelCard.classList.remove('loading');
+                // Optionally, show an error state on the card
+              });
           }
         });
       });
     }
   });
 
-  const openModalWithModel = (modelUrl, modelTitle) => {
+  const showModelInViewer = (modelUrl, modelTitle) => {
     window.currentModelTitle = modelTitle;
     window.currentModelSrc = modelUrl;
 
@@ -182,7 +192,7 @@ if (galleryDisplay) {
           if (response) {
             response.blob().then(blob => {
               const objectURL = URL.createObjectURL(blob);
-              modalViewer.src = '';
+              modalViewer.src = ''; // Clear previous model
               modalViewer.cameraOrbit = '0deg 75deg 105%';
               modalViewer.setAttribute('src', objectURL);
               modalViewer.setAttribute('alt', modelTitle);
