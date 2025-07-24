@@ -185,6 +185,7 @@ if (galleryDisplay) {
     }
 
     if (modalViewer) {
+      modalViewer.src = '';
       modalViewer.cameraOrbit = '0deg 75deg 105%';
       modalViewer.setAttribute('src', modelUrl);
       modalViewer.setAttribute('alt', modelTitle);
