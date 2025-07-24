@@ -11,7 +11,7 @@ body {
   height: 400px;
   background: white;
   border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   min-width: 200px;
@@ -40,6 +40,20 @@ body {
 
 .tools-btn {
   cursor: pointer;
+}
+
+.close-btn {
+  cursor: pointer;
+  margin-left: 5px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  padding: 0;
 }
 
 .tools-menu {
