@@ -424,3 +424,7 @@ p {
   font-size: 12px;
   color: #666;
 }
+
+.model-card.loading model-viewer {
+  animation: pulse 1.5s infinite;
+}

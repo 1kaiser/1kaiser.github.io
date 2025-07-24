@@ -133,65 +133,67 @@ if (galleryDisplay) {
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
-      const modelUrl = modelCard.dataset.modelUrl; // Get URL from data-model-url
-      window.currentModelTitle = modelCard.dataset.title;
-      window.currentModelSrc = modelUrl; // Keep this updated for download and QR deploy
-
-      // Lazy load the model in the card itself
+      const modelUrl = modelCard.dataset.modelUrl;
       const cardModelViewer = modelCard.querySelector('model-viewer');
-      if (cardModelViewer && (!cardModelViewer.src || cardModelViewer.src !== modelUrl)) {
-        console.log(`Loading model in card: ${modelUrl}`);
+
+      // If the model is already loaded, open the modal
+      if (modelCard.classList.contains('loaded')) {
+        openModalWithModel(modelUrl, modelCard.dataset.title);
+        return;
+      }
+
+      // If the model is already loading, do nothing
+      if (modelCard.classList.contains('loading')) {
+        return;
+      }
+
+      // If another model is loading, cancel it
+      const currentlyLoading = document.querySelector('.model-card.loading');
+      if (currentlyLoading) {
+        currentlyLoading.classList.remove('loading');
+        const currentlyLoadingViewer = currentlyLoading.querySelector('model-viewer');
+        if (currentlyLoadingViewer) {
+          currentlyLoadingViewer.src = '';
+        }
+      }
+
+      // First click: start loading the model
+      modelCard.classList.add('loading');
+      if (cardModelViewer) {
         cardModelViewer.src = modelUrl;
-      }
-
-      // Set up the modal viewer
-      // modalViewer.setAttribute('src', modelUrl); // Moved to load event listener
-      // modalViewer.setAttribute('alt', window.currentModelTitle); // Moved to load event listener
-
-      modalDownloadBtn.href = modelUrl;
-      modalDownloadBtn.setAttribute('download', window.currentModelTitle + '.glb');
-
-      if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
-        window.mobileDeployment.contentHasChanged = true;
-        if (window.mobileDeployment.sessionList.length > 0) {
-          const refreshBtn = document.getElementById('refreshMobileBtn');
-          if (refreshBtn) refreshBtn.style.display = 'block';
-        }
-      }
-
-      // Function to open the modal (to avoid code duplication)
-      const openModalWithModel = () => {
-        console.log(`Model ${modelUrl} is ready or loaded in card, preparing and opening modal.`);
-        if (modalViewer) {
-          // Set a default camera orbit BEFORE setting the new src
-          // This can help ensure the camera system is reset/re-initialized
-          modalViewer.cameraOrbit = '0deg 75deg 105%'; // Default starting orbit
-
-          modalViewer.setAttribute('src', modelUrl);
-          modalViewer.setAttribute('alt', window.currentModelTitle);
-        }
-        if (overlay) {
-          overlay.style.display = 'flex';
-          document.body.style.overflow = 'hidden';
-        }
-      };
-
-      // Check if the card's model-viewer is already loaded with the correct src
-      if (cardModelViewer && cardModelViewer.loaded && cardModelViewer.src === modelUrl) {
-        // If already loaded and src is correct, open modal immediately
-        openModalWithModel();
-      } else if (cardModelViewer) {
-        // Otherwise, if src is different or not loaded, ensure src is set and wait for it to load
-        // The src attribute might have already been set just above this block if it was new
-        // This event listener will handle the case where it's still loading
-        cardModelViewer.addEventListener('load', openModalWithModel, { once: true });
-      } else {
-        // Fallback if cardModelViewer somehow isn't found (shouldn't happen)
-        console.warn('Card model viewer not found, opening modal immediately (fallback).');
-        openModalWithModel();
+        cardModelViewer.addEventListener('load', () => {
+          modelCard.classList.remove('loading');
+          modelCard.classList.add('loaded');
+        }, { once: true });
       }
     }
   });
+
+  const openModalWithModel = (modelUrl, modelTitle) => {
+    window.currentModelTitle = modelTitle;
+    window.currentModelSrc = modelUrl;
+
+    modalDownloadBtn.href = modelUrl;
+    modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
+
+    if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
+      window.mobileDeployment.contentHasChanged = true;
+      if (window.mobileDeployment.sessionList.length > 0) {
+        const refreshBtn = document.getElementById('refreshMobileBtn');
+        if (refreshBtn) refreshBtn.style.display = 'block';
+      }
+    }
+
+    if (modalViewer) {
+      modalViewer.cameraOrbit = '0deg 75deg 105%';
+      modalViewer.setAttribute('src', modelUrl);
+      modalViewer.setAttribute('alt', modelTitle);
+    }
+    if (overlay) {
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+  };
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
@@ -204,7 +206,6 @@ if (closeButton) {
     document.body.style.overflow = 'auto';
     if (modalViewer) {
       modalViewer.src = ''; // Clear the source
-      console.log('Modal closed by button, src cleared.');
     }
   });
 }
@@ -217,7 +218,6 @@ if (overlay) {
       document.body.style.overflow = 'auto';
       if (modalViewer) {
         modalViewer.src = ''; // Clear the source
-        console.log('Modal closed by overlay click, src cleared.');
       }
     }
   });
@@ -231,7 +231,6 @@ document.addEventListener('keydown', (event) => {
       document.body.style.overflow = 'auto';
       if (modalViewer) {
         modalViewer.src = ''; // Clear the source
-        console.log('Modal closed by ESC key, src cleared.');
       }
     }
   }
