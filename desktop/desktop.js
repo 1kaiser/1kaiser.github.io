@@ -10,7 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (windowCount === 2) {
       windowEl.innerHTML = `
-        <div class="window-header">Window ${windowCount}</div>
+        <div class="window-header">
+          <span>Window ${windowCount}</span>
+          <button class="tools-btn">Tools</button>
+        </div>
         <div class="window-content">
           <div class="gallery" id="modelGallery">
             <!-- Model cards will be dynamically generated here -->
@@ -20,7 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
     } else {
       windowEl.innerHTML = `
-        <div class="window-header">Window ${windowCount}</div>
+        <div class="window-header">
+          <span>Window ${windowCount}</span>
+          <button class="tools-btn">Tools</button>
+        </div>
         <div class="window-content"></div>
         <div class="resize-handle"></div>
       `;
@@ -30,6 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
     makeDraggable(windowEl, windowEl.querySelector('.window-header'));
     makeResizable(windowEl, windowEl.querySelector('.resize-handle'));
 
+    const toolsBtn = windowEl.querySelector('.tools-btn');
+    const toolsMenu = createToolsMenu(windowEl);
+    toolsBtn.addEventListener('click', () => {
+      toolsMenu.style.display = toolsMenu.style.display === 'block' ? 'none' : 'block';
+    });
+
     if (windowCount === 2) {
       // Initialize the gallery
       if (window.modelsConfig && typeof window.initializeGallery === 'function') {
@@ -37,6 +49,54 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  function createToolsMenu(windowEl) {
+    const menu = document.createElement('div');
+    menu.className = 'tools-menu';
+    menu.innerHTML = `
+      <ul>
+        <li data-tool="clock">Clock</li>
+        <li data-tool="calendar">Calendar</li>
+        <li data-tool="music">Music Player</li>
+      </ul>
+    `;
+    windowEl.appendChild(menu);
+
+    menu.addEventListener('click', (e) => {
+      const tool = e.target.dataset.tool;
+      if (tool) {
+        const windowContent = windowEl.querySelector('.window-content');
+        if (tool === 'clock') {
+          const clockEl = document.createElement('div');
+          clockEl.style.fontSize = '2em';
+          clockEl.style.textAlign = 'center';
+          setInterval(() => {
+            const now = new Date();
+            clockEl.textContent = now.toLocaleTimeString();
+          }, 1000);
+          windowContent.innerHTML = '';
+          windowContent.appendChild(clockEl);
+        } else if (tool === 'calendar') {
+          const calendarEl = document.createElement('div');
+          calendarEl.style.fontSize = '2em';
+          calendarEl.style.textAlign = 'center';
+          const now = new Date();
+          calendarEl.textContent = now.toLocaleDateString();
+          windowContent.innerHTML = '';
+          windowContent.appendChild(calendarEl);
+        } else if (tool === 'music') {
+          const musicEl = document.createElement('audio');
+          musicEl.controls = true;
+          musicEl.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+          windowContent.innerHTML = '';
+          windowContent.appendChild(musicEl);
+        }
+        menu.style.display = 'none';
+      }
+    });
+
+    return menu;
+  }
 
   function makeResizable(element, handle) {
     let original_width = 0;
