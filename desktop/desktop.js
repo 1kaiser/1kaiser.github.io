@@ -16,16 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
             <!-- Model cards will be dynamically generated here -->
           </div>
         </div>
+        <div class="resize-handle"></div>
       `;
     } else {
       windowEl.innerHTML = `
         <div class="window-header">Window ${windowCount}</div>
         <div class="window-content"></div>
+        <div class="resize-handle"></div>
       `;
     }
 
     windowsContainer.appendChild(windowEl);
     makeDraggable(windowEl, windowEl.querySelector('.window-header'));
+    makeResizable(windowEl, windowEl.querySelector('.resize-handle'));
 
     if (windowCount === 2) {
       // Initialize the gallery
@@ -34,6 +37,38 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+
+  function makeResizable(element, handle) {
+    let original_width = 0;
+    let original_height = 0;
+    let original_x = 0;
+    let original_y = 0;
+    let original_mouse_x = 0;
+    let original_mouse_y = 0;
+
+    handle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      original_width = parseFloat(getComputedStyle(element, null).getPropertyValue('width').replace('px', ''));
+      original_height = parseFloat(getComputedStyle(element, null).getPropertyValue('height').replace('px', ''));
+      original_x = element.getBoundingClientRect().left;
+      original_y = element.getBoundingClientRect().top;
+      original_mouse_x = e.pageX;
+      original_mouse_y = e.pageY;
+      window.addEventListener('mousemove', resize);
+      window.addEventListener('mouseup', stopResize);
+    });
+
+    function resize(e) {
+      const width = original_width + (e.pageX - original_mouse_x);
+      const height = original_height + (e.pageY - original_mouse_y);
+      element.style.width = width + 'px';
+      element.style.height = height + 'px';
+    }
+
+    function stopResize() {
+      window.removeEventListener('mousemove', resize);
+    }
+  }
 
   function makeDraggable(element, handle) {
     let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
