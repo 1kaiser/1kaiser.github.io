@@ -12,7 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
       windowEl.innerHTML = `
         <div class="window-header">
           <span>Window ${windowCount}</span>
-          <button class="tools-btn">Tools</button>
+          <div>
+            <button class="tools-btn">Tools</button>
+            <button class="close-btn">X</button>
+          </div>
         </div>
         <div class="window-content">
           <div class="gallery" id="modelGallery">
@@ -25,7 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
       windowEl.innerHTML = `
         <div class="window-header">
           <span>Window ${windowCount}</span>
-          <button class="tools-btn">Tools</button>
+          <div>
+            <button class="tools-btn">Tools</button>
+            <button class="close-btn">X</button>
+          </div>
         </div>
         <div class="window-content"></div>
         <div class="resize-handle"></div>
@@ -40,6 +46,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const toolsMenu = createToolsMenu(windowEl);
     toolsBtn.addEventListener('click', () => {
       toolsMenu.style.display = toolsMenu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    const closeBtn = windowEl.querySelector('.close-btn');
+    closeBtn.addEventListener('click', () => {
+      windowEl.remove();
     });
 
     if (windowCount === 2) {
