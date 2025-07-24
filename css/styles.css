@@ -432,3 +432,35 @@ p {
 .model-card.caching model-viewer {
   animation: pulse 1.5s infinite;
 }
+
+.window-container {
+  display: flex;
+  height: 100vh;
+}
+
+.window {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+}
+
+.window-controls {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.window-controls button {
+  padding: 10px 20px;
+  border: none;
+  background: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.window-controls button.active {
+  background: #ccc;
+}

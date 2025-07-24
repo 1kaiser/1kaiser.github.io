@@ -299,3 +299,23 @@ function initializeDraggableWindow() {
         makeDraggable(statusWindow, statusHeader);
     }
 }
+
+// Window switching functionality
+const window1Btn = document.getElementById('window1-btn');
+const window2Btn = document.getElementById('window2-btn');
+const window1 = document.getElementById('window1');
+const window2 = document.getElementById('window2');
+
+window1Btn.addEventListener('click', () => {
+  window1.style.display = 'block';
+  window2.style.display = 'none';
+  window1Btn.classList.add('active');
+  window2Btn.classList.remove('active');
+});
+
+window2Btn.addEventListener('click', () => {
+  window1.style.display = 'none';
+  window2.style.display = 'block';
+  window1Btn.classList.remove('active');
+  window2Btn.classList.add('active');
+});

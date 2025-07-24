@@ -52,34 +52,39 @@
     </div>
   </div>
 
-  <h1>Space</h1>
-  <div class="gallery" id="modelGallery">
-    <!-- Model cards will be dynamically generated here -->
-  </div>
-
-  <!-- Modal overlay for enlarged model view -->
-  <div class="overlay" id="modelOverlay">
-    <div class="modal">
-      <button class="close-button" id="closeButton">×</button>
-      <model-viewer
-        id="modalModelViewer"
-        camera-controls
-        shadow-intensity="1"
-        ar
-        ar-modes="webxr scene-viewer quick-look">
-      </model-viewer>
-      <div class="modal-button-container">
-        <a id="modalDownloadBtn" href="#" download class="modal-download-btn">Download</a>
-        <button id="modalDeployBtn" class="modal-deploy-btn">
-          <span>Deploy to Mobile</span>
-        </button>
-        <div id="statusMessage"></div>
-        <div class="connection-status" id="connectionStatus" style="display: none;">
-          <div class="status-indicator"></div>
-          <span class="status-text"></span>
+  <div class="window-container">
+    <div class="window" id="window1">
+      <div class="gallery" id="modelGallery">
+        <!-- Model cards will be dynamically generated here -->
+      </div>
+    </div>
+    <div class="window" id="window2" style="display: none;">
+      <div class="modal">
+        <button class="close-button" id="closeButton">×</button>
+        <model-viewer
+          id="modalModelViewer"
+          camera-controls
+          shadow-intensity="1"
+          ar
+          ar-modes="webxr scene-viewer quick-look">
+        </model-viewer>
+        <div class="modal-button-container">
+          <a id="modalDownloadBtn" href="#" download class="modal-download-btn">Download</a>
+          <button id="modalDeployBtn" class="modal-deploy-btn">
+            <span>Deploy to Mobile</span>
+          </button>
+          <div id="statusMessage"></div>
+          <div class="connection-status" id="connectionStatus" style="display: none;">
+            <div class="status-indicator"></div>
+            <span class="status-text"></span>
+          </div>
         </div>
       </div>
     </div>
+  </div>
+  <div class="window-controls">
+    <button id="window1-btn" class="active">1</button>
+    <button id="window2-btn">2</button>
   </div>
 
   <!-- QR Code overlay with enhanced functionality -->
