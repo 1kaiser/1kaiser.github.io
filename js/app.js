@@ -136,36 +136,28 @@ if (galleryDisplay) {
       const modelUrl = modelCard.dataset.modelUrl;
       const cardModelViewer = modelCard.querySelector('model-viewer');
 
-      // If the model is already loaded, open the modal
-      if (modelCard.classList.contains('loaded')) {
+      // If the model is cached, open the modal
+      if (modelCard.classList.contains('cached')) {
         openModalWithModel(modelUrl, modelCard.dataset.title);
         return;
       }
 
-      // If the model is already loading, do nothing
-      if (modelCard.classList.contains('loading')) {
-        return;
-      }
-
-      // If another model is loading, cancel it
-      const currentlyLoading = document.querySelector('.model-card.loading');
-      if (currentlyLoading) {
-        currentlyLoading.classList.remove('loading');
-        const currentlyLoadingViewer = currentlyLoading.querySelector('model-viewer');
-        if (currentlyLoadingViewer) {
-          currentlyLoadingViewer.src = '';
-        }
-      }
-
-      // First click: start loading the model
-      modelCard.classList.add('loading');
-      if (cardModelViewer) {
-        cardModelViewer.src = modelUrl;
-        cardModelViewer.addEventListener('load', () => {
-          modelCard.classList.remove('loading');
-          modelCard.classList.add('loaded');
-        }, { once: true });
-      }
+      // First click: download and cache the model
+      modelCard.classList.add('caching');
+      caches.open('models-cache').then(cache => {
+        cache.match(modelUrl).then(response => {
+          if (!response) {
+            fetch(modelUrl).then(response => {
+              cache.put(modelUrl, response);
+              modelCard.classList.remove('caching');
+              modelCard.classList.add('cached');
+            });
+          } else {
+            modelCard.classList.remove('caching');
+            modelCard.classList.add('cached');
+          }
+        });
+      });
     }
   });
 
@@ -185,10 +177,19 @@ if (galleryDisplay) {
     }
 
     if (modalViewer) {
-      modalViewer.src = '';
-      modalViewer.cameraOrbit = '0deg 75deg 105%';
-      modalViewer.setAttribute('src', modelUrl);
-      modalViewer.setAttribute('alt', modelTitle);
+      caches.open('models-cache').then(cache => {
+        cache.match(modelUrl).then(response => {
+          if (response) {
+            response.blob().then(blob => {
+              const objectURL = URL.createObjectURL(blob);
+              modalViewer.src = '';
+              modalViewer.cameraOrbit = '0deg 75deg 105%';
+              modalViewer.setAttribute('src', objectURL);
+              modalViewer.setAttribute('alt', modelTitle);
+            });
+          }
+        });
+      });
     }
     if (overlay) {
       overlay.style.display = 'flex';

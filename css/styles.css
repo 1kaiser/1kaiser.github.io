@@ -428,3 +428,7 @@ p {
 .model-card.loading model-viewer {
   animation: pulse 1.5s infinite;
 }
+
+.model-card.caching model-viewer {
+  animation: pulse 1.5s infinite;
+}
