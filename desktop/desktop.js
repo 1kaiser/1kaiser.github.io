@@ -89,8 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
           windowContent.appendChild(clockEl);
         } else if (tool === 'calendar') {
           const calendarEl = document.createElement('iframe');
-          calendarEl.src = "https://calendar.google.com/calendar/embed?src=59607fd99c223503acfafee38da12994c6738d1e3d909d9633716dd409182b5e%40group.calendar.google.com&ctz=Asia%2FKolkata";
-          calendarEl.style.border = "0";
+          calendarEl.src = "https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Asia%2FKolkata&showPrint=0&src=NTk2MDdmZDk5YzIyMzUwM2FjZmFmZWUzOGRhMTI5OTRjNjczOGQxZTNkOTA5ZDk2MzM3MTZkZDQwOTE4MmI1ZUBncm91cC5jYWxlbmRhci5nb29nbGUuY29t&src=OGE2ZjVjNGI0NTA2NDkxODAzMTRjYmFkMDUzNzM0MmExNWVjNWI3MjA2OWYyOWNkZWU3NGZiNjY5NGQxNWNhOUBncm91cC5jYWxlbmRhci5nb29nbGUuY29t&src=aHQzamxmYWFjNWxmZDYyNjN1bGZoNHRxbDhAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ&src=c2hpdmFsaXRoYWt1ci50aGFrdXJAZ21haWwuY29t&color=%23b39ddb&color=%23e4c441&color=%23e67c73&color=%23d81b60";
+          calendarEl.style.border = "solid 1px #777";
           calendarEl.width = "100%";
           calendarEl.height = "100%";
           calendarEl.frameborder = "0";
