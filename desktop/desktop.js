@@ -88,11 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
           windowContent.innerHTML = '';
           windowContent.appendChild(clockEl);
         } else if (tool === 'calendar') {
-          const calendarEl = document.createElement('div');
-          calendarEl.style.fontSize = '2em';
-          calendarEl.style.textAlign = 'center';
-          const now = new Date();
-          calendarEl.textContent = now.toLocaleDateString();
+          const calendarEl = document.createElement('iframe');
+          calendarEl.src = "https://calendar.google.com/calendar/embed?src=59607fd99c223503acfafee38da12994c6738d1e3d909d9633716dd409182b5e%40group.calendar.google.com&ctz=Asia%2FKolkata";
+          calendarEl.style.border = "0";
+          calendarEl.width = "100%";
+          calendarEl.height = "100%";
+          calendarEl.frameborder = "0";
+          calendarEl.scrolling = "no";
           windowContent.innerHTML = '';
           windowContent.appendChild(calendarEl);
         } else if (tool === 'music') {
