@@ -133,79 +133,19 @@ if (galleryDisplay) {
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
-      const modelUrl = modelCard.dataset.modelUrl;
-      const modelTitle = modelCard.dataset.title;
+      const index = modelCard.dataset.index;
+      const modelViewer = document.getElementById(`model-viewer-${index}`);
 
-      // Show loading indicator
-      modelCard.classList.add('loading');
-
-      // Fetch and cache the model, then open the viewer
-      caches.open('models-cache').then(cache => {
-        cache.match(modelUrl).then(response => {
-          if (response) {
-            // Model is cached, open immediately
-            modelCard.classList.remove('loading');
-            showModelInViewer(modelUrl, modelTitle);
-          } else {
-            // Model not cached, fetch and then open
-            fetch(modelUrl)
-              .then(response => {
-                if (!response.ok) {
-                  throw new Error('Network response was not ok');
-                }
-                return response.clone();
-              })
-              .then(response => cache.put(modelUrl, response))
-              .then(() => {
-                modelCard.classList.remove('loading');
-                showModelInViewer(modelUrl, modelTitle);
-              })
-              .catch(error => {
-                console.error('Error fetching or caching model:', error);
-                modelCard.classList.remove('loading');
-                // Optionally, show an error state on the card
-              });
-          }
-        });
-      });
-    }
-  });
-
-  const showModelInViewer = (modelUrl, modelTitle) => {
-    window.currentModelTitle = modelTitle;
-    window.currentModelSrc = modelUrl;
-
-    modalDownloadBtn.href = modelUrl;
-    modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
-
-    if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
-      window.mobileDeployment.contentHasChanged = true;
-      if (window.mobileDeployment.sessionList.length > 0) {
-        const refreshBtn = document.getElementById('refreshMobileBtn');
-        if (refreshBtn) refreshBtn.style.display = 'block';
+      if (modelViewer && modelViewer.dataset.src) {
+        // Load the model
+        modelViewer.src = modelViewer.dataset.src;
+        // Remove the data-src attribute to prevent reloading
+        delete modelViewer.dataset.src;
+        // Add auto-rotate after loading
+        modelViewer.setAttribute('auto-rotate', '');
       }
     }
-
-    if (modalViewer) {
-      caches.open('models-cache').then(cache => {
-        cache.match(modelUrl).then(response => {
-          if (response) {
-            response.blob().then(blob => {
-              const objectURL = URL.createObjectURL(blob);
-              modalViewer.src = ''; // Clear previous model
-              modalViewer.cameraOrbit = '0deg 75deg 105%';
-              modalViewer.setAttribute('src', objectURL);
-              modalViewer.setAttribute('alt', modelTitle);
-            });
-          }
-        });
-      });
-    }
-    if (overlay) {
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
-  };
+  });
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
