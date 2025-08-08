@@ -206,13 +206,13 @@ window.ModelManager = {
 // Create a model card element (moved from index.html)
 window.createModelCard = function(modelData, index) {
   const cardHtml = `
-    <div class="model-card" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
+    <div class="model-card" data-index="${index}" data-model-url="${modelData.url}">
       <div class="model-container">
         <model-viewer
-          src="${modelData.url}"
+          id="model-viewer-${index}"
+          data-src="${modelData.url}"
           poster="${modelData.poster}"
           alt="${modelData.alt}"
-          auto-rotate
           camera-controls
           shadow-intensity="1">
         </model-viewer>
