@@ -62,7 +62,7 @@ window.modelsConfig = [
   },
   {
     url: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
-    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/untitled.webp",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/untitled-transformed.webp",
     title: "Kaiser Roy",
     description: "Kaiser_Roy",
     alt: "Kaiser Roy"
