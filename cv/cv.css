@@ -1,3 +1,16 @@
 body {
   font-family: sans-serif;
 }
+
+section {
+  margin-bottom: 20px;
+}
+
+#github-projects ul {
+  list-style: none;
+  padding: 0;
+}
+
+#github-projects li {
+  margin-bottom: 10px;
+}
