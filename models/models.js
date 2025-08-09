@@ -40,7 +40,7 @@ window.modelsConfig = [
     alt: "Idol"
   },
   {
-    url: "./models/bycycle.glb",
+    url: "https://github.com/1kaiser/1kaiser.github.io/releases/download/1/bycycle.glb",
     poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/bycycle.webp",
     title: "Bicycle",
     description: "3D bicycle model",
