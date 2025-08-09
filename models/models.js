@@ -221,6 +221,7 @@ window.createModelCard = function(modelData, index) {
         <h2>${modelData.title}</h2>
         <p>${modelData.description}</p>
         <a href="${modelData.url}" download class="download-btn">Download</a>
+        <button class="expand-btn" data-index="${index}">Expand</button>
       </div>
     </div>
   `;
