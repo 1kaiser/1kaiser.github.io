@@ -108,6 +108,31 @@ function initializeServerStatus() {
 }
 
 // Content from js/gallery.js
+
+// Function to open the modal with a specific model
+function openModal(index) {
+  const model = window.modelsConfig[index];
+  if (!model) {
+    console.error('Model data not found for index:', index);
+    return;
+  }
+
+  // Set the source and other attributes for the modal's model-viewer
+  modalViewer.src = model.url;
+  modalViewer.poster = model.poster || '';
+  modalViewer.alt = model.alt || '3D model';
+
+  // Update the download button in the modal
+  modalDownloadBtn.href = model.url;
+  modalDownloadBtn.download = model.title || 'model';
+
+  // Display the overlay
+  if (overlay) {
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
 // Get gallery container and modal elements
 const galleryDisplay = document.getElementById('modelGallery'); // Renamed to avoid conflict with main.js's gallery var in DOMContentLoaded
 const overlay = document.getElementById('modelOverlay');
@@ -126,24 +151,24 @@ window.currentModelTitle = '';
 // Ensure galleryDisplay is not null before adding event listener
 if (galleryDisplay) {
   galleryDisplay.addEventListener('click', (event) => {
-    if (event.target.classList.contains('download-btn')) {
-      event.stopPropagation();
+    const downloadBtn = event.target.closest('.download-btn');
+    if (downloadBtn) {
+      // Allow download to proceed without opening modal
+      return;
+    }
+
+    const expandBtn = event.target.closest('.expand-btn');
+    if (expandBtn) {
+      event.stopPropagation(); // Prevent card click from firing
+      const index = expandBtn.dataset.index;
+      openModal(index);
       return;
     }
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
       const index = modelCard.dataset.index;
-      const modelViewer = document.getElementById(`model-viewer-${index}`);
-
-      if (modelViewer && modelViewer.dataset.src) {
-        // Load the model
-        modelViewer.src = modelViewer.dataset.src;
-        // Remove the data-src attribute to prevent reloading
-        delete modelViewer.dataset.src;
-        // Add auto-rotate after loading
-        modelViewer.setAttribute('auto-rotate', '');
-      }
+      openModal(index);
     }
   });
 } else {
