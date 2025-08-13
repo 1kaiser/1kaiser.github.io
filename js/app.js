@@ -124,6 +124,7 @@ window.currentModelTitle = '';
 
 // Event delegation for dynamically generated model cards
 // Ensure galleryDisplay is not null before adding event listener
+/*
 if (galleryDisplay) {
   galleryDisplay.addEventListener('click', (event) => {
     if (event.target.classList.contains('download-btn')) {
@@ -209,6 +210,7 @@ if (galleryDisplay) {
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
+*/
 
 
 // Close button functionality for modal
