@@ -196,7 +196,7 @@ window.ModelManager = {
 // Create a model card element (moved from index.html)
 window.createModelCard = function(modelData, index) {
   const cardHtml = `
-    <div class="model-card" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
+    <div class="model-card" data-index="${index}" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
       <div class="model-container">
         <model-viewer
           data-src="${modelData.url}"

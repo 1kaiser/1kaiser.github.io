@@ -125,7 +125,16 @@ window.currentModelTitle = '';
 // Event delegation for dynamically generated model cards
 // Ensure galleryDisplay is not null before adding event listener
 if (galleryDisplay) {
-  const showModelInViewer = (modelUrl, modelTitle) => {
+  const openModal = (index) => {
+    const modelData = window.modelsConfig[index];
+    if (!modelData) {
+      console.error('Model data not found for index:', index);
+      return;
+    }
+
+    const modelUrl = modelData.url;
+    const modelTitle = modelData.title;
+
     window.currentModelTitle = modelTitle;
     window.currentModelSrc = modelUrl;
 
@@ -154,16 +163,24 @@ if (galleryDisplay) {
   };
 
   galleryDisplay.addEventListener('click', (event) => {
-    if (event.target.classList.contains('download-btn')) {
-      event.stopPropagation();
+    const downloadBtn = event.target.closest('.download-btn');
+    if (downloadBtn) {
+      // Allow download to proceed without opening modal
+      return;
+    }
+
+    const expandBtn = event.target.closest('.expand-btn');
+    if (expandBtn) {
+      event.stopPropagation(); // Prevent card click from firing
+      const index = expandBtn.dataset.index;
+      openModal(index);
       return;
     }
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
-      const modelUrl = modelCard.dataset.modelUrl;
-      const modelTitle = modelCard.dataset.title;
-      showModelInViewer(modelUrl, modelTitle);
+      const index = modelCard.dataset.index;
+      openModal(index);
     }
   });
 } else {
