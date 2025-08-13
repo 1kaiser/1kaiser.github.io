@@ -58,6 +58,7 @@ h1 {
   flex-shrink: 0; /* Prevent cards from shrinking */
   display: flex; /* To help with internal alignment if needed */
   flex-direction: column; /* Ensure content within card stacks vertically */
+  position: relative;
 }
 
 .model-card:hover {
@@ -78,14 +79,22 @@ model-viewer {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #fafafa; /* Default background */
+  background-color: transparent; /* Default background */
   --progress-bar-height: 5px;
   --progress-bar-color: #007bff; /* Blue color for the bar */
   --progress-mask: #efefef; /* Light grey for the track/background of the bar */
 }
 
 .model-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   padding: 15px;
+  z-index: 1;
 }
 
 h2 {
@@ -113,6 +122,21 @@ p {
 
 .download-btn:hover {
   background-color: #45a049;
+}
+
+.expand-btn {
+  background-color: #2196F3; /* Blue */
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+.expand-btn:hover {
+  background-color: #0b7dda;
 }
 
 /* Modal/Overlay styles */

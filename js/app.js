@@ -108,6 +108,31 @@ function initializeServerStatus() {
 }
 
 // Content from js/gallery.js
+
+// Function to open the modal with a specific model
+function openModal(index) {
+  const model = window.modelsConfig[index];
+  if (!model) {
+    console.error('Model data not found for index:', index);
+    return;
+  }
+
+  // Set the source and other attributes for the modal's model-viewer
+  modalViewer.src = model.url;
+  modalViewer.poster = model.poster || '';
+  modalViewer.alt = model.alt || '3D model';
+
+  // Update the download button in the modal
+  modalDownloadBtn.href = model.url;
+  modalDownloadBtn.download = model.title || 'model';
+
+  // Display the overlay
+  if (overlay) {
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
 // Get gallery container and modal elements
 const galleryDisplay = document.getElementById('modelGallery'); // Renamed to avoid conflict with main.js's gallery var in DOMContentLoaded
 const overlay = document.getElementById('modelOverlay');
@@ -176,6 +201,7 @@ if (galleryDisplay) {
       openModal(index);
       return;
     }
+
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
