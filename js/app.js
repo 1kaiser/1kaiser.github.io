@@ -150,6 +150,43 @@ window.currentModelTitle = '';
 // Event delegation for dynamically generated model cards
 // Ensure galleryDisplay is not null before adding event listener
 if (galleryDisplay) {
+  const openModal = (index) => {
+    const modelData = window.modelsConfig[index];
+    if (!modelData) {
+      console.error('Model data not found for index:', index);
+      return;
+    }
+
+    const modelUrl = modelData.url;
+    const modelTitle = modelData.title;
+
+    window.currentModelTitle = modelTitle;
+    window.currentModelSrc = modelUrl;
+
+    modalDownloadBtn.href = modelUrl;
+    modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
+
+    if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
+      window.mobileDeployment.contentHasChanged = true;
+      if (window.mobileDeployment.sessionList.length > 0) {
+        const refreshBtn = document.getElementById('refreshMobileBtn');
+        if (refreshBtn) refreshBtn.style.display = 'block';
+      }
+    }
+
+    if (modalViewer) {
+      modalViewer.src = ''; // Clear previous model
+      modalViewer.cameraOrbit = '0deg 75deg 105%';
+      modalViewer.setAttribute('src', modelUrl);
+      modalViewer.setAttribute('alt', modelTitle);
+    }
+
+    if (overlay) {
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+  };
+
   galleryDisplay.addEventListener('click', (event) => {
     const downloadBtn = event.target.closest('.download-btn');
     if (downloadBtn) {
@@ -164,6 +201,7 @@ if (galleryDisplay) {
       openModal(index);
       return;
     }
+
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
