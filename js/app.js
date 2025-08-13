@@ -149,6 +149,7 @@ window.currentModelTitle = '';
 
 // Event delegation for dynamically generated model cards
 // Ensure galleryDisplay is not null before adding event listener
+/*
 if (galleryDisplay) {
   const openModal = (index) => {
     const modelData = window.modelsConfig[index];
@@ -212,6 +213,7 @@ if (galleryDisplay) {
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
+*/
 
 
 // Close button functionality for modal
