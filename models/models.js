@@ -12,7 +12,7 @@ window.modelsConfig = [
     alt: "Original 3D model"
   },
   {
-    url: "./models/20230204temple-transformed.glb",
+    url: "https://gitlab.com/1kaiser/1kaiser.gitlab.io/-/raw/main/models/20230204temple-transformed.glb",//"./models/20230204temple-transformed.glb",
     poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/20230204temple-transformed.webp",
     title: "Temple",
     description: "Example 3D model",
