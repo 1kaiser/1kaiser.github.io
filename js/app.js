@@ -136,18 +136,29 @@ if (galleryDisplay) {
       const modelUrl = modelCard.dataset.modelUrl;
       const modelTitle = modelCard.dataset.title;
 
+      // If model is already loaded, show it in the viewer.
+      if (modelCard.classList.contains('loaded')) {
+        showModelInViewer(modelUrl, modelTitle);
+        return;
+      }
+
+      // If model is already loading, do nothing.
+      if (modelCard.classList.contains('loading')) {
+        return;
+      }
+
       // Show loading indicator
       modelCard.classList.add('loading');
 
-      // Fetch and cache the model, then open the viewer
+      // Fetch and cache the model, then mark as loaded.
       caches.open('models-cache').then(cache => {
         cache.match(modelUrl).then(response => {
           if (response) {
-            // Model is cached, open immediately
+            // Model is already cached, just mark as loaded.
             modelCard.classList.remove('loading');
-            showModelInViewer(modelUrl, modelTitle);
+            modelCard.classList.add('loaded');
           } else {
-            // Model not cached, fetch and then open
+            // Model not cached, fetch and then mark as loaded.
             fetch(modelUrl)
               .then(response => {
                 if (!response.ok) {
@@ -158,7 +169,7 @@ if (galleryDisplay) {
               .then(response => cache.put(modelUrl, response))
               .then(() => {
                 modelCard.classList.remove('loading');
-                showModelInViewer(modelUrl, modelTitle);
+                modelCard.classList.add('loaded');
               })
               .catch(error => {
                 console.error('Error fetching or caching model:', error);
