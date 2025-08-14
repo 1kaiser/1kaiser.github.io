@@ -229,22 +229,34 @@ window.createModelCard = function(modelData, index) {
 
 // Initialize the gallery (moved from index.html)
 window.initializeGallery = function() {
-  const gallery = document.getElementById('modelGallery');
+  const galleryContainer = document.getElementById('galleryContainer');
   
-  if (!gallery) {
-    console.error('Gallery element not found');
+  if (!galleryContainer) {
+    console.error('Gallery container element not found');
     return;
   }
   
-  // Generate HTML for all model cards
-  const cardsHtml = window.modelsConfig.map((model, index) => 
-    window.createModelCard(model, index)
-  ).join('');
+  // Clear existing content
+  galleryContainer.innerHTML = '';
   
-  // Insert all cards into the gallery
-  gallery.innerHTML = cardsHtml;
+  const modelsPerRow = 4;
+  const models = window.modelsConfig;
   
-  console.log(`Gallery initialized with ${window.modelsConfig.length} models`);
+  for (let i = 0; i < models.length; i += modelsPerRow) {
+    const row = document.createElement('div');
+    row.className = 'gallery'; // Use the .gallery class for the row
+
+    const rowModels = models.slice(i, i + modelsPerRow);
+
+    const cardsHtml = rowModels.map((model, index) =>
+      window.createModelCard(model, i + index) // Pass the correct global index
+    ).join('');
+
+    row.innerHTML = cardsHtml;
+    galleryContainer.appendChild(row);
+  }
+
+  console.log(`Gallery initialized with ${models.length} models in ${Math.ceil(models.length / modelsPerRow)} rows.`);
 };
 
 // Add this to your models/models.js or create a new file: js/model-viewer-config.js
