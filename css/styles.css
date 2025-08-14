@@ -14,11 +14,34 @@ h1 {
 /* Gallery grid layout */
 .gallery {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 columns */
-  gap: 30px; /* Space between cards */
-  padding: 30px;
-  max-width: 1200px;
-  margin: 0 auto;
+  grid-template-rows: repeat(2, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 140px;
+  overflow-x: auto;
+  overflow-y: hidden; /* Prevent vertical scrollbar on the gallery itself */
+  gap: 20px; /* Maintains spacing between cards */
+  padding: 20px; /* Add some padding so cards don't touch edges */
+  /* max-width: 100%; /* Allow it to take full width for scrolling */
+  /* margin: 0 auto; /* Centering might not be desired for a full-width scroller */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: #ccc #f0f0f0; /* For Firefox */
+}
+
+/* Styling for Webkit scrollbars (Chrome, Safari, Edge) */
+.gallery::-webkit-scrollbar {
+  height: 8px;
+}
+
+.gallery::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.gallery::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+
 }
 
 /* Model card styles */
@@ -29,9 +52,9 @@ h1 {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   cursor: default; /* Change cursor as it's no longer a button for a modal */
   transition: transform 0.3s ease;
-  width: 100%; /* Take up full column width */
-  display: flex;
-  flex-direction: column;
+  width: 140px; /* Fixed width for cards in the horizontal strip */
+  display: flex; /* To help with internal alignment if needed */
+  flex-direction: column; /* Ensure content within card stacks vertically */
 
 }
 

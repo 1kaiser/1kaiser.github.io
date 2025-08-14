@@ -158,8 +158,57 @@ if (galleryDisplay) {
       return;
     }
 
-    const modelUrl = modelData.url;
-    const modelTitle = modelData.title;
+    const modelCard = event.target.closest('.model-card');
+    if (modelCard) {
+      const modelUrl = modelCard.dataset.modelUrl;
+      const modelTitle = modelCard.dataset.title;
+
+      // If model is already loaded, show it in the viewer.
+      if (modelCard.classList.contains('loaded')) {
+        showModelInViewer(modelUrl, modelTitle);
+        return;
+      }
+
+      // If model is already loading, do nothing.
+      if (modelCard.classList.contains('loading')) {
+        return;
+      }
+
+      // Show loading indicator
+      modelCard.classList.add('loading');
+
+      // Fetch and cache the model, then mark as loaded.
+      caches.open('models-cache').then(cache => {
+        cache.match(modelUrl).then(response => {
+          if (response) {
+            // Model is already cached, just mark as loaded.
+            modelCard.classList.remove('loading');
+            modelCard.classList.add('loaded');
+          } else {
+            // Model not cached, fetch and then mark as loaded.
+            fetch(modelUrl)
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Network response was not ok');
+                }
+                return response.clone();
+              })
+              .then(response => cache.put(modelUrl, response))
+              .then(() => {
+                modelCard.classList.remove('loading');
+                modelCard.classList.add('loaded');
+              })
+              .catch(error => {
+                console.error('Error fetching or caching model:', error);
+                modelCard.classList.remove('loading');
+                // Optionally, show an error state on the card
+              });
+          }
+        });
+      });
+    }
+  });
+
 
     window.currentModelTitle = modelTitle;
     window.currentModelSrc = modelUrl;
