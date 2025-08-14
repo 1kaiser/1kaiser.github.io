@@ -108,6 +108,31 @@ function initializeServerStatus() {
 }
 
 // Content from js/gallery.js
+
+// Function to open the modal with a specific model
+function openModal(index) {
+  const model = window.modelsConfig[index];
+  if (!model) {
+    console.error('Model data not found for index:', index);
+    return;
+  }
+
+  // Set the source and other attributes for the modal's model-viewer
+  modalViewer.src = model.url;
+  modalViewer.poster = model.poster || '';
+  modalViewer.alt = model.alt || '3D model';
+
+  // Update the download button in the modal
+  modalDownloadBtn.href = model.url;
+  modalDownloadBtn.download = model.title || 'model';
+
+  // Display the overlay
+  if (overlay) {
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
 // Get gallery container and modal elements
 const galleryDisplay = document.getElementById('modelGallery'); // Renamed to avoid conflict with main.js's gallery var in DOMContentLoaded
 const overlay = document.getElementById('modelOverlay');
@@ -124,10 +149,12 @@ window.currentModelTitle = '';
 
 // Event delegation for dynamically generated model cards
 // Ensure galleryDisplay is not null before adding event listener
+/*
 if (galleryDisplay) {
-  galleryDisplay.addEventListener('click', (event) => {
-    if (event.target.classList.contains('download-btn')) {
-      event.stopPropagation();
+  const openModal = (index) => {
+    const modelData = window.modelsConfig[index];
+    if (!modelData) {
+      console.error('Model data not found for index:', index);
       return;
     }
 
@@ -182,7 +209,7 @@ if (galleryDisplay) {
     }
   });
 
-  const showModelInViewer = (modelUrl, modelTitle) => {
+
     window.currentModelTitle = modelTitle;
     window.currentModelSrc = modelUrl;
 
@@ -198,28 +225,44 @@ if (galleryDisplay) {
     }
 
     if (modalViewer) {
-      caches.open('models-cache').then(cache => {
-        cache.match(modelUrl).then(response => {
-          if (response) {
-            response.blob().then(blob => {
-              const objectURL = URL.createObjectURL(blob);
-              modalViewer.src = ''; // Clear previous model
-              modalViewer.cameraOrbit = '0deg 75deg 105%';
-              modalViewer.setAttribute('src', objectURL);
-              modalViewer.setAttribute('alt', modelTitle);
-            });
-          }
-        });
-      });
+      modalViewer.src = ''; // Clear previous model
+      modalViewer.cameraOrbit = '0deg 75deg 105%';
+      modalViewer.setAttribute('src', modelUrl);
+      modalViewer.setAttribute('alt', modelTitle);
     }
+
     if (overlay) {
       overlay.style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
   };
+
+  galleryDisplay.addEventListener('click', (event) => {
+    const downloadBtn = event.target.closest('.download-btn');
+    if (downloadBtn) {
+      // Allow download to proceed without opening modal
+      return;
+    }
+
+    const expandBtn = event.target.closest('.expand-btn');
+    if (expandBtn) {
+      event.stopPropagation(); // Prevent card click from firing
+      const index = expandBtn.dataset.index;
+      openModal(index);
+      return;
+    }
+
+
+    const modelCard = event.target.closest('.model-card');
+    if (modelCard) {
+      const index = modelCard.dataset.index;
+      openModal(index);
+    }
+  });
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
+*/
 
 
 // Close button functionality for modal
