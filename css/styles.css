@@ -33,9 +33,6 @@ h1 {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: #ccc #f0f0f0;
-  background-color: #fff; /* Giving rows a background */
-  border-radius: 8px; /* Rounded corners for rows */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.05); /* Subtle shadow for depth */
 }
 
 /* Styling for Webkit scrollbars (Chrome, Safari, Edge) */
