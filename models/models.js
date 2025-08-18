@@ -19,60 +19,70 @@ async function supportsWebGPU() {
 window.modelsConfig = [
   {
     url: "./models/31_10_2024.glb",
+    poster: "./models/31_10_2024.webp",
     title: "My Model",
     description: "Original 3D model",
     alt: "Original 3D model"
   },
   {
     url: "./models/20230204temple-transformed.glb",
+    poster: "./models/20230204temple-transformed.webp",
     title: "Temple",
     description: "Example 3D model",
     alt: "Temple"
   },
   {
     url: "./models/hibiscus.glb",
+    poster: "./models/hibiscus.webp",
     title: "Hibiscus",
     description: "Example 3D model",
     alt: "hibiscus"
   },
   {
     url: "./models/momos.glb",
+    poster: "./models/momos.webp",
     title: "Momos",
     description: "Example 3D model",
     alt: "momos"
   },
   {
     url: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
+    poster: "./models/saraswati_flower.webp",
     title: "Idol",
     description: "Saraswati 3D model",
     alt: "Idol"
   },
   {
     url: "./models/bycycle.glb",
+    poster: "./models/bycycle.webp",
     title: "Bicycle",
     description: "3D bicycle model",
     alt: "Bicycle"
   },
   {
     url: "https://cdn.glitch.global/e71dfee6-422f-4ea9-a2a1-7c360807106f/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
+    poster: "./models/bhatura_VegBiryani_EggNoodles_ChickenStrips.webp",
     title: "bhatura VegBiryani EggNoodles ChickenStrips",
     description: "bhatura_VegBiryani_EggNoodles_ChickenStrips",
     alt: "bhatura VegBiryani EggNoodles ChickenStrips"
   },
   {
-    url: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
+    url: "https.cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
+    poster: "./models/paneer_sabji.webp",
     title: "paneer sabji",
     description: "paneer_sabji",
     alt: "paneer sabji"
   },
   {
     url: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
+    poster: "./models/untitled-transformed.webp",
     title: "Kaiser Roy",
     description: "Kaiser_Roy",
     alt: "Kaiser Roy"
   },
   {
     url: "./models/Chicken_Biryani.glb",
+    poster: "./models/Chicken_Biryani.webp",
     title: "chicken biryani",
     description: "chicken biryani with eggs and potatoes",
     alt: "chicken biryani with eggs and potatoes"
@@ -217,7 +227,7 @@ window.createModelCard = async function(modelData, index) {
         <model-viewer
           renderer-preference="${rendererPreference}"
           data-src="${modelData.url}"
-          poster="data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20400%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17ba8618998%20text%20%7B%20fill%3A%23999%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A20pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17ba8618998%22%3E%3Crect%20width%3D%22300%22%20height%3D%22400%22%20fill%3D%22%23eee%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%2296.3828125%22%20y%3D%22209.3609375%22%3ELoading...%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"
+          poster="${modelData.poster}"
           alt="${modelData.alt}"
           auto-rotate
           camera-controls
