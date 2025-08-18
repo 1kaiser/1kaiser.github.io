@@ -85,6 +85,14 @@ model-viewer {
 }
 
 .model-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px) brightness(80%);
+  -webkit-backdrop-filter: blur(10px) brightness(80%);
+  color: white;
   padding: 15px;
 }
 
