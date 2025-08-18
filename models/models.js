@@ -2,6 +2,19 @@
 // 3D Models Configuration for the Gallery
 // This file contains all model data and utility functions for model management
 
+// Function to check for WebGPU support
+async function supportsWebGPU() {
+  if (!navigator.gpu) {
+    return false;
+  }
+  try {
+    const adapter = await navigator.gpu.requestAdapter();
+    return adapter !== null;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Main models configuration array
 window.modelsConfig = [
   {
@@ -204,14 +217,18 @@ window.ModelManager = {
 };
 
 // Create a model card element (moved from index.html)
-window.createModelCard = function(modelData, index) {
+window.createModelCard = async function(modelData, index) {
+  const webGPUSupported = await supportsWebGPU();
+  const rendererPreference = webGPUSupported ? 'webgpu' : 'webgl';
+
   const cardHtml = `
     <div class="model-card" data-index="${index}" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
 
       <div class="model-container">
         <model-viewer
-          src="${modelData.url}"
-          poster="${modelData.poster}"
+          renderer-preference="${rendererPreference}"
+          data-src="${modelData.url}"
+          poster="data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20400%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17ba8618998%20text%20%7B%20fill%3A%23999%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A20pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17ba8618998%22%3E%3Crect%20width%3D%22300%22%20height%3D%22400%22%20fill%3D%22%23eee%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%2296.3828125%22%20y%3D%22209.3609375%22%3ELoading...%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"
 
           alt="${modelData.alt}"
           camera-controls
@@ -228,19 +245,25 @@ window.createModelCard = function(modelData, index) {
 };
 
 // Initialize the gallery (moved from index.html)
-window.initializeGallery = function() {
-  const galleryContainer = document.getElementById('galleryContainer');
+window.initializeGallery = async function() {
+  const gallery = document.getElementById('modelGallery');
+
   
   if (!galleryContainer) {
     console.error('Gallery container element not found');
     return;
   }
   
-  // Clear existing content
-  galleryContainer.innerHTML = '';
+  // Generate HTML for all model cards
+  const cardsHtmlPromises = window.modelsConfig.map((model, index) =>
+    window.createModelCard(model, index)
+  );
+
+  const cardsHtml = await Promise.all(cardsHtmlPromises);
   
-  const modelsPerRow = 4;
-  const models = window.modelsConfig;
+  // Insert all cards into the gallery
+  gallery.innerHTML = cardsHtml.join('');
+
   
   for (let i = 0; i < models.length; i += modelsPerRow) {
     const row = document.createElement('div');
