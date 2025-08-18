@@ -5,26 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CV</title>
   <link rel="stylesheet" href="cv.css">
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    window.mermaid = mermaid; // Make mermaid globally available
-    mermaid.initialize({ startOnLoad: true });
-  </script>
 </head>
 <body>
   <header>
     <h1>John Doe</h1>
     <p>Software Engineer</p>
   </header>
-  <pre class="mermaid" id="timeline-diagram">
-    timeline
-        title Professional and Academic Timeline
-        section Work Experience
-            2020 - Present : Software Engineer at Google
-            2018 - 2020 : Software Engineer at Facebook
-        section Education
-            2014 - 2018 : Bachelor of Science in Computer Science, Stanford University
-  </pre>
+  <main>
+    <section>
+      <h2>Work Experience</h2>
+      <ul>
+        <li>
+          <h3>Software Engineer at Google</h3>
+          <p>2020 - Present</p>
+        </li>
+        <li>
+          <h3>Software Engineer at Facebook</h3>
+          <p>2018 - 2020</p>
+        </li>
+      </ul>
+    </section>
+    <section>
+      <h2>Education</h2>
+      <ul>
+        <li>
+          <h3>Stanford University</h3>
+          <p>2014 - 2018</p>
+        </li>
+      </ul>
+    </section>
+  </main>
   <script src="cv.js"></script>
 </body>
 </html>

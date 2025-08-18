@@ -32,13 +32,10 @@ This project leverages several key technologies and AI assistance:
     *   Uses piping servers for data transfer without permanent server-side storage.
     *   Supports AR mode selection (Scene Viewer default).
 *   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
-*   **Desktop Mode**: A multi-window interface where you can open the model gallery and other tools (like a clock or calendar) in draggable and resizable windows.
 *   **CV Page**: A dedicated page to showcase a curriculum vitae.
 
 ## Recent Improvements
 
-*   **Desktop Mode**: Introduced a new desktop view (`desktop/desktop.html`) with a multi-window interface, allowing the gallery and other tools to be opened in draggable, resizable windows.
-*   **Model Preview Images**: Added `.webp` preview images for each 3D model to provide a static preview in the gallery before the full model is loaded.
 *   **CV Page**: Added a new CV page with placeholder content.
 *   **Mobile View Page Refactor (`view/index.html`)**:
     *   Externalized all inline CSS into a dedicated `view/mobile-view.css` file, cleaning up the HTML structure.
@@ -57,10 +54,6 @@ This project leverages several key technologies and AI assistance:
 │   ├── cv.css
 │   ├── cv.html
 │   └── cv.js
-├── desktop/
-│   ├── desktop.css
-│   ├── desktop.html
-│   └── desktop.js
 ├── css/
 │   └── styles.css
 ├── js/
@@ -69,9 +62,12 @@ This project leverages several key technologies and AI assistance:
 │   └── qr-deploy.js
 ├── models/
 │   ├── 20230204temple-transformed.glb
-│   ├── 20230204temple-transformed.webp
-│   ├── ... (more models and .webp previews)
-│   └── models.js
+│   ├── 31_10_2024.glb
+│   ├── Chicken_Biryani.glb
+│   ├── bycycle.glb
+│   ├── hibiscus.glb
+│   ├── models.js
+│   └── momos.glb
 ├── view/
 │   ├── index.html
 │   ├── mobile-view.css
@@ -91,10 +87,9 @@ This project leverages several key technologies and AI assistance:
     -   [X] Move common piping server constants and utility functions into this shared module.
     -   [X] Update `js/qr-deploy.js` and `view/mobile_view.js` to use this shared module.
 -   **CSS Review**:
-    -   [ ] Conduct a thorough review of all CSS (`css/styles.css`, `view/mobile-view.css`, and `desktop/desktop.css`) to identify and remove any remaining redundancies or style overlaps.
+    -   [ ] Conduct a thorough review of all CSS (`css/styles.css` and `view/mobile-view.css`) to identify and remove any remaining redundancies or style overlaps.
 -   **Testing**:
     -   [ ] Perform comprehensive cross-browser and cross-device testing of all application features.
-    -   [ ] Test the new desktop mode feature.
 -   **Documentation**:
     -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
     -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
