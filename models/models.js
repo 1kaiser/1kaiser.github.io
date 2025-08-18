@@ -19,60 +19,70 @@ async function supportsWebGPU() {
 window.modelsConfig = [
   {
     url: "./models/31_10_2024.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/31_10_2024.webp",
     title: "My Model",
     description: "Original 3D model",
     alt: "Original 3D model"
   },
   {
-    url: "./models/20230204temple-transformed.glb",
+    url: "https://gitlab.com/1kaiser/1kaiser.gitlab.io/-/raw/main/models/20230204temple-transformed.glb",//"./models/20230204temple-transformed.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/20230204temple-transformed.webp",
     title: "Temple",
     description: "Example 3D model",
     alt: "Temple"
   },
   {
     url: "./models/hibiscus.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/hibiscus.webp",
     title: "Hibiscus",
     description: "Example 3D model",
     alt: "hibiscus"
   },
   {
     url: "./models/momos.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/momos.webp",
     title: "Momos",
     description: "Example 3D model",
     alt: "momos"
   },
   {
     url: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/saraswati_flower.webp",
     title: "Idol",
     description: "Saraswati 3D model",
     alt: "Idol"
   },
   {
-    url: "./models/bycycle.glb",
+    url: "https://github.com/1kaiser/1kaiser.github.io/releases/download/1/bycycle.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/bycycle.webp",
     title: "Bicycle",
     description: "3D bicycle model",
     alt: "Bicycle"
   },
   {
     url: "https://cdn.glitch.global/e71dfee6-422f-4ea9-a2a1-7c360807106f/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/bhatura_VegBiryani_EggNoodles_ChickenStrips.webp",
     title: "bhatura VegBiryani EggNoodles ChickenStrips",
     description: "bhatura_VegBiryani_EggNoodles_ChickenStrips",
     alt: "bhatura VegBiryani EggNoodles ChickenStrips"
   },
   {
     url: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/paneer_sabji.webp",
     title: "paneer sabji",
     description: "paneer_sabji",
     alt: "paneer sabji"
   },
   {
     url: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/untitled-transformed.webp",
     title: "Kaiser Roy",
     description: "Kaiser_Roy",
     alt: "Kaiser Roy"
   },
   {
     url: "./models/Chicken_Biryani.glb",
+    poster: "https://raw.githubusercontent.com/1kaiser/1kaiser.github.io/main/models/Chicken_Biryani.webp",
     title: "chicken biryani",
     description: "chicken biryani with eggs and potatoes",
     alt: "chicken biryani with eggs and potatoes"
@@ -212,23 +222,23 @@ window.createModelCard = async function(modelData, index) {
   const rendererPreference = webGPUSupported ? 'webgpu' : 'webgl';
 
   const cardHtml = `
-    <div class="model-card" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
+    <div class="model-card" data-index="${index}" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
+
       <div class="model-container">
         <model-viewer
           renderer-preference="${rendererPreference}"
           data-src="${modelData.url}"
           poster="data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22300%22%20height%3D%22400%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%20400%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cstyle%20type%3D%22text%2Fcss%22%3E%23holder_17ba8618998%20text%20%7B%20fill%3A%23999%3Bfont-weight%3Anormal%3Bfont-family%3AHelvetica%2C%20monospace%3Bfont-size%3A20pt%20%7D%20%3C%2Fstyle%3E%3C%2Fdefs%3E%3Cg%20id%3D%22holder_17ba8618998%22%3E%3Crect%20width%3D%22300%22%20height%3D%22400%22%20fill%3D%22%23eee%22%3E%3C%2Frect%3E%3Cg%3E%3Ctext%20x%3D%2296.3828125%22%20y%3D%22209.3609375%22%3ELoading...%3C%2Ftext%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"
+
           alt="${modelData.alt}"
-          auto-rotate
           camera-controls
           shadow-intensity="1">
         </model-viewer>
       </div>
-      <div class="model-info">
+      <div class="model-title-container">
         <h2>${modelData.title}</h2>
-        <p>${modelData.description}</p>
-        <a href="${modelData.url}" download class="download-btn">Download</a>
       </div>
+      <a href="${modelData.url}" download class="download-btn">⬇</a>
     </div>
   `;
   return cardHtml;
@@ -237,9 +247,10 @@ window.createModelCard = async function(modelData, index) {
 // Initialize the gallery (moved from index.html)
 window.initializeGallery = async function() {
   const gallery = document.getElementById('modelGallery');
+
   
-  if (!gallery) {
-    console.error('Gallery element not found');
+  if (!galleryContainer) {
+    console.error('Gallery container element not found');
     return;
   }
   
@@ -252,8 +263,23 @@ window.initializeGallery = async function() {
   
   // Insert all cards into the gallery
   gallery.innerHTML = cardsHtml.join('');
+
   
-  console.log(`Gallery initialized with ${window.modelsConfig.length} models`);
+  for (let i = 0; i < models.length; i += modelsPerRow) {
+    const row = document.createElement('div');
+    row.className = 'gallery'; // Use the .gallery class for the row
+
+    const rowModels = models.slice(i, i + modelsPerRow);
+
+    const cardsHtml = rowModels.map((model, index) =>
+      window.createModelCard(model, i + index) // Pass the correct global index
+    ).join('');
+
+    row.innerHTML = cardsHtml;
+    galleryContainer.appendChild(row);
+  }
+
+  console.log(`Gallery initialized with ${models.length} models in ${Math.ceil(models.length / modelsPerRow)} rows.`);
 };
 
 // Add this to your models/models.js or create a new file: js/model-viewer-config.js

@@ -108,6 +108,31 @@ function initializeServerStatus() {
 }
 
 // Content from js/gallery.js
+
+// Function to open the modal with a specific model
+function openModal(index) {
+  const model = window.modelsConfig[index];
+  if (!model) {
+    console.error('Model data not found for index:', index);
+    return;
+  }
+
+  // Set the source and other attributes for the modal's model-viewer
+  modalViewer.src = model.url;
+  modalViewer.poster = model.poster || '';
+  modalViewer.alt = model.alt || '3D model';
+
+  // Update the download button in the modal
+  modalDownloadBtn.href = model.url;
+  modalDownloadBtn.download = model.title || 'model';
+
+  // Display the overlay
+  if (overlay) {
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+}
+
 // Get gallery container and modal elements
 const galleryDisplay = document.getElementById('modelGallery'); // Renamed to avoid conflict with main.js's gallery var in DOMContentLoaded
 const overlay = document.getElementById('modelOverlay');
@@ -124,44 +149,67 @@ window.currentModelTitle = '';
 
 // Event delegation for dynamically generated model cards
 // Ensure galleryDisplay is not null before adding event listener
+/*
 if (galleryDisplay) {
-  galleryDisplay.addEventListener('click', (event) => {
-    if (event.target.classList.contains('download-btn')) {
-      event.stopPropagation();
+  const openModal = (index) => {
+    const modelData = window.modelsConfig[index];
+    if (!modelData) {
+      console.error('Model data not found for index:', index);
       return;
     }
 
     const modelCard = event.target.closest('.model-card');
     if (modelCard) {
       const modelUrl = modelCard.dataset.modelUrl;
-      const cardModelViewer = modelCard.querySelector('model-viewer');
+      const modelTitle = modelCard.dataset.title;
 
-      // If the model is cached, open the modal
-      if (modelCard.classList.contains('cached')) {
-        openModalWithModel(modelUrl, modelCard.dataset.title);
+      // If model is already loaded, show it in the viewer.
+      if (modelCard.classList.contains('loaded')) {
+        showModelInViewer(modelUrl, modelTitle);
         return;
       }
 
-      // First click: download and cache the model
-      modelCard.classList.add('caching');
+      // If model is already loading, do nothing.
+      if (modelCard.classList.contains('loading')) {
+        return;
+      }
+
+      // Show loading indicator
+      modelCard.classList.add('loading');
+
+      // Fetch and cache the model, then mark as loaded.
       caches.open('models-cache').then(cache => {
         cache.match(modelUrl).then(response => {
-          if (!response) {
-            fetch(modelUrl).then(response => {
-              cache.put(modelUrl, response);
-              modelCard.classList.remove('caching');
-              modelCard.classList.add('cached');
-            });
+          if (response) {
+            // Model is already cached, just mark as loaded.
+            modelCard.classList.remove('loading');
+            modelCard.classList.add('loaded');
           } else {
-            modelCard.classList.remove('caching');
-            modelCard.classList.add('cached');
+            // Model not cached, fetch and then mark as loaded.
+            fetch(modelUrl)
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error('Network response was not ok');
+                }
+                return response.clone();
+              })
+              .then(response => cache.put(modelUrl, response))
+              .then(() => {
+                modelCard.classList.remove('loading');
+                modelCard.classList.add('loaded');
+              })
+              .catch(error => {
+                console.error('Error fetching or caching model:', error);
+                modelCard.classList.remove('loading');
+                // Optionally, show an error state on the card
+              });
           }
         });
       });
     }
   });
 
-  const openModalWithModel = (modelUrl, modelTitle) => {
+
     window.currentModelTitle = modelTitle;
     window.currentModelSrc = modelUrl;
 
@@ -177,28 +225,44 @@ if (galleryDisplay) {
     }
 
     if (modalViewer) {
-      caches.open('models-cache').then(cache => {
-        cache.match(modelUrl).then(response => {
-          if (response) {
-            response.blob().then(blob => {
-              const objectURL = URL.createObjectURL(blob);
-              modalViewer.src = '';
-              modalViewer.cameraOrbit = '0deg 75deg 105%';
-              modalViewer.setAttribute('src', objectURL);
-              modalViewer.setAttribute('alt', modelTitle);
-            });
-          }
-        });
-      });
+      modalViewer.src = ''; // Clear previous model
+      modalViewer.cameraOrbit = '0deg 75deg 105%';
+      modalViewer.setAttribute('src', modelUrl);
+      modalViewer.setAttribute('alt', modelTitle);
     }
+
     if (overlay) {
       overlay.style.display = 'flex';
       document.body.style.overflow = 'hidden';
     }
   };
+
+  galleryDisplay.addEventListener('click', (event) => {
+    const downloadBtn = event.target.closest('.download-btn');
+    if (downloadBtn) {
+      // Allow download to proceed without opening modal
+      return;
+    }
+
+    const expandBtn = event.target.closest('.expand-btn');
+    if (expandBtn) {
+      event.stopPropagation(); // Prevent card click from firing
+      const index = expandBtn.dataset.index;
+      openModal(index);
+      return;
+    }
+
+
+    const modelCard = event.target.closest('.model-card');
+    if (modelCard) {
+      const index = modelCard.dataset.index;
+      openModal(index);
+    }
+  });
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
+*/
 
 
 // Close button functionality for modal
