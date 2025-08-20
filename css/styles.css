@@ -115,6 +115,26 @@ p {
   background-color: #45a049;
 }
 
+.card-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.expand-btn {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.expand-btn:hover {
+  background-color: #0b7dda;
+}
+
 /* Modal/Overlay styles */
 .overlay {
   display: none;
