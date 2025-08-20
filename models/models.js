@@ -226,18 +226,23 @@ window.createModelCard = async function(modelData, index) {
       <div class="model-container">
         <model-viewer
           renderer-preference="${rendererPreference}"
-          data-src="${modelData.url}"
+          src="${modelData.url}"
           poster="${modelData.poster}"
           alt="${modelData.alt}"
           auto-rotate
           camera-controls
-          shadow-intensity="1">
+          shadow-intensity="1"
+          loading="lazy"
+          reveal="interaction">
         </model-viewer>
       </div>
       <div class="model-info">
         <h2>${modelData.title}</h2>
         <p>${modelData.description}</p>
-        <a href="${modelData.url}" download class="download-btn">Download</a>
+        <div class="card-buttons">
+          <button class="expand-btn">Expand</button>
+          <a href="${modelData.url}" download class="download-btn">Download</a>
+        </div>
       </div>
     </div>
   `;
