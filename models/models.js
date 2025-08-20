@@ -223,20 +223,18 @@ window.createModelCard = async function(modelData, index) {
 
   const cardHtml = `
     <div class="model-card" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
-      <div class="model-container">
-        <model-viewer
-          renderer-preference="${rendererPreference}"
-          src="${modelData.url}"
-          poster="${modelData.poster}"
-          alt="${modelData.alt}"
-          auto-rotate
-          camera-controls
-          shadow-intensity="1"
-          loading="lazy"
-          reveal="interaction">
-        </model-viewer>
-      </div>
-      <div class="model-info">
+      <model-viewer
+        renderer-preference="${rendererPreference}"
+        src="${modelData.url}"
+        poster="${modelData.poster}"
+        alt="${modelData.alt}"
+        auto-rotate
+        camera-controls
+        shadow-intensity="1"
+        loading="lazy"
+        reveal="interaction">
+      </model-viewer>
+      <div class="model-info-overlay">
         <h2>${modelData.title}</h2>
         <p>${modelData.description}</p>
         <div class="card-buttons">

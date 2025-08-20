@@ -3,7 +3,7 @@ body {
   margin: 0;
   padding: 20px;
   font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
+  background-color: #ffffff;
 }
 
 h1 {
@@ -48,71 +48,57 @@ h1 {
 
 /* Model card styles */
 .model-card {
-  background-color: #fff;
-  border-radius: 8px;
+  background-color: #eee;
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.3s ease;
-  width: 280px; /* Fixed width for cards in the horizontal strip */
-  flex-shrink: 0; /* Prevent cards from shrinking */
-  display: flex; /* To help with internal alignment if needed */
-  flex-direction: column; /* Ensure content within card stacks vertically */
+  width: 320px;
+  height: 480px; /* Using fixed height for consistent card size */
+  flex-shrink: 0;
+  position: relative;
 }
 
 .model-card:hover {
-  transform: translateY(-5px) scale(1.02); /* Slightly enhance hover */
+  transform: translateY(-5px) scale(1.02);
 }
 
-/* 9:16 aspect ratio container */
-.model-container {
-  position: relative;
-  width: 100%;
-  padding-top: 133.33%; /* Adjusted for a 4:3 like aspect ratio for cards, or adjust as needed */
-                         /* Original was 177.78% for 9:16, which might be too tall for horizontal cards */
-}
-
-model-viewer {
-  position: absolute;
-  top: 0;
-  left: 0;
+.model-card model-viewer {
   width: 100%;
   height: 100%;
-  background-color: #fafafa; /* Default background */
   --progress-bar-height: 5px;
-  --progress-bar-color: #007bff; /* Blue color for the bar */
-  --progress-mask: #efefef; /* Light grey for the track/background of the bar */
+  --progress-bar-color: #007bff;
+  --progress-mask: #efefef;
 }
 
-.model-info {
-  padding: 15px;
+.model-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 
-h2 {
+.model-info-overlay h2 {
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-p {
-  color: #666;
+.model-info-overlay p {
   margin: 0 0 15px 0;
-}
-
-/* Button styles */
-.download-btn {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  text-decoration: none;
   font-size: 14px;
-  display: inline-block;
-}
-
-.download-btn:hover {
-  background-color: #45a049;
+  color: #e0e0e0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .card-buttons {
@@ -121,18 +107,22 @@ p {
   align-items: center;
 }
 
-.expand-btn {
-  background-color: #2196F3;
-  color: white;
+.expand-btn, .download-btn {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
   border: none;
-  padding: 8px 12px;
-  border-radius: 4px;
+  padding: 10px 16px;
+  border-radius: 12px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  transition: background-color 0.2s ease;
 }
 
-.expand-btn:hover {
-  background-color: #0b7dda;
+.expand-btn:hover, .download-btn:hover {
+  background-color: rgba(255, 255, 255, 1);
 }
 
 /* Modal/Overlay styles */
