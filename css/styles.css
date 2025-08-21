@@ -11,40 +11,20 @@ h1 {
   margin-bottom: 30px;
 }
 
-/* Gallery horizontal strip layout */
+/* Gallery container for stacked layout */
 .gallery {
+  position: relative;
+  width: 100%;
+  height: 600px; /* Container height to hold the stacked cards */
   display: flex;
-  flex-direction: row;
-  overflow-x: auto;
-  overflow-y: hidden; /* Prevent vertical scrollbar on the gallery itself */
-  gap: 20px; /* Maintains spacing between cards */
-  padding: 20px; /* Add some padding so cards don't touch edges */
-  /* max-width: 100%; /* Allow it to take full width for scrolling */
-  /* margin: 0 auto; /* Centering might not be desired for a full-width scroller */
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  scrollbar-width: thin; /* For Firefox */
-  scrollbar-color: #ccc #f0f0f0; /* For Firefox */
+  justify-content: center;
+  align-items: center;
 }
 
 /* Styling for Webkit scrollbars (Chrome, Safari, Edge) */
 .gallery::-webkit-scrollbar {
-  height: 8px;
+  display: none; /* Hide scrollbar as it's not a scrolling container anymore */
 }
-
-.gallery::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 4px;
-}
-
-.gallery::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
-
-.gallery::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
-}
-
 
 /* Model card styles */
 .model-card {
@@ -53,11 +33,12 @@ h1 {
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.5s ease; /* Slower transition for smoother effect */
   width: 320px;
   height: 480px; /* Using fixed height for consistent card size */
-  flex-shrink: 0;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 50%;
 }
 
 .model-card:hover {
@@ -441,4 +422,37 @@ h1 {
 
 .model-card.caching model-viewer {
   animation: pulse 1.5s infinite;
+}
+
+/* Static Fanned-Out Layout Styles */
+.model-card:nth-child(1) {
+  transform: translateX(-50%) translateX(-250px) rotate(-20deg);
+  z-index: 1;
+}
+.model-card:nth-child(2) {
+  transform: translateX(-50%) translateX(-125px) rotate(-10deg);
+  z-index: 2;
+}
+.model-card:nth-child(3) {
+  transform: translateX(-50%);
+  z-index: 3;
+}
+.model-card:nth-child(4) {
+  transform: translateX(-50%) translateX(125px) rotate(10deg);
+  z-index: 2;
+}
+.model-card:nth-child(5) {
+  transform: translateX(-50%) translateX(250px) rotate(20deg);
+  z-index: 1;
+}
+
+/* Hide cards beyond the 5th for this static layout */
+.model-card:nth-child(n+6) {
+  display: none;
+}
+
+/* Hover effect to bring card to front */
+.gallery:hover .model-card:hover {
+  transform: translateX(-50%) scale(1.05);
+  z-index: 10;
 }
