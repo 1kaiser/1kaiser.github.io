@@ -39,10 +39,12 @@ h1 {
   position: absolute;
   top: 0;
   left: 50%;
+  transform: translateX(-50%); /* Default to a centered stack */
 }
 
 .model-card:hover {
-  transform: translateY(-5px) scale(1.02);
+  transform: translateX(-50%) scale(1.05);
+  z-index: 10;
 }
 
 .model-card model-viewer {
@@ -424,35 +426,4 @@ h1 {
   animation: pulse 1.5s infinite;
 }
 
-/* Static Fanned-Out Layout Styles */
-.model-card:nth-child(1) {
-  transform: translateX(-50%) translateX(-250px) rotate(-20deg);
-  z-index: 1;
-}
-.model-card:nth-child(2) {
-  transform: translateX(-50%) translateX(-125px) rotate(-10deg);
-  z-index: 2;
-}
-.model-card:nth-child(3) {
-  transform: translateX(-50%);
-  z-index: 3;
-}
-.model-card:nth-child(4) {
-  transform: translateX(-50%) translateX(125px) rotate(10deg);
-  z-index: 2;
-}
-.model-card:nth-child(5) {
-  transform: translateX(-50%) translateX(250px) rotate(20deg);
-  z-index: 1;
-}
-
-/* Hide cards beyond the 5th for this static layout */
-.model-card:nth-child(n+6) {
-  display: none;
-}
-
-/* Hover effect to bring card to front */
-.gallery:hover .model-card:hover {
-  transform: translateX(-50%) scale(1.05);
-  z-index: 10;
-}
+/* Static layout rules are now removed, handled by default .model-card transform */
