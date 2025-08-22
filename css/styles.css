@@ -14,20 +14,24 @@ h1 {
   color: #333;
 }
 
-/* Gallery container for stacked layout */
-.gallery {
-  position: relative;
+/* Swiper container styles */
+.swiper {
   width: 100%;
-  height: 600px; /* Container height to hold the stacked cards */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  perspective: 1000px;
+  padding-top: 50px;
+  padding-bottom: 50px;
 }
 
-/* Styling for Webkit scrollbars (Chrome, Safari, Edge) */
-.gallery::-webkit-scrollbar {
-  display: none; /* Hide scrollbar as it's not a scrolling container anymore */
+.swiper-slide {
+  background-position: center;
+  background-size: cover;
+  width: 320px;
+  height: 480px;
+}
+
+.swiper-slide .model-card {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* Model card styles */
@@ -39,12 +43,8 @@ h1 {
   border: none;
   cursor: pointer;
   transition: transform 0.5s ease;
-  width: 320px;
-  height: 480px;
-  position: absolute;
-  top: 50px; /* Adjust to center vertically in the container */
-  left: 50%;
-  transform: translateX(-50%); /* Default to a centered stack */
+  width: 100%;
+  height: 100%;
 }
 
 .model-card:hover {
