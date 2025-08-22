@@ -277,11 +277,11 @@ window.initializeGallery = async function() {
     centeredSlides: true,
     slidesPerView: "auto",
     coverflowEffect: {
-      rotate: 50,
-      stretch: 0,
-      depth: 100,
+      rotate: 30,
+      stretch: 10,
+      depth: 50,
       modifier: 1,
-      slideShadows: true,
+      slideShadows: false,
     },
     loop: true,
     navigation: {
