@@ -222,10 +222,9 @@ window.createModelCard = async function(modelData, index) {
   const rendererPreference = webGPUSupported ? 'webgpu' : 'webgl';
 
   const cardHtml = `
-    <div class="swiper-slide">
-      <div class="model-card" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
-        <model-viewer
-          renderer-preference="${rendererPreference}"
+    <div class="model-card" data-title="${modelData.title}" data-desc="${modelData.description}" data-model-url="${modelData.url}">
+      <model-viewer
+        renderer-preference="${rendererPreference}"
         src="${modelData.url}"
         poster="${modelData.poster || ''}"
         alt="${modelData.alt}"
@@ -244,7 +243,6 @@ window.createModelCard = async function(modelData, index) {
         </div>
       </div>
     </div>
-  </div>
   `;
   return cardHtml;
 };
@@ -269,26 +267,6 @@ window.initializeGallery = async function() {
   gallery.innerHTML = cardsHtml.join('');
   
   console.log(`Gallery initialized with ${window.modelsConfig.length} models`);
-
-  // Initialize Swiper
-  var swiper = new Swiper(".mySwiper", {
-    effect: "coverflow",
-    grabCursor: true,
-    centeredSlides: true,
-    slidesPerView: "auto",
-    coverflowEffect: {
-      rotate: 30,
-      stretch: 10,
-      depth: 50,
-      modifier: 1,
-      slideShadows: false,
-    },
-    loop: true,
-    navigation: {
-      nextEl: ".swiper-button-next",
-      prevEl: ".swiper-button-prev",
-    },
-  });
 };
 
 // Add this to your models/models.js or create a new file: js/model-viewer-config.js

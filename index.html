@@ -42,8 +42,6 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <!-- External CSS -->
   <link rel="stylesheet" href="css/styles.css">
-  <!-- Swiper's CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
 </head>
 <body>
   <!-- Draggable Server Status Window -->
@@ -59,13 +57,8 @@
     <a href="desktop/desktop.html" style="margin-left: 10px;">Desktop</a>
   </div>
   <h1>Space</h1>
-  <!-- Swiper -->
-  <div class="swiper mySwiper">
-    <div class="swiper-wrapper" id="modelGallery">
-      <!-- Model cards will be dynamically generated here -->
-    </div>
-    <div class="swiper-button-next"></div>
-    <div class="swiper-button-prev"></div>
+  <div class="gallery" id="modelGallery">
+    <!-- Model cards will be dynamically generated here -->
   </div>
 
   <!-- Modal overlay for enlarged model view -->
@@ -131,7 +124,5 @@
   <script src="js/piping-utils.js"></script>
   <script src="js/qr-deploy.js"></script>
   <script src="js/app.js" defer></script>
-  <!-- Swiper's JS -->
-  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 </body>
 </html>
