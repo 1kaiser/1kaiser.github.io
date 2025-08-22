@@ -283,4 +283,47 @@ function initializeDraggableWindow() {
     }
 }
 
-// Old carousel logic has been removed as Swiper.js now handles this.
+function applyRandomTransforms() {
+    const gallery = document.querySelector('.gallery');
+    if (!gallery) return;
+
+    const cards = gallery.querySelectorAll('.model-card');
+    const numCards = cards.length;
+    if (numCards === 0) return;
+
+    cards.forEach((card, i) => {
+        const center_x = gallery.offsetWidth / 2 - card.offsetWidth / 2;
+        const center_y = gallery.offsetHeight / 2 - card.offsetHeight / 2;
+
+        const random_rotate_z = (Math.random() * 20) - 10; // -10 to 10 degrees
+        const random_x = (Math.random() * 100) - 50; // -50 to 50 px
+        const random_y = (Math.random() * 100) - 50;
+
+        const position_x = center_x + random_x + (i - numCards / 2) * 80;
+        const position_y = center_y + random_y;
+
+        card.style.left = `${position_x}px`;
+        card.style.top = `${position_y}px`;
+        card.style.transform = `rotateZ(${random_rotate_z}deg)`;
+        card.style.zIndex = i;
+    });
+}
+
+// After the gallery is initialized, apply the random transforms.
+// We need to wait for the cards to be created, so we'll use a MutationObserver.
+document.addEventListener('DOMContentLoaded', () => {
+    const gallery = document.getElementById('modelGallery');
+    if (gallery) {
+        const observer = new MutationObserver((mutationsList, observer) => {
+            for(const mutation of mutationsList) {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    applyRandomTransforms();
+                    observer.disconnect(); // We only need to do this once
+                    break;
+                }
+            }
+        });
+
+        observer.observe(gallery, { childList: true });
+    }
+});
