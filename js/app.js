@@ -293,22 +293,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (numCards === 0) return;
 
     let revealedCardIndex = -1;
+    let isInteracting = false;
 
-    const handleMouseMove = (e) => {
-        const galleryRect = gallery.getBoundingClientRect();
-        const mouseX = e.clientX - galleryRect.left;
-        const progress = mouseX / galleryRect.width; // 0 to 1
-
+    // --- Core Carousel Update Function ---
+    const updateCarousel = (progress) => {
         let activeCardIndex = -1;
         let maxZ = -1;
 
         cards.forEach((card, i) => {
-            const cardOffset = (numCards > 1) ? (i / (numCards - 1)) - 0.5 : 0; // -0.5 to 0.5, or 0 if 1 card
-            const mouseOffset = progress - 0.5; // -0.5 to 0.5
+            const cardOffset = (numCards > 1) ? (i / (numCards - 1)) - 0.5 : 0;
+            const mouseOffset = progress - 0.5;
 
             const distance = Math.abs(cardOffset - mouseOffset);
-            const rotation = (cardOffset - mouseOffset) * 40; // Max rotation
-            const translationX = (cardOffset - mouseOffset) * 400; // Max translation
+            const rotation = (cardOffset - mouseOffset) * 40;
+            const translationX = (cardOffset - mouseOffset) * 400;
             const scale = 1 - (distance * 0.2);
             const zIndex = Math.round(100 - (distance * 50));
 
@@ -321,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Reveal the model for the active card
+        // Reveal model for the active card
         if (activeCardIndex !== revealedCardIndex) {
             revealedCardIndex = activeCardIndex;
             const activeCard = cards[activeCardIndex];
@@ -335,17 +333,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const handleMouseLeave = () => {
-        gallery.removeEventListener('mousemove', handleMouseMove);
-        cards.forEach(card => {
-            card.style.transform = ''; // Clear inline styles to return to CSS state
-            card.style.zIndex = '';
-        });
-        revealedCardIndex = -1; // Reset revealed index
-    };
-
-    gallery.addEventListener('mouseenter', () => {
-        // Reveal the center card immediately on hover
+    // --- Interaction Start/End Handlers ---
+    const startInteraction = () => {
+        if (isInteracting) return;
+        isInteracting = true;
+        // Reveal the center card immediately on interaction start
         const centerCardIndex = Math.floor(numCards / 2);
         if (cards[centerCardIndex]) {
             const modelViewer = cards[centerCardIndex].querySelector('model-viewer');
@@ -355,8 +347,59 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             revealedCardIndex = centerCardIndex;
         }
+    };
+
+    const endInteraction = () => {
+        isInteracting = false;
+        cards.forEach(card => {
+            card.style.transform = '';
+            card.style.zIndex = '';
+        });
+        revealedCardIndex = -1;
+    };
+
+    // --- Event Handlers ---
+    const handleMouseMove = (e) => {
+        const galleryRect = gallery.getBoundingClientRect();
+        const mouseX = e.clientX - galleryRect.left;
+        const progress = mouseX / galleryRect.width;
+        updateCarousel(progress);
+    };
+
+    const handleTouchMove = (e) => {
+        e.preventDefault(); // Prevent page scroll
+        const galleryRect = gallery.getBoundingClientRect();
+        const touchX = e.touches[0].clientX - galleryRect.left;
+        const progress = Math.max(0, Math.min(1, touchX / galleryRect.width)); // Clamp progress between 0 and 1
+        updateCarousel(progress);
+    };
+
+    // --- Event Listeners ---
+    // Mouse events
+    gallery.addEventListener('mouseenter', () => {
+        startInteraction();
         gallery.addEventListener('mousemove', handleMouseMove);
     });
 
-    gallery.addEventListener('mouseleave', handleMouseLeave);
+    gallery.addEventListener('mouseleave', () => {
+        gallery.removeEventListener('mousemove', handleMouseMove);
+        endInteraction();
+    });
+
+    // Touch events
+    gallery.addEventListener('touchstart', (e) => {
+        startInteraction();
+        updateCarousel((e.touches[0].clientX - gallery.getBoundingClientRect().left) / gallery.getBoundingClientRect().width);
+        gallery.addEventListener('touchmove', handleTouchMove, { passive: false });
+    });
+
+    gallery.addEventListener('touchend', () => {
+        gallery.removeEventListener('touchmove', handleTouchMove);
+        endInteraction();
+    });
+
+    gallery.addEventListener('touchcancel', () => {
+        gallery.removeEventListener('touchmove', handleTouchMove);
+        endInteraction();
+    });
 });
