@@ -226,13 +226,12 @@ window.createModelCard = async function(modelData, index) {
       <model-viewer
         renderer-preference="${rendererPreference}"
         src="${modelData.url}"
-        poster="${modelData.poster}"
+        poster="${modelData.poster || ''}"
         alt="${modelData.alt}"
         auto-rotate
         camera-controls
         shadow-intensity="1"
-        loading="lazy"
-        reveal="interaction">
+        loading="lazy">
       </model-viewer>
       <div class="model-info-overlay">
         <h2>${modelData.title}</h2>
