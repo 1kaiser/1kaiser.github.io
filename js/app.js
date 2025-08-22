@@ -283,57 +283,131 @@ function initializeDraggableWindow() {
     }
 }
 
-// Random Scattered Layout Logic
+// Definitive Interactive Carousel Logic
 document.addEventListener('DOMContentLoaded', () => {
     const gallery = document.querySelector('.gallery');
     if (!gallery) return;
 
-    const cards = gallery.querySelectorAll('.model-card');
-    if (cards.length === 0) return;
-
-    // This needs to run after the gallery is initialized
-    const observer = new MutationObserver((mutationsList, observer) => {
-        for(const mutation of mutationsList) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                const newCards = gallery.querySelectorAll('.model-card');
-                if (newCards.length > 0) {
-                    applyRandomLayout(newCards);
-                    observer.disconnect(); // Stop observing once cards are loaded
-                }
-            }
+    const observer = new MutationObserver(() => {
+        const cards = gallery.querySelectorAll('.model-card');
+        if (cards.length > 0) {
+            initializeCarousel(cards);
+            observer.disconnect();
         }
     });
 
-    const applyRandomLayout = (cardElements) => {
-        cardElements.forEach((card, index) => {
-            if (index > 0) {
-                const randomOverlap = 80 + Math.random() * 50; // 80px to 130px
-                card.style.marginLeft = `-${randomOverlap}px`;
+    const initializeCarousel = (cards) => {
+        const numCards = cards.length;
+        if (numCards === 0) return;
+
+        let revealedCardIndex = -1;
+        let isInteracting = false;
+
+        const updateCarousel = (progress) => {
+            let activeCardIndex = -1;
+            let maxZ = -1;
+
+            cards.forEach((card, i) => {
+                const cardOffset = (numCards > 1) ? (i / (numCards - 1)) - 0.5 : 0;
+                const mouseOffset = progress - 0.5;
+
+                const distance = Math.abs(cardOffset - mouseOffset);
+                const rotation = (cardOffset - mouseOffset) * 40;
+                const translationX = (cardOffset - mouseOffset) * 400;
+                const scale = 1 - (distance * 0.2);
+                const zIndex = Math.round(100 - (distance * 50));
+
+                card.style.transform = `translateX(-50%) translateX(${translationX}px) rotate(${rotation}deg) scale(${scale})`;
+                card.style.zIndex = zIndex;
+
+                if (zIndex > maxZ) {
+                    maxZ = zIndex;
+                    activeCardIndex = i;
+                }
+            });
+
+            if (activeCardIndex !== revealedCardIndex) {
+                revealedCardIndex = activeCardIndex;
+                const activeCard = cards[activeCardIndex];
+                if (activeCard) {
+                    const modelViewer = activeCard.querySelector('model-viewer');
+                    if (modelViewer && !modelViewer.dataset.revealed) {
+                        modelViewer.reveal();
+                        modelViewer.dataset.revealed = 'true';
+                    }
+                }
             }
+        };
 
-            const randomRotation = (Math.random() - 0.5) * 15; // -7.5 to +7.5 degrees
-            const randomY = (Math.random() - 0.5) * 50; // -25 to +25 pixels
+        const startInteraction = () => {
+            if (isInteracting) return;
+            isInteracting = true;
+            const centerCardIndex = Math.floor(numCards / 2);
+            if (cards[centerCardIndex]) {
+                const modelViewer = cards[centerCardIndex].querySelector('model-viewer');
+                if (modelViewer && !modelViewer.dataset.revealed) {
+                    modelViewer.reveal();
+                    modelViewer.dataset.revealed = 'true';
+                }
+                revealedCardIndex = centerCardIndex;
+            }
+        };
 
-            card.style.transform = `translateY(${randomY}px) rotate(${randomRotation}deg)`;
-            card.style.zIndex = index;
+        const endInteraction = () => {
+            isInteracting = false;
+            cards.forEach(card => {
+                card.style.transform = 'translateX(-50%)';
+                card.style.zIndex = Array.from(cards).indexOf(card);
+            });
+            revealedCardIndex = -1;
+        };
+
+        const handleMouseMove = (e) => {
+            const galleryRect = gallery.getBoundingClientRect();
+            const mouseX = e.clientX - galleryRect.left;
+            const progress = mouseX / galleryRect.width;
+            updateCarousel(progress);
+        };
+
+        const handleTouchMove = (e) => {
+            e.preventDefault();
+            const galleryRect = gallery.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - galleryRect.left;
+            const progress = Math.max(0, Math.min(1, touchX / galleryRect.width));
+            updateCarousel(progress);
+        };
+
+        // Initialize default state
+        endInteraction();
+
+        // Mouse events
+        gallery.addEventListener('mouseenter', () => {
+            startInteraction();
+            gallery.addEventListener('mousemove', handleMouseMove);
         });
 
-        // Add hover effect to bring card to front
-        gallery.addEventListener('mouseover', (event) => {
-            const card = event.target.closest('.model-card');
-            if (card) {
-                card.style.zIndex = cardElements.length + 1;
-            }
+        gallery.addEventListener('mouseleave', () => {
+            gallery.removeEventListener('mousemove', handleMouseMove);
+            endInteraction();
         });
 
-        gallery.addEventListener('mouseout', (event) => {
-            const card = event.target.closest('.model-card');
-            if (card) {
-                card.style.zIndex = Array.from(cardElements).indexOf(card);
-            }
+        // Touch events
+        gallery.addEventListener('touchstart', (e) => {
+            startInteraction();
+            updateCarousel((e.touches[0].clientX - gallery.getBoundingClientRect().left) / gallery.getBoundingClientRect().width);
+            gallery.addEventListener('touchmove', handleTouchMove, { passive: false });
+        });
+
+        gallery.addEventListener('touchend', () => {
+            gallery.removeEventListener('touchmove', handleTouchMove);
+            endInteraction();
+        });
+
+        gallery.addEventListener('touchcancel', () => {
+            gallery.removeEventListener('touchmove', handleTouchMove);
+            endInteraction();
         });
     };
 
-    // Start observing the gallery for when cards are added
     observer.observe(gallery, { childList: true });
 });
