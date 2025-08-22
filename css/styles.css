@@ -440,16 +440,8 @@ h1 {
   animation: pulse 1.5s infinite;
 }
 
-/* New Fanned-Out Layout Styles */
-.model-card:nth-child(odd) {
-    transform: translateY(-15px) rotate(-2deg);
-}
-
-.model-card:nth-child(even) {
-    transform: translateY(15px) rotate(2deg);
-}
-
+/* Static layout styles are now handled by JavaScript */
 .model-card:hover {
-  transform: translateY(0) rotate(0) scale(1.05);
+  transform: translateY(-5px) scale(1.02);
   z-index: 10;
 }

@@ -283,4 +283,44 @@ function initializeDraggableWindow() {
     }
 }
 
-// Interactive Carousel Logic has been removed as per the new request for a static layout.
+// Random Layout Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const gallery = document.querySelector('.gallery');
+    if (!gallery) return;
+
+    const cards = gallery.querySelectorAll('.model-card');
+    if (cards.length === 0) return;
+
+    cards.forEach((card, index) => {
+        // Don't apply margin to the first card
+        if (index > 0) {
+            const randomOverlap = 60 + Math.random() * 40; // Overlap between 60px and 100px (approx 20-30% of card width)
+            card.style.marginLeft = `-${randomOverlap}px`;
+        }
+
+        const randomRotation = (Math.random() - 0.5) * 10; // -5 to +5 degrees
+        const randomY = (Math.random() - 0.5) * 40; // -20 to +20 pixels
+
+        card.style.transform = `translateY(${randomY}px) rotate(${randomRotation}deg)`;
+
+        // Ensure cards layer on top of each other correctly
+        card.style.zIndex = index;
+    });
+
+    // Adjust hover effect to work with the new random layout
+    gallery.addEventListener('mouseover', (event) => {
+        const card = event.target.closest('.model-card');
+        if (card) {
+            // Bring hovered card to the front
+            card.style.zIndex = cards.length + 1;
+        }
+    });
+
+    gallery.addEventListener('mouseout', (event) => {
+        const card = event.target.closest('.model-card');
+        if (card) {
+            // Restore original z-index
+            card.style.zIndex = Array.from(cards).indexOf(card);
+        }
+    });
+});
