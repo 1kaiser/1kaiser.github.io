@@ -1,178 +1,96 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const addWindowBtn = document.getElementById('add-window-btn');
-  const windowsContainer = document.getElementById('windows-container');
-  let windowCount = 0;
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-  addWindowBtn.addEventListener('click', () => {
-    windowCount++;
-    const windowEl = document.createElement('div');
-    windowEl.className = 'window';
+// 1. Scene Setup
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb); // Sky blue background
 
-    if (windowCount === 2) {
-      windowEl.innerHTML = `
-        <div class="window-header">
-          <span>Window ${windowCount}</span>
-          <div>
-            <button class="tools-btn">Tools</button>
-            <button class="close-btn">X</button>
-          </div>
-        </div>
-        <div class="window-content">
-          <div class="gallery" id="modelGallery">
-            <!-- Model cards will be dynamically generated here -->
-          </div>
-        </div>
-        <div class="resize-handle"></div>
-      `;
-    } else {
-      windowEl.innerHTML = `
-        <div class="window-header">
-          <span>Window ${windowCount}</span>
-          <div>
-            <button class="tools-btn">Tools</button>
-            <button class="close-btn">X</button>
-          </div>
-        </div>
-        <div class="window-content"></div>
-        <div class="resize-handle"></div>
-      `;
-    }
+// 2. Camera
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 1.5, 5); // Position the camera
 
-    windowsContainer.appendChild(windowEl);
-    makeDraggable(windowEl, windowEl.querySelector('.window-header'));
-    makeResizable(windowEl, windowEl.querySelector('.resize-handle'));
+// 3. Renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-    const toolsBtn = windowEl.querySelector('.tools-btn');
-    const toolsMenu = createToolsMenu(windowEl);
-    toolsBtn.addEventListener('click', () => {
-      toolsMenu.style.display = toolsMenu.style.display === 'block' ? 'none' : 'block';
+// 4. Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
+scene.add(ambientLight);
+
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+directionalLight.position.set(5, 10, 7.5);
+scene.add(directionalLight);
+
+// 4a. Controls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+controls.dampingFactor = 0.05;
+controls.screenSpacePanning = false;
+controls.maxPolarAngle = Math.PI / 2;
+
+
+// 5. Create the Room
+const room = new THREE.Group();
+
+// Floor
+const floorGeometry = new THREE.PlaneGeometry(20, 20);
+const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2; // Rotate to be horizontal
+room.add(floor);
+
+// Walls
+const wallMaterial = new THREE.MeshStandardMaterial({ color: 0xaaddff });
+const wallGeometry = new THREE.PlaneGeometry(20, 8);
+
+const backWall = new THREE.Mesh(wallGeometry, wallMaterial);
+backWall.position.set(0, 4, -10);
+room.add(backWall);
+
+const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
+leftWall.position.set(-10, 4, 0);
+leftWall.rotation.y = Math.PI / 2;
+room.add(leftWall);
+
+const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
+rightWall.position.set(10, 4, 0);
+rightWall.rotation.y = -Math.PI / 2;
+room.add(rightWall);
+
+scene.add(room);
+
+// 6. Load a Model
+if (window.modelsConfig && window.modelsConfig.length > 0) {
+    const loader = new GLTFLoader();
+    const modelToLoad = window.modelsConfig[0]; // Load the first model
+
+    loader.load(`../${modelToLoad.url}`, (gltf) => {
+        const model = gltf.scene;
+        model.position.set(0, 0, 0); // Place it at the origin of the room
+        model.scale.set(1, 1, 1); // Adjust scale if needed
+        scene.add(model);
+    }, undefined, (error) => {
+        console.error(`An error happened while loading the model: ${error}`);
     });
+}
 
-    const closeBtn = windowEl.querySelector('.close-btn');
-    closeBtn.addEventListener('click', () => {
-      windowEl.remove();
-    });
 
-    if (windowCount === 2) {
-      // Initialize the gallery
-      if (window.modelsConfig && typeof window.initializeGallery === 'function') {
-        window.initializeGallery();
-      }
-    }
-  });
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
 
-  function createToolsMenu(windowEl) {
-    const menu = document.createElement('div');
-    menu.className = 'tools-menu';
-    menu.innerHTML = `
-      <ul>
-        <li data-tool="clock">Clock</li>
-        <li data-tool="calendar">Calendar</li>
-        <li data-tool="music">Music Player</li>
-      </ul>
-    `;
-    windowEl.appendChild(menu);
+    controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
-    menu.addEventListener('click', (e) => {
-      const tool = e.target.dataset.tool;
-      if (tool) {
-        const windowContent = windowEl.querySelector('.window-content');
-        if (tool === 'clock') {
-          const clockEl = document.createElement('div');
-          clockEl.style.fontSize = '2em';
-          clockEl.style.textAlign = 'center';
-          setInterval(() => {
-            const now = new Date();
-            clockEl.textContent = now.toLocaleTimeString();
-          }, 1000);
-          windowContent.innerHTML = '';
-          windowContent.appendChild(clockEl);
-        } else if (tool === 'calendar') {
-          const calendarEl = document.createElement('div');
-          calendarEl.style.fontSize = '2em';
-          calendarEl.style.textAlign = 'center';
-          const now = new Date();
-          calendarEl.textContent = now.toLocaleDateString();
-          windowContent.innerHTML = '';
-          windowContent.appendChild(calendarEl);
-        } else if (tool === 'music') {
-          const musicEl = document.createElement('audio');
-          musicEl.controls = true;
-          musicEl.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-          windowContent.innerHTML = '';
-          windowContent.appendChild(musicEl);
-        }
-        menu.style.display = 'none';
-      }
-    });
+    renderer.render(scene, camera);
+}
 
-    return menu;
-  }
+animate();
 
-  function makeResizable(element, handle) {
-    let original_width = 0;
-    let original_height = 0;
-    let original_x = 0;
-    let original_y = 0;
-    let original_mouse_x = 0;
-    let original_mouse_y = 0;
-
-    handle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      original_width = parseFloat(getComputedStyle(element, null).getPropertyValue('width').replace('px', ''));
-      original_height = parseFloat(getComputedStyle(element, null).getPropertyValue('height').replace('px', ''));
-      original_x = element.getBoundingClientRect().left;
-      original_y = element.getBoundingClientRect().top;
-      original_mouse_x = e.pageX;
-      original_mouse_y = e.pageY;
-      window.addEventListener('mousemove', resize);
-      window.addEventListener('mouseup', stopResize);
-    });
-
-    function resize(e) {
-      const width = original_width + (e.pageX - original_mouse_x);
-      const height = original_height + (e.pageY - original_mouse_y);
-      element.style.width = width + 'px';
-      element.style.height = height + 'px';
-    }
-
-    function stopResize() {
-      window.removeEventListener('mousemove', resize);
-    }
-  }
-
-  function makeDraggable(element, handle) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-
-    const dragMouseDown = (e) => {
-      e = e || window.event;
-      e.preventDefault();
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      document.onmouseup = closeDragElement;
-      document.onmousemove = elementDrag;
-    };
-
-    const elementDrag = (e) => {
-      e = e || window.event;
-      e.preventDefault();
-      pos1 = pos3 - e.clientX;
-      pos2 = pos4 - e.clientY;
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      element.style.top = (element.offsetTop - pos2) + "px";
-      element.style.left = (element.offsetLeft - pos1) + "px";
-    };
-
-    const closeDragElement = () => {
-      document.onmouseup = null;
-      document.onmousemove = null;
-    };
-
-    if (handle) {
-      handle.onmousedown = dragMouseDown;
-    } else {
-      element.onmousedown = dragMouseDown;
-    }
-  }
+// Handle window resizing
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
