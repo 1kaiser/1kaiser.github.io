@@ -282,3 +282,81 @@ function initializeDraggableWindow() {
         makeDraggable(statusWindow, statusHeader);
     }
 }
+
+// Interactive Carousel Logic
+document.addEventListener('DOMContentLoaded', () => {
+    const gallery = document.querySelector('.gallery');
+    if (!gallery) return;
+
+    const cards = gallery.querySelectorAll('.model-card');
+    const numCards = cards.length;
+    if (numCards === 0) return;
+
+    let revealedCardIndex = -1;
+
+    const handleMouseMove = (e) => {
+        const galleryRect = gallery.getBoundingClientRect();
+        const mouseX = e.clientX - galleryRect.left;
+        const progress = mouseX / galleryRect.width; // 0 to 1
+
+        let activeCardIndex = -1;
+        let maxZ = -1;
+
+        cards.forEach((card, i) => {
+            const cardOffset = (numCards > 1) ? (i / (numCards - 1)) - 0.5 : 0; // -0.5 to 0.5, or 0 if 1 card
+            const mouseOffset = progress - 0.5; // -0.5 to 0.5
+
+            const distance = Math.abs(cardOffset - mouseOffset);
+            const rotation = (cardOffset - mouseOffset) * 40; // Max rotation
+            const translationX = (cardOffset - mouseOffset) * 400; // Max translation
+            const scale = 1 - (distance * 0.2);
+            const zIndex = Math.round(100 - (distance * 50));
+
+            card.style.transform = `translateX(-50%) translateX(${translationX}px) rotate(${rotation}deg) scale(${scale})`;
+            card.style.zIndex = zIndex;
+
+            if (zIndex > maxZ) {
+                maxZ = zIndex;
+                activeCardIndex = i;
+            }
+        });
+
+        // Reveal the model for the active card
+        if (activeCardIndex !== revealedCardIndex) {
+            revealedCardIndex = activeCardIndex;
+            const activeCard = cards[activeCardIndex];
+            if (activeCard) {
+                const modelViewer = activeCard.querySelector('model-viewer');
+                if (modelViewer && !modelViewer.dataset.revealed) {
+                    modelViewer.reveal();
+                    modelViewer.dataset.revealed = 'true';
+                }
+            }
+        }
+    };
+
+    const handleMouseLeave = () => {
+        gallery.removeEventListener('mousemove', handleMouseMove);
+        cards.forEach(card => {
+            card.style.transform = ''; // Clear inline styles to return to CSS state
+            card.style.zIndex = '';
+        });
+        revealedCardIndex = -1; // Reset revealed index
+    };
+
+    gallery.addEventListener('mouseenter', () => {
+        // Reveal the center card immediately on hover
+        const centerCardIndex = Math.floor(numCards / 2);
+        if (cards[centerCardIndex]) {
+            const modelViewer = cards[centerCardIndex].querySelector('model-viewer');
+            if (modelViewer && !modelViewer.dataset.revealed) {
+                modelViewer.reveal();
+                modelViewer.dataset.revealed = 'true';
+            }
+            revealedCardIndex = centerCardIndex;
+        }
+        gallery.addEventListener('mousemove', handleMouseMove);
+    });
+
+    gallery.addEventListener('mouseleave', handleMouseLeave);
+});
