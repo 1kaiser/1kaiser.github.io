@@ -11,19 +11,36 @@ h1 {
   margin-bottom: 30px;
 }
 
-/* Gallery container for stacked layout */
+/* Gallery horizontal strip layout */
 .gallery {
-  position: relative;
-  width: 100%;
-  height: 600px; /* Container height to hold the stacked cards */
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 20px;
+  padding: 20px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #ccc #f0f0f0;
 }
 
 /* Styling for Webkit scrollbars (Chrome, Safari, Edge) */
 .gallery::-webkit-scrollbar {
-  display: none; /* Hide scrollbar as it's not a scrolling container anymore */
+  height: 8px;
+}
+
+.gallery::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.gallery::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.gallery::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
 }
 
 /* Model card styles */
@@ -33,18 +50,15 @@ h1 {
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: transform 0.5s ease; /* Slower transition for smoother effect */
+  transition: transform 0.3s ease;
   width: 320px;
-  height: 480px; /* Using fixed height for consistent card size */
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%); /* Default to a centered stack */
+  height: 480px;
+  flex-shrink: 0;
+  position: relative; /* For the overlay */
 }
 
 .model-card:hover {
-  transform: translateX(-50%) scale(1.05);
-  z-index: 10;
+  transform: translateY(-5px) scale(1.02);
 }
 
 .model-card model-viewer {
@@ -426,4 +440,16 @@ h1 {
   animation: pulse 1.5s infinite;
 }
 
-/* Static layout rules are now removed, handled by default .model-card transform */
+/* New Fanned-Out Layout Styles */
+.model-card:nth-child(odd) {
+    transform: translateY(-15px) rotate(-2deg);
+}
+
+.model-card:nth-child(even) {
+    transform: translateY(15px) rotate(2deg);
+}
+
+.model-card:hover {
+  transform: translateY(0) rotate(0) scale(1.05);
+  z-index: 10;
+}
