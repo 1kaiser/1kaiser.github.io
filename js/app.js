@@ -306,6 +306,12 @@ function applyRandomTransforms() {
         card.style.top = `${position_y}px`;
         card.style.transform = `rotateZ(${random_rotate_z}deg)`;
         card.style.zIndex = i;
+
+        // Reveal the model viewer
+        const modelViewer = card.querySelector('model-viewer');
+        if (modelViewer) {
+            modelViewer.reveal();
+        }
     });
 }
 
