@@ -283,7 +283,7 @@ function initializeDraggableWindow() {
     }
 }
 
-// Random Layout Logic
+// Random Scattered Layout Logic
 document.addEventListener('DOMContentLoaded', () => {
     const gallery = document.querySelector('.gallery');
     if (!gallery) return;
@@ -291,36 +291,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const cards = gallery.querySelectorAll('.model-card');
     if (cards.length === 0) return;
 
-    cards.forEach((card, index) => {
-        // Don't apply margin to the first card
-        if (index > 0) {
-            const randomOverlap = 60 + Math.random() * 40; // Overlap between 60px and 100px (approx 20-30% of card width)
-            card.style.marginLeft = `-${randomOverlap}px`;
-        }
-
-        const randomRotation = (Math.random() - 0.5) * 10; // -5 to +5 degrees
-        const randomY = (Math.random() - 0.5) * 40; // -20 to +20 pixels
-
-        card.style.transform = `translateY(${randomY}px) rotate(${randomRotation}deg)`;
-
-        // Ensure cards layer on top of each other correctly
-        card.style.zIndex = index;
-    });
-
-    // Adjust hover effect to work with the new random layout
-    gallery.addEventListener('mouseover', (event) => {
-        const card = event.target.closest('.model-card');
-        if (card) {
-            // Bring hovered card to the front
-            card.style.zIndex = cards.length + 1;
+    // This needs to run after the gallery is initialized
+    const observer = new MutationObserver((mutationsList, observer) => {
+        for(const mutation of mutationsList) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                const newCards = gallery.querySelectorAll('.model-card');
+                if (newCards.length > 0) {
+                    applyRandomLayout(newCards);
+                    observer.disconnect(); // Stop observing once cards are loaded
+                }
+            }
         }
     });
 
-    gallery.addEventListener('mouseout', (event) => {
-        const card = event.target.closest('.model-card');
-        if (card) {
-            // Restore original z-index
-            card.style.zIndex = Array.from(cards).indexOf(card);
-        }
-    });
+    const applyRandomLayout = (cardElements) => {
+        cardElements.forEach((card, index) => {
+            if (index > 0) {
+                const randomOverlap = 80 + Math.random() * 50; // 80px to 130px
+                card.style.marginLeft = `-${randomOverlap}px`;
+            }
+
+            const randomRotation = (Math.random() - 0.5) * 15; // -7.5 to +7.5 degrees
+            const randomY = (Math.random() - 0.5) * 50; // -25 to +25 pixels
+
+            card.style.transform = `translateY(${randomY}px) rotate(${randomRotation}deg)`;
+            card.style.zIndex = index;
+        });
+
+        // Add hover effect to bring card to front
+        gallery.addEventListener('mouseover', (event) => {
+            const card = event.target.closest('.model-card');
+            if (card) {
+                card.style.zIndex = cardElements.length + 1;
+            }
+        });
+
+        gallery.addEventListener('mouseout', (event) => {
+            const card = event.target.closest('.model-card');
+            if (card) {
+                card.style.zIndex = Array.from(cardElements).indexOf(card);
+            }
+        });
+    };
+
+    // Start observing the gallery for when cards are added
+    observer.observe(gallery, { childList: true });
 });
