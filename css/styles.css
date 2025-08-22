@@ -3,14 +3,15 @@ body {
   margin: 0;
   padding: 20px;
   font-family: 'Inter', sans-serif;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: #f0f2f5;
+  color: #333;
 }
 
 h1 {
   text-align: center;
   margin-bottom: 30px;
   font-weight: bold;
+  color: #333;
 }
 
 /* Gallery container for stacked layout */
@@ -31,11 +32,11 @@ h1 {
 
 /* Model card styles */
 .model-card {
-  background-color: #1a1a1a;
+  background-color: #ffffff;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border: 1px solid #333;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: none;
   cursor: pointer;
   transition: transform 0.5s ease;
   width: 320px;
@@ -65,8 +66,8 @@ h1 {
   left: 0;
   right: 0;
   padding: 20px;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
-  color: #fff;
+  background: none;
+  color: #333;
 }
 
 .model-info-overlay h2 {
@@ -74,15 +75,15 @@ h1 {
   margin-bottom: 5px;
   font-size: 24px;
   font-weight: bold;
-  color: #fff;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  color: #333;
+  text-shadow: none;
 }
 
 .model-info-overlay p {
   margin: 0 0 15px 0;
   font-size: 16px;
-  color: #ccc;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  color: #666;
+  text-shadow: none;
 }
 
 .card-buttons {
@@ -92,9 +93,9 @@ h1 {
 }
 
 .expand-btn, .download-btn {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #f0f2f5;
+  color: #333;
+  border: 1px solid #ddd;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
@@ -102,13 +103,11 @@ h1 {
   font-weight: 500;
   text-decoration: none;
   display: inline-block;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   transition: background-color 0.2s ease;
 }
 
 .expand-btn:hover, .download-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: #e2e6ea;
 }
 
 /* Modal/Overlay styles */
