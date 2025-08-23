@@ -296,16 +296,37 @@ function applyRandomTransforms() {
         const center_y = gallery.offsetHeight / 2 - card.offsetHeight / 2;
 
         const random_rotate_z = (Math.random() * 20) - 10; // -10 to 10 degrees
+        card.dataset.rotation = random_rotate_z; // Store rotation
+
         const random_x = (Math.random() * 100) - 50; // -50 to 50 px
         const random_y = (Math.random() * 100) - 50;
 
-        const position_x = center_x + random_x + (i - numCards / 2) * 80;
+        const position_x = center_x + random_x + (i - numCards / 2) * 200;
         const position_y = center_y + random_y;
 
         card.style.left = `${position_x}px`;
         card.style.top = `${position_y}px`;
-        card.style.transform = `rotateZ(${random_rotate_z}deg)`;
+        card.style.transform = `rotateZ(${random_rotate_z}deg) scale(0.7)`;
         card.style.zIndex = i;
+
+        // Reveal the model viewer
+        const modelViewer = card.querySelector('model-viewer');
+        if (modelViewer) {
+            modelViewer.reveal();
+        }
+
+        // Add hover listeners
+        card.addEventListener('mouseenter', () => {
+            const rotation = card.dataset.rotation;
+            card.style.transform = `rotateZ(${rotation}deg) scale(0.75)`;
+            card.style.zIndex = 100;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            const rotation = card.dataset.rotation;
+            card.style.transform = `rotateZ(${rotation}deg) scale(0.7)`;
+            card.style.zIndex = i;
+        });
     });
 }
 
