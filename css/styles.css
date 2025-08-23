@@ -18,65 +18,50 @@ h1 {
 .gallery-container {
     position: relative;
     width: 100%;
-    height: 600px;
-    perspective: 1000px;
+    height: 80vh; /* Use viewport height */
+    perspective: 1200px; /* Enhanced perspective */
     display: flex;
     justify-content: center;
     align-items: center;
+    padding-top: 100px; /* Add padding to accommodate the title */
+}
+
+.gallery-title {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 200;
+}
+
+.gallery-title h1 {
+    font-size: 48px;
+    font-weight: bold;
+    color: #222;
 }
 
 .model-card {
   background-color: #ffffff;
-  border-radius: 12px;
+  border-radius: 20px; /* More rounded corners */
   overflow: hidden;
-  /* box-shadow is now set by React inline styles */
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0.05);
   cursor: pointer;
-  transition: transform 0.5s ease, box-shadow 0.5s ease;
-  width: 320px;
-  height: 480px;
+  /* transition is now set by React inline styles */
+  width: 300px; /* Slightly smaller */
+  height: 450px; /* Slightly smaller */
   position: absolute;
-  /* Transform will be set by React inline styles */
   top: 50%;
   left: 50%;
+  /* box-shadow and transform are set by React inline styles */
 }
 
 .model-card model-viewer {
   width: 100%;
   height: 100%;
-  --progress-bar-height: 5px;
+  --progress-bar-height: 4px;
   --progress-bar-color: #333;
   --progress-mask: #eee;
-}
-
-.model-info-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.5); /* Semi-transparent background */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px); /* For Safari */
-  color: #333;
-  pointer-events: none; /* Allow clicks to pass through to the model-viewer */
-  border-top: 1px solid rgba(255, 255, 255, 0.2); /* Subtle top border */
-}
-
-.model-info-overlay h2 {
-  margin-top: 0;
-  margin-bottom: 5px;
-  font-size: 24px;
-  font-weight: bold;
-  color: #333;
-  text-shadow: none;
-}
-
-.model-info-overlay p {
-  margin: 0;
-  font-size: 16px;
-  color: #666;
-  text-shadow: none;
 }
 
 .card-buttons {
