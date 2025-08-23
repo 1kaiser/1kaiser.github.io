@@ -4,6 +4,9 @@
 const { useState } = React;
 
 function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
+    const modelUrl = model.url.startsWith('http') ? model.url : `../${model.url}`;
+    const posterUrl = model.poster.startsWith('http') ? model.poster : `../${model.poster}`;
+
     // The style prop will be used to position and rotate the card
     return (
         <div
@@ -13,8 +16,8 @@ function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
             onMouseLeave={onMouseLeave}
         >
             <model-viewer
-                src={model.url}
-                poster={model.poster}
+                src={modelUrl}
+                poster={posterUrl}
                 alt={model.alt}
                 shadow-intensity="1"
                 camera-controls
