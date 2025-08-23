@@ -33,7 +33,7 @@ function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
 
     const combinedStyle = {
         ...style,
-        boxShadow: edgeColor ? `inset 0 0 20px 5px ${edgeColor}` : '0 10px 30px rgba(0, 0, 0, 0.15)',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
     };
 
     const modelUrl = model.url.startsWith('http')
