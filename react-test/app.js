@@ -1,9 +1,17 @@
 'use strict';
 
-function ModelCard({ model, style }) {
+// Use React's state hook to manage interactivity
+const { useState } = React;
+
+function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
     // The style prop will be used to position and rotate the card
     return (
-        <div className="model-card" style={style}>
+        <div
+            className="model-card"
+            style={style}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+        >
             <model-viewer
                 src={model.url}
                 poster={model.poster}
@@ -22,6 +30,8 @@ function ModelCard({ model, style }) {
 }
 
 function Gallery() {
+    const [activeIndex, setActiveIndex] = useState(null);
+
     // Check if model data is available
     if (!window.modelsConfig || window.modelsConfig.length === 0) {
         return <p>Loading models...</p>;
@@ -29,16 +39,35 @@ function Gallery() {
 
     const cards = window.modelsConfig.map((model, i) => {
         const numCards = window.modelsConfig.length;
-        const random_rotate_z = (Math.random() * 10) - 5; // -5 to 5 degrees for a subtle effect
-        const spread = 150; // How far apart the cards are
+        const isHovered = activeIndex === i;
+
+        // Base layout calculations
+        const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 10) - 5);
+        const spread = 150;
         const offset = (i - (numCards - 1) / 2) * spread;
 
+        // Base transform
+        let transform = `translate(-50%, -50%) translateX(${offset}px) rotateZ(${random_rotate_z}deg)`;
+
+        // Modify transform on hover
+        if (isHovered) {
+            transform = `translate(-50%, -50%) translateX(${offset}px) rotateZ(0deg) scale(1.1)`;
+        }
+
         const style = {
-            transform: `translateX(${offset}px) rotateZ(${random_rotate_z}deg)`,
-            zIndex: i,
+            transform: transform,
+            zIndex: isHovered ? 100 : i,
         };
 
-        return <ModelCard key={i} model={model} style={style} />;
+        return (
+            <ModelCard
+                key={i}
+                model={model}
+                style={style}
+                onMouseEnter={() => setActiveIndex(i)}
+                onMouseLeave={() => setActiveIndex(null)}
+            />
+        );
     });
 
     return (
@@ -51,7 +80,7 @@ function Gallery() {
 const App = () => {
     return (
         <>
-            <h1>React Test Page (All Tiles)</h1>
+            <h1>React Test Page (Interactive)</h1>
             <Gallery />
         </>
     );
