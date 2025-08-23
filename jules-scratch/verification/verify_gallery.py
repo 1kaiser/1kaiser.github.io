@@ -8,20 +8,10 @@ async def main():
 
         await page.goto("http://localhost:8000/index.html", wait_until="domcontentloaded")
 
-        # Add a class to the body to disable animations
-        await page.evaluate("document.body.classList.add('no-animations')")
+        # Give the particles some time to appear
+        await page.wait_for_timeout(10000)
 
-        # Wait for the gallery to be ready, but with a generous timeout
-        await page.wait_for_selector(".gallery-container", timeout=60000)
-
-        # Give the models some time to load
-        await page.wait_for_timeout(5000)
-
-        # Hover over the model-viewer inside the first card to make the download button appear
-        await page.hover(".model-card model-viewer", force=True)
-        await page.wait_for_timeout(500) # wait for the button to appear
-
-        await page.screenshot(path="jules-scratch/verification/gallery_sticky_hover.png")
+        await page.screenshot(path="jules-scratch/verification/gallery_with_particles.png")
 
         await browser.close()
 
