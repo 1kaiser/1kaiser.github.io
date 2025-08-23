@@ -1,0 +1,78 @@
+/* Global styles */
+body {
+  margin: 0;
+  /* Use a flex column to stack the title and card */
+  flex-direction: column;
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+  background-color: #f0f2f5;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Container to hold the React component */
+#root {
+  width: 100%;
+  display: flex;
+  flex-direction: column; /* Match body */
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+}
+
+/* Model card styles, adapted for a single component view */
+.model-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.5s ease;
+  width: 320px;
+  height: 480px;
+  position: relative; /* Changed from absolute */
+  transform: rotateZ(-5deg) scale(0.9); /* Example static transform */
+}
+
+.model-card:hover {
+    transform: rotateZ(0deg) scale(1);
+}
+
+.model-card model-viewer {
+  width: 100%;
+  height: 100%;
+  --progress-bar-height: 5px;
+  --progress-bar-color: #333;
+  --progress-mask: #eee;
+}
+
+.model-info-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  background: none;
+  color: #333;
+  pointer-events: none; /* Allow clicks to pass through to the model-viewer */
+}
+
+.model-info-overlay h2 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  text-shadow: none;
+}
+
+.model-info-overlay p {
+  margin: 0;
+  font-size: 16px;
+  color: #666;
+  text-shadow: none;
+}
