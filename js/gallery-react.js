@@ -5,20 +5,30 @@ const { useState, useEffect } = React;
 function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
     const [edgeColor, setEdgeColor] = useState(null);
 
+    const posterUrl = model.poster.startsWith('http')
+        ? model.poster
+        : model.poster.startsWith('./')
+            ? model.poster.substring(2)
+            : model.poster;
+
     useEffect(() => {
         const colorThief = new ColorThief();
         const img = new Image();
-
-        // Paths are now relative to the root index.html
-        const posterUrl = model.poster.startsWith('http') ? model.poster : model.poster;
 
         img.crossOrigin = 'Anonymous';
         img.src = posterUrl;
 
         img.onload = () => {
-            const dominantColor = colorThief.getColor(img);
-            setEdgeColor(`rgba(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]}, 0.8)`);
+            try {
+                const dominantColor = colorThief.getColor(img);
+                setEdgeColor(`rgba(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]}, 0.8)`);
+            } catch (e) {
+                console.error("Error getting color:", e);
+            }
         };
+        img.onerror = (e) => {
+            console.error("Error loading image for color thief:", posterUrl, e);
+        }
     }, [model.poster]);
 
     const combinedStyle = {
@@ -26,7 +36,11 @@ function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
         boxShadow: edgeColor ? `0 0 20px 5px ${edgeColor}` : '0 10px 30px rgba(0, 0, 0, 0.15)',
     };
 
-    const modelUrl = model.url.startsWith('http') ? model.url : model.url;
+    const modelUrl = model.url.startsWith('http')
+        ? model.url
+        : model.url.startsWith('./')
+            ? model.url.substring(2)
+            : model.url;
 
     return (
         <div

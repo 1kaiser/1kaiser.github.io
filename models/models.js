@@ -67,7 +67,7 @@ window.modelsConfig = [
     alt: "bhatura VegBiryani EggNoodles ChickenStrips"
   },
   {
-    url: "https.cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
+    url: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
     poster: "./models/paneer_sabji.webp",
     title: "paneer sabji",
     description: "paneer_sabji",
