@@ -20,7 +20,13 @@ body {
   flex-direction: column; /* Match body */
   justify-content: center;
   align-items: center;
-  perspective: 1000px;
+}
+
+.gallery-container {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    perspective: 1000px;
 }
 
 /* Model card styles, adapted for a single component view */
@@ -34,13 +40,14 @@ body {
   transition: transform 0.5s ease;
   width: 320px;
   height: 480px;
-  position: relative; /* Changed from absolute */
-  transform: rotateZ(-5deg) scale(0.9); /* Example static transform */
+  position: absolute;
+  /* Transform will be set by React inline styles */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
-.model-card:hover {
-    transform: rotateZ(0deg) scale(1);
-}
+/* Hover effects can be added later if needed */
 
 .model-card model-viewer {
   width: 100%;
