@@ -89,7 +89,7 @@ function Gallery() {
 
         // A more dramatic fan effect
         const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 16) - 8);
-        const spread = 70; // Tighter spread
+        const spread = 147; // 30% overlap
         const offset = (i - (numCards - 1) / 2) * spread;
         const translateY = Math.abs(i - (numCards - 1) / 2) * -35 + 35; // Less pronounced arc
 
