@@ -283,71 +283,110 @@ function initializeDraggableWindow() {
     }
 }
 
-function applyRandomTransforms() {
-    const gallery = document.querySelector('.gallery');
-    if (!gallery) return;
+// ===== New Dual-Mode Gallery Logic =====
 
-    const cards = gallery.querySelectorAll('.model-card');
-    const numCards = cards.length;
-    if (numCards === 0) return;
+let isCarouselMode = false;
+let gallery, cards, numCards;
+
+function applyStaticLayout() {
+    if (!gallery || !cards) return;
 
     cards.forEach((card, i) => {
-        const center_x = gallery.offsetWidth / 2 - card.offsetWidth / 2;
-        const center_y = gallery.offsetHeight / 2 - card.offsetHeight / 2;
+        // Store static transform for returning from carousel mode
+        if (!card.dataset.staticTransform) {
+            const center_x = gallery.offsetWidth / 2 - card.offsetWidth / 2;
+            const center_y = gallery.offsetHeight / 2 - card.offsetHeight / 2;
+            const random_rotate_z = (Math.random() * 20) - 10;
+            const random_x = (Math.random() * 100) - 50;
+            const random_y = (Math.random() * 100) - 50;
+            const position_x = center_x + random_x + (i - numCards / 2) * 120; // Reduced spread
+            const position_y = center_y + random_y;
 
-        const random_rotate_z = (Math.random() * 20) - 10; // -10 to 10 degrees
-        card.dataset.rotation = random_rotate_z; // Store rotation
-
-        const random_x = (Math.random() * 100) - 50; // -50 to 50 px
-        const random_y = (Math.random() * 100) - 50;
-
-        const position_x = center_x + random_x + (i - numCards / 2) * 200;
-        const position_y = center_y + random_y;
-
-        card.style.left = `${position_x}px`;
-        card.style.top = `${position_y}px`;
-        card.style.transform = `rotateZ(${random_rotate_z}deg) scale(0.7)`;
-        card.style.zIndex = i;
-
-        // Reveal the model viewer
-        const modelViewer = card.querySelector('model-viewer');
-        if (modelViewer) {
-            modelViewer.reveal();
+            card.dataset.staticLeft = `${position_x}px`;
+            card.dataset.staticTop = `${position_y}px`;
+            card.dataset.staticTransform = `rotateZ(${random_rotate_z}deg) scale(0.7)`;
+            card.dataset.staticZIndex = i;
         }
 
-        // Add hover listeners
-        card.addEventListener('mouseenter', () => {
-            const rotation = card.dataset.rotation;
-            card.style.transform = `rotateZ(${rotation}deg) scale(0.75)`;
-            card.style.zIndex = 100;
-        });
+        card.style.left = card.dataset.staticLeft;
+        card.style.top = card.dataset.staticTop;
+        card.style.transform = card.dataset.staticTransform;
+        card.style.zIndex = card.dataset.staticZIndex;
 
-        card.addEventListener('mouseleave', () => {
-            const rotation = card.dataset.rotation;
-            card.style.transform = `rotateZ(${rotation}deg) scale(0.7)`;
-            card.style.zIndex = i;
-        });
+        const modelViewer = card.querySelector('model-viewer');
+        if (modelViewer && !modelViewer.dataset.revealed) {
+            modelViewer.reveal();
+            modelViewer.dataset.revealed = 'true';
+        }
     });
 }
 
-// After the gallery is initialized, apply the random transforms.
-// We need to wait for the cards to be created, so we'll use a MutationObserver.
+function applyCarouselLayout(progress) {
+    if (!gallery || !cards) return;
+
+    cards.forEach((card, i) => {
+        const cardOffset = (numCards > 1) ? (i / (numCards - 1)) - 0.5 : 0;
+        const mouseOffset = progress - 0.5;
+        const distance = Math.abs(cardOffset - mouseOffset);
+
+        const rotation = (cardOffset - mouseOffset) * 40;
+        const translationX = (cardOffset - mouseOffset) * 400;
+        const scale = 1 - (distance * 0.2);
+        const zIndex = Math.round(100 - (distance * 50));
+
+        // We need to position the cards from the center
+        const center_x = gallery.offsetWidth / 2 - card.offsetWidth / 2;
+        const center_y = gallery.offsetHeight / 2 - card.offsetHeight / 2;
+
+        card.style.left = `${center_x}px`;
+        card.style.top = `${center_y}px`;
+        card.style.transform = `translateX(${translationX}px) rotateY(${rotation}deg) scale(${scale})`;
+        card.style.zIndex = zIndex;
+    });
+}
+
+// After the gallery is initialized, set up the dual-mode logic.
 document.addEventListener('DOMContentLoaded', () => {
-    const gallery = document.getElementById('modelGallery');
+    gallery = document.getElementById('modelGallery');
     if (gallery) {
-        const observer = new MutationObserver((mutationsList, observer) => {
-            for(const mutation of mutationsList) {
-                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    // Add a small delay to ensure cards have been rendered and have dimensions
-                    setTimeout(() => {
-                        applyRandomTransforms();
-                    }, 100);
-                    observer.disconnect(); // We only need to do this once
-                    break;
-                }
+        const observer = new MutationObserver(() => {
+            cards = gallery.querySelectorAll('.model-card');
+            numCards = cards.length;
+            if (numCards > 0) {
+                // Set the initial static layout
+                setTimeout(() => {
+                    applyStaticLayout();
+                }, 100);
+
+                // Add event listeners for mode switching
+                gallery.addEventListener('mouseenter', handleMouseEnter);
+                gallery.addEventListener('mouseleave', handleMouseLeave);
+
+                observer.disconnect();
             }
         });
-
         observer.observe(gallery, { childList: true });
     }
 });
+
+function handleMouseEnter() {
+    isCarouselMode = true;
+    gallery.addEventListener('mousemove', handleMouseMove);
+    // Initial transition to carousel view (center)
+    applyCarouselLayout(0.5);
+}
+
+function handleMouseLeave() {
+    isCarouselMode = false;
+    gallery.removeEventListener('mousemove', handleMouseMove);
+    // Transition back to static layout
+    applyStaticLayout();
+}
+
+function handleMouseMove(e) {
+    if (!isCarouselMode) return;
+    const galleryRect = gallery.getBoundingClientRect();
+    const mouseX = e.clientX - galleryRect.left;
+    const progress = mouseX / galleryRect.width;
+    applyCarouselLayout(progress);
+}
