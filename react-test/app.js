@@ -68,11 +68,12 @@ function Gallery() {
         const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 10) - 5);
         const spread = 150;
         const offset = (i - (numCards - 1) / 2) * spread;
+        const translateY = Math.abs(i - (numCards - 1) / 2) * -30 + 50; // Arc effect
 
-        let transform = `translate(-50%, -50%) translateX(${offset}px) rotateZ(${random_rotate_z}deg)`;
+        let transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg)`;
 
         if (isHovered) {
-            transform = `translate(-50%, -50%) translateX(${offset}px) rotateZ(0deg) scale(1.1)`;
+            transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(1.1)`;
         }
 
         const style = {
