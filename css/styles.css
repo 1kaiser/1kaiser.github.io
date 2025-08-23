@@ -36,10 +36,7 @@ h1 {
   position: absolute;
 }
 
-.model-card:hover {
-  transform: scale(1.05) !important;
-  z-index: 100 !important;
-}
+/* Hover effect is now handled by JavaScript */
 
 .model-card model-viewer {
   width: 100%;
