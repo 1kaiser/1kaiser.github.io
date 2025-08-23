@@ -1,17 +1,39 @@
 'use strict';
 
-// Use React's state hook to manage interactivity
-const { useState } = React;
+const { useState, useEffect } = React;
 
 function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
-    const modelUrl = model.url.startsWith('http') ? model.url : `../${model.url}`;
-    const posterUrl = model.poster.startsWith('http') ? model.poster : `../${model.poster}`;
+    const [edgeColor, setEdgeColor] = useState(null);
 
-    // The style prop will be used to position and rotate the card
+    useEffect(() => {
+        const colorThief = new ColorThief();
+        const img = new Image();
+
+        // The posterUrl needs to be constructed correctly, including the `../`
+        const posterUrl = model.poster.startsWith('http') ? model.poster : `../${model.poster}`;
+
+        img.crossOrigin = 'Anonymous'; // Needed for cross-origin images
+        img.src = posterUrl;
+
+        img.onload = () => {
+            const dominantColor = colorThief.getColor(img);
+            // Set a semi-transparent color for the glow effect
+            setEdgeColor(`rgba(${dominantColor[0]}, ${dominantColor[1]}, ${dominantColor[2]}, 0.8)`);
+        };
+    }, [model.poster]);
+
+    // Combine the layout style with the dynamic edge color style
+    const combinedStyle = {
+        ...style,
+        boxShadow: edgeColor ? `0 0 20px 5px ${edgeColor}` : '0 10px 30px rgba(0, 0, 0, 0.15)',
+    };
+
+    const modelUrl = model.url.startsWith('http') ? model.url : `../${model.url}`;
+
     return (
         <div
             className="model-card"
-            style={style}
+            style={combinedStyle}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
         >
@@ -35,7 +57,6 @@ function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
 function Gallery() {
     const [activeIndex, setActiveIndex] = useState(null);
 
-    // Check if model data is available
     if (!window.modelsConfig || window.modelsConfig.length === 0) {
         return <p>Loading models...</p>;
     }
@@ -44,15 +65,12 @@ function Gallery() {
         const numCards = window.modelsConfig.length;
         const isHovered = activeIndex === i;
 
-        // Base layout calculations
         const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 10) - 5);
         const spread = 150;
         const offset = (i - (numCards - 1) / 2) * spread;
 
-        // Base transform
         let transform = `translate(-50%, -50%) translateX(${offset}px) rotateZ(${random_rotate_z}deg)`;
 
-        // Modify transform on hover
         if (isHovered) {
             transform = `translate(-50%, -50%) translateX(${offset}px) rotateZ(0deg) scale(1.1)`;
         }
@@ -83,7 +101,7 @@ function Gallery() {
 const App = () => {
     return (
         <>
-            <h1>React Test Page (Interactive)</h1>
+            <h1>React Test Page (Edge Effect)</h1>
             <Gallery />
         </>
     );
