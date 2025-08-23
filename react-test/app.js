@@ -1,24 +1,9 @@
 'use strict';
 
-// Since we don't have a module loader, we'll define the model data here for the test.
-const modelData = {
-    url: "../models/31_10_2024.glb",
-    poster: "../models/31_10_2024.webp",
-    title: "My Model",
-    description: "React Component Test",
-    alt: "A 3D model"
-};
-
-function ModelCard(props) {
-    const { model } = props;
-
-    // Note: In a real React app, we would use `React.useEffect` to handle
-    // the model-viewer element imperatively, but for this simple test,
-    // we can rely on its declarative attributes.
-    // Also, model-viewer is a web component, so React treats it as a custom element.
-
+function ModelCard({ model, style }) {
+    // The style prop will be used to position and rotate the card
     return (
-        <div className="model-card">
+        <div className="model-card" style={style}>
             <model-viewer
                 src={model.url}
                 poster={model.poster}
@@ -36,11 +21,38 @@ function ModelCard(props) {
     );
 }
 
+function Gallery() {
+    // Check if model data is available
+    if (!window.modelsConfig || window.modelsConfig.length === 0) {
+        return <p>Loading models...</p>;
+    }
+
+    const cards = window.modelsConfig.map((model, i) => {
+        const numCards = window.modelsConfig.length;
+        const random_rotate_z = (Math.random() * 10) - 5; // -5 to 5 degrees for a subtle effect
+        const spread = 150; // How far apart the cards are
+        const offset = (i - (numCards - 1) / 2) * spread;
+
+        const style = {
+            transform: `translateX(${offset}px) rotateZ(${random_rotate_z}deg)`,
+            zIndex: i,
+        };
+
+        return <ModelCard key={i} model={model} style={style} />;
+    });
+
+    return (
+        <div className="gallery-container">
+            {cards}
+        </div>
+    );
+}
+
 const App = () => {
     return (
         <>
-            <h1>React Test Page</h1>
-            <ModelCard model={modelData} />
+            <h1>React Test Page (All Tiles)</h1>
+            <Gallery />
         </>
     );
 };
