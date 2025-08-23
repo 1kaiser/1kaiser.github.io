@@ -63,20 +63,23 @@ function Gallery() {
         const numCards = window.modelsConfig.length;
         const isHovered = activeIndex === i;
 
-        const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 10) - 5);
-        const spread = 150;
+        // A more dramatic fan effect
+        const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 16) - 8);
+        const spread = 100; // Tighter spread
         const offset = (i - (numCards - 1) / 2) * spread;
-        const translateY = Math.abs(i - (numCards - 1) / 2) * -30 + 50; // Arc effect
+        const translateY = Math.abs(i - (numCards - 1) / 2) * -50 + 50; // More pronounced arc
 
         let transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg)`;
 
         if (isHovered) {
-            transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(1.1)`;
+            // Make the hovered card pop out more
+            transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 30}px) rotateZ(0deg) scale(1.15)`;
         }
 
         const style = {
             transform: transform,
             zIndex: isHovered ? 100 : i,
+            transition: 'transform 0.5s ease, z-index 0.5s ease', // Smooth transition
         };
 
         return (
@@ -92,6 +95,9 @@ function Gallery() {
 
     return (
         <div className="gallery-container">
+            <div className="gallery-title">
+                <h1>A place to display your masterpiece.</h1>
+            </div>
             {cards}
         </div>
     );
