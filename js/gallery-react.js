@@ -33,7 +33,7 @@ function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
 
     const combinedStyle = {
         ...style,
-        boxShadow: edgeColor ? `0 0 20px 5px ${edgeColor}` : '0 10px 30px rgba(0, 0, 0, 0.15)',
+        boxShadow: edgeColor ? `inset 0 0 20px 5px ${edgeColor}` : '0 10px 30px rgba(0, 0, 0, 0.15)',
     };
 
     const modelUrl = model.url.startsWith('http')
@@ -68,6 +68,16 @@ function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
 
 function Gallery() {
     const [activeIndex, setActiveIndex] = useState(null);
+    const [zIndices, setZIndices] = useState([]);
+
+    useEffect(() => {
+        if (window.modelsConfig) {
+            const shuffled = window.modelsConfig
+                .map((_, i) => i)
+                .sort(() => 0.5 - Math.random());
+            setZIndices(shuffled);
+        }
+    }, []);
 
     if (!window.modelsConfig || window.modelsConfig.length === 0) {
         return <p>Loading models...</p>;
@@ -79,20 +89,20 @@ function Gallery() {
 
         // A more dramatic fan effect
         const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 16) - 8);
-        const spread = 100; // Tighter spread
+        const spread = 70; // Tighter spread
         const offset = (i - (numCards - 1) / 2) * spread;
-        const translateY = Math.abs(i - (numCards - 1) / 2) * -50 + 50; // More pronounced arc
+        const translateY = Math.abs(i - (numCards - 1) / 2) * -35 + 35; // Less pronounced arc
 
         let transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg)`;
 
         if (isHovered) {
             // Make the hovered card pop out more
-            transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 30}px) rotateZ(0deg) scale(1.15)`;
+            transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(1.1)`;
         }
 
         const style = {
             transform: transform,
-            zIndex: isHovered ? 100 : i,
+            zIndex: isHovered ? 100 : zIndices[i],
             transition: 'transform 0.5s ease, z-index 0.5s ease', // Smooth transition
         };
 
@@ -109,9 +119,6 @@ function Gallery() {
 
     return (
         <div className="gallery-container">
-            <div className="gallery-title">
-                <h1>A place to display your masterpiece.</h1>
-            </div>
             {cards}
         </div>
     );
