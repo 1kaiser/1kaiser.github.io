@@ -68,7 +68,7 @@ body {
   pointer-events: all; /* Re-enable pointer events for buttons */
 }
 
-.expand-btn, .download-btn {
+.expand-btn {
   background-color: #f0f2f5;
   color: #333;
   border: 1px solid #ddd;
@@ -82,8 +82,28 @@ body {
   transition: background-color 0.2s ease;
 }
 
-.expand-btn:hover, .download-btn:hover {
+.expand-btn:hover {
   background-color: #e2e6ea;
+}
+
+.download-button {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(50, 205, 50, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+
+.no-animations * {
+    transition: none !important;
 }
 
 
