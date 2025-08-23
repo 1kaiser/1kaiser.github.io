@@ -248,25 +248,9 @@ window.createModelCard = async function(modelData, index) {
 };
 
 // Initialize the gallery (moved from index.html)
+// This function is now disabled as React handles gallery creation.
 window.initializeGallery = async function() {
-  const gallery = document.getElementById('modelGallery');
-  
-  if (!gallery) {
-    console.error('Gallery element not found');
-    return;
-  }
-  
-  // Generate HTML for all model cards
-  const cardsHtmlPromises = window.modelsConfig.map((model, index) =>
-    window.createModelCard(model, index)
-  );
-
-  const cardsHtml = await Promise.all(cardsHtmlPromises);
-  
-  // Insert all cards into the gallery
-  gallery.innerHTML = cardsHtml.join('');
-  
-  console.log(`Gallery initialized with ${window.modelsConfig.length} models`);
+  console.log('Old gallery initialization skipped.');
 };
 
 // Add this to your models/models.js or create a new file: js/model-viewer-config.js
