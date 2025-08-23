@@ -338,7 +338,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const observer = new MutationObserver((mutationsList, observer) => {
             for(const mutation of mutationsList) {
                 if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                    applyRandomTransforms();
+                    // Add a small delay to ensure cards have been rendered and have dimensions
+                    setTimeout(() => {
+                        applyRandomTransforms();
+                    }, 100);
                     observer.disconnect(); // We only need to do this once
                     break;
                 }
