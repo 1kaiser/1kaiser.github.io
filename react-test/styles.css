@@ -63,9 +63,12 @@ body {
   left: 0;
   right: 0;
   padding: 20px;
-  background: none;
+  background: rgba(255, 255, 255, 0.5); /* Semi-transparent background */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* For Safari */
   color: #333;
   pointer-events: none; /* Allow clicks to pass through to the model-viewer */
+  border-top: 1px solid rgba(255, 255, 255, 0.2); /* Subtle top border */
 }
 
 .model-info-overlay h2 {
