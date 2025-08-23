@@ -2,7 +2,7 @@
 
 const { useState, useEffect } = React;
 
-function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
+function ModelCard({ model, style, onMouseEnter, onMouseLeave, isHovered }) {
     const [edgeColor, setEdgeColor] = useState(null);
 
     const posterUrl = model.poster.startsWith('http')
@@ -62,26 +62,42 @@ function ModelCard({ model, style, onMouseEnter, onMouseLeave }) {
                 <h2>{model.title}</h2>
                 <p>{model.description}</p>
             </div>
+            {isHovered && (
+                <a href={modelUrl} download className="download-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
+                        <path d="M0 0h24v24H0z" fill="none"/>
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                </a>
+            )}
         </div>
     );
 }
 
 function Gallery() {
     const [activeIndex, setActiveIndex] = useState(null);
-    const [zIndices, setZIndices] = useState([]);
+    const [cardZIndices, setCardZIndices] = useState([]);
+    const [zCounter, setZCounter] = useState(0);
 
     useEffect(() => {
         if (window.modelsConfig) {
-            const shuffled = window.modelsConfig
-                .map((_, i) => i)
-                .sort(() => 0.5 - Math.random());
-            setZIndices(shuffled);
+            const initialZIndices = window.modelsConfig.map((_, i) => i);
+            setCardZIndices(initialZIndices);
+            setZCounter(window.modelsConfig.length);
         }
     }, []);
 
     if (!window.modelsConfig || window.modelsConfig.length === 0) {
         return <p>Loading models...</p>;
     }
+
+    const handleMouseEnter = (i) => {
+        setActiveIndex(i);
+        const newZIndices = [...cardZIndices];
+        newZIndices[i] = zCounter;
+        setCardZIndices(newZIndices);
+        setZCounter(zCounter + 1);
+    };
 
     const cards = window.modelsConfig.map((model, i) => {
         const numCards = window.modelsConfig.length;
@@ -102,7 +118,7 @@ function Gallery() {
 
         const style = {
             transform: transform,
-            zIndex: isHovered ? 100 : zIndices[i],
+            zIndex: cardZIndices[i],
             transition: 'transform 0.5s ease, z-index 0.5s ease', // Smooth transition
         };
 
@@ -111,7 +127,8 @@ function Gallery() {
                 key={i}
                 model={model}
                 style={style}
-                onMouseEnter={() => setActiveIndex(i)}
+                isHovered={isHovered}
+                onMouseEnter={() => handleMouseEnter(i)}
                 onMouseLeave={() => setActiveIndex(null)}
             />
         );
