@@ -96,114 +96,116 @@ window.addEventListener('resize', () => {
 });
 
 // FFmpeg.wasm video processing logic
-const { FFmpeg } = window.FFmpeg;
-const { fetchFile, toBlobURL } = window.FFmpegUtil;
+window.addEventListener('load', () => {
+    const { FFmpeg } = window.FFmpeg;
+    const { fetchFile, toBlobURL } = window.FFmpegUtil;
 
-const ffmpeg = new FFmpeg();
+    const ffmpeg = new FFmpeg();
 
-const uploader = document.getElementById('uploader');
-const video = document.getElementById('output-video');
-const message = document.getElementById('message');
-const startTimeInput = document.getElementById('start-time');
-const endTimeInput = document.getElementById('end-time');
-const durationInput = document.getElementById('duration');
-const applyClipButton = document.getElementById('apply-clip-button');
-let inputFile = null;
+    const uploader = document.getElementById('uploader');
+    const video = document.getElementById('output-video');
+    const message = document.getElementById('message');
+    const startTimeInput = document.getElementById('start-time');
+    const endTimeInput = document.getElementById('end-time');
+    const durationInput = document.getElementById('duration');
+    const applyClipButton = document.getElementById('apply-clip-button');
+    let inputFile = null;
 
-const load = async () => {
-    if (!ffmpeg.loaded) {
-        message.textContent = 'Loading ffmpeg-core.js...';
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
-        await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    const load = async () => {
+        if (!ffmpeg.loaded) {
+            message.textContent = 'Loading ffmpeg-core.js...';
+            const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
+            await ffmpeg.load({
+                coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+            });
+            message.textContent = 'FFmpeg loaded. Please upload a video file.';
+            ffmpeg.on('log', ({ message: msg }) => {
+                const el = document.getElementById('message');
+                el.innerHTML = msg;
+                console.log(msg);
+            });
+            ffmpeg.on('progress', ({ progress, time }) => {
+                const el = document.getElementById('message');
+                if (progress < 1) {
+                    el.innerHTML = `${Math.round(progress * 100)}% (transcoded time: ${time / 1000000}s)`;
+                }
+            });
+        }
+    };
+
+    const getDuration = (file) => {
+        return new Promise((resolve) => {
+            const tempVideo = document.createElement('video');
+            tempVideo.preload = 'metadata';
+            tempVideo.onloadedmetadata = () => {
+                window.URL.revokeObjectURL(tempVideo.src);
+                resolve(tempVideo.duration);
+            };
+            tempVideo.src = window.URL.createObjectURL(file);
         });
-        message.textContent = 'FFmpeg loaded. Please upload a video file.';
-        ffmpeg.on('log', ({ message: msg }) => {
-            const el = document.getElementById('message');
-            el.innerHTML = msg;
-            console.log(msg);
-        });
-        ffmpeg.on('progress', ({ progress, time }) => {
-            const el = document.getElementById('message');
-            if (progress < 1) {
-                el.innerHTML = `${Math.round(progress * 100)}% (transcoded time: ${time / 1000000}s)`;
-            }
-        });
-    }
-};
+    };
 
-const getDuration = (file) => {
-    return new Promise((resolve) => {
-        const tempVideo = document.createElement('video');
-        tempVideo.preload = 'metadata';
-        tempVideo.onloadedmetadata = () => {
-            window.URL.revokeObjectURL(tempVideo.src);
-            resolve(tempVideo.duration);
-        };
-        tempVideo.src = window.URL.createObjectURL(file);
+    const processVideo = async (args, outputFilename) => {
+        if (!inputFile) {
+            alert('Please upload a video file first.');
+            return;
+        }
+        await load();
+        message.textContent = 'Processing...';
+        const inputFilename = inputFile.name;
+        await ffmpeg.writeFile(inputFilename, await fetchFile(inputFile));
+
+        const command = ['-i', inputFilename, ...args, outputFilename];
+        await ffmpeg.exec(command);
+
+        const data = await ffmpeg.readFile(outputFilename);
+        video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+        message.textContent = 'Processing complete.';
+        await ffmpeg.deleteFile(inputFilename);
+        await ffmpeg.deleteFile(outputFilename);
+    };
+
+    uploader.addEventListener('change', (e) => {
+        inputFile = e.target.files[0];
+        if (inputFile) {
+            message.textContent = `File "${inputFile.name}" selected.`;
+        }
     });
-};
 
-const processVideo = async (args, outputFilename) => {
-    if (!inputFile) {
-        alert('Please upload a video file first.');
-        return;
-    }
-    await load();
-    message.textContent = 'Processing...';
-    const inputFilename = inputFile.name;
-    await ffmpeg.writeFile(inputFilename, await fetchFile(inputFile));
+    applyClipButton.addEventListener('click', async () => {
+        const startTime = startTimeInput.value.trim();
+        const endTime = endTimeInput.value.trim();
+        const duration = durationInput.value.trim();
 
-    const command = ['-i', inputFilename, ...args, outputFilename];
-    await ffmpeg.exec(command);
+        if (!inputFile) {
+            alert('Please upload a video file first.');
+            return;
+        }
 
-    const data = await ffmpeg.readFile(outputFilename);
-    video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-    message.textContent = 'Processing complete.';
-    await ffmpeg.deleteFile(inputFilename);
-    await ffmpeg.deleteFile(outputFilename);
-};
+        if (!startTime) {
+            alert('A start time is required for clipping.');
+            return;
+        }
 
-uploader.addEventListener('change', (e) => {
-    inputFile = e.target.files[0];
-    if (inputFile) {
-        message.textContent = `File "${inputFile.name}" selected.`;
-    }
+        if (!endTime && !duration) {
+            alert('Please specify either an end time or a duration.');
+            return;
+        }
+
+        const args = ['-ss', startTime];
+        if (endTime) {
+            args.push('-to', endTime);
+        } else { // duration must be present due to the check above
+            args.push('-t', duration);
+        }
+
+        const outputFilename = 'clipped.mp4';
+        await processVideo(args, outputFilename);
+    });
+
+
+    // Lazy load ffmpeg on first interaction
+    uploader.addEventListener('focus', load, { once: true });
+    applyClipButton.addEventListener('focus', load, { once: true });
 });
-
-applyClipButton.addEventListener('click', async () => {
-    const startTime = startTimeInput.value.trim();
-    const endTime = endTimeInput.value.trim();
-    const duration = durationInput.value.trim();
-
-    if (!inputFile) {
-        alert('Please upload a video file first.');
-        return;
-    }
-
-    if (!startTime) {
-        alert('A start time is required for clipping.');
-        return;
-    }
-
-    if (!endTime && !duration) {
-        alert('Please specify either an end time or a duration.');
-        return;
-    }
-
-    const args = ['-ss', startTime];
-    if (endTime) {
-        args.push('-to', endTime);
-    } else { // duration must be present due to the check above
-        args.push('-t', duration);
-    }
-
-    const outputFilename = 'clipped.mp4';
-    await processVideo(args, outputFilename);
-});
-
-
-// Lazy load ffmpeg on first interaction
-uploader.addEventListener('focus', load, { once: true });
-applyClipButton.addEventListener('focus', load, { once: true });
