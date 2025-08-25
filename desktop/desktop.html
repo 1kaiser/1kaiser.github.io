@@ -12,9 +12,22 @@
     <div id="video-controls">
         <h3>FFmpeg.wasm Video Editor</h3>
         <input type="file" id="uploader" />
-        <br />
-        <button id="clip-button">Clip last 5 seconds</button>
-        <button id="resize-button">Resize to 360p</button>
+
+        <h4>Clipping Controls</h4>
+        <div>
+            <label for="start-time">Start Time:</label>
+            <input type="text" id="start-time" placeholder="hh:mm:ss.ms">
+        </div>
+        <div>
+            <label for="end-time">End Time:</label>
+            <input type="text" id="end-time" placeholder="hh:mm:ss.ms">
+        </div>
+        <div>
+            <label for="duration">Duration:</label>
+            <input type="text" id="duration" placeholder="in seconds">
+        </div>
+
+        <button id="apply-clip-button">Apply Clip</button>
         <br />
         <video id="output-video" controls muted></video>
         <p id="message"></p>

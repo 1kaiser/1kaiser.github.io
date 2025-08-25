@@ -102,10 +102,12 @@ const { fetchFile, toBlobURL } = window.FFmpegUtil;
 const ffmpeg = new FFmpeg();
 
 const uploader = document.getElementById('uploader');
-const clipButton = document.getElementById('clip-button');
-const resizeButton = document.getElementById('resize-button');
 const video = document.getElementById('output-video');
 const message = document.getElementById('message');
+const startTimeInput = document.getElementById('start-time');
+const endTimeInput = document.getElementById('end-time');
+const durationInput = document.getElementById('duration');
+const applyClipButton = document.getElementById('apply-clip-button');
 let inputFile = null;
 
 const load = async () => {
@@ -170,25 +172,38 @@ uploader.addEventListener('change', (e) => {
     }
 });
 
-clipButton.addEventListener('click', async () => {
+applyClipButton.addEventListener('click', async () => {
+    const startTime = startTimeInput.value.trim();
+    const endTime = endTimeInput.value.trim();
+    const duration = durationInput.value.trim();
+
     if (!inputFile) {
         alert('Please upload a video file first.');
         return;
     }
-    const duration = await getDuration(inputFile);
-    const startTime = Math.max(0, duration - 5);
+
+    if (!startTime) {
+        alert('A start time is required for clipping.');
+        return;
+    }
+
+    if (!endTime && !duration) {
+        alert('Please specify either an end time or a duration.');
+        return;
+    }
+
+    const args = ['-ss', startTime];
+    if (endTime) {
+        args.push('-to', endTime);
+    } else { // duration must be present due to the check above
+        args.push('-t', duration);
+    }
+
     const outputFilename = 'clipped.mp4';
-    const args = ['-ss', startTime.toString(), '-t', '5'];
     await processVideo(args, outputFilename);
 });
 
-resizeButton.addEventListener('click', async () => {
-    const outputFilename = 'resized.mp4';
-    const args = ['-vf', 'scale=-1:360'];
-    await processVideo(args, outputFilename);
-});
 
 // Lazy load ffmpeg on first interaction
 uploader.addEventListener('focus', load, { once: true });
-clipButton.addEventListener('focus', load, { once: true });
-resizeButton.addEventListener('focus', load, { once: true });
+applyClipButton.addEventListener('focus', load, { once: true });
