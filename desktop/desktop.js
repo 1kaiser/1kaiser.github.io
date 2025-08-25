@@ -120,14 +120,13 @@ window.addEventListener('load', () => {
 
     const load = async () => {
         if (!ffmpeg.loaded) {
-            message.textContent = 'Loading ffmpeg-core.js (multi-threaded)...';
-            const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd'
+            message.textContent = 'Loading ffmpeg-core.js...';
+            const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
             await ffmpeg.load({
                 coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
                 wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-                workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),
             });
-            message.textContent = 'FFmpeg (multi-threaded) loaded. Please upload a video file.';
+            message.textContent = 'FFmpeg loaded. Please upload a video file.';
             ffmpeg.on('log', ({ message: msg }) => {
                 const el = document.getElementById('message');
                 el.innerHTML = msg;
