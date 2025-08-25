@@ -111,6 +111,13 @@ window.addEventListener('load', () => {
     const applyClipButton = document.getElementById('apply-clip-button');
     let inputFile = null;
 
+    const formatTime = (timeInSeconds) => {
+        const hh = Math.floor(timeInSeconds / 3600).toString().padStart(2, '0');
+        const mm = Math.floor((timeInSeconds % 3600) / 60).toString().padStart(2, '0');
+        const ss = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
+        return `${hh}:${mm}:${ss}`;
+    };
+
     const load = async () => {
         if (!ffmpeg.loaded) {
             message.textContent = 'Loading ffmpeg-core.js (multi-threaded)...';
@@ -167,10 +174,14 @@ window.addEventListener('load', () => {
         await ffmpeg.deleteFile(outputFilename);
     };
 
-    uploader.addEventListener('change', (e) => {
+    uploader.addEventListener('change', async (e) => {
         inputFile = e.target.files[0];
         if (inputFile) {
             message.textContent = `File "${inputFile.name}" selected.`;
+            const duration = await getDuration(inputFile);
+            startTimeInput.value = '00:00:00';
+            endTimeInput.value = formatTime(duration);
+            durationInput.value = ''; // Clear duration field
         }
     });
 
@@ -195,10 +206,11 @@ window.addEventListener('load', () => {
         }
 
         const args = ['-ss', startTime];
-        if (endTime) {
-            args.push('-to', endTime);
-        } else { // duration must be present due to the check above
+        // New logic: Prioritize duration over end time
+        if (duration) {
             args.push('-t', duration);
+        } else if (endTime) {
+            args.push('-to', endTime);
         }
 
         const outputFilename = 'clipped.mp4';
