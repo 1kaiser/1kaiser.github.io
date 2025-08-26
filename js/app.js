@@ -1,6 +1,7 @@
 // Content from js/main.js
 // Draco Decoder Support
 // Configure Draco decoder before model-viewer loads
+// Sourced from unpkg, which hosts Google's Draco library.
 window.ModelViewerElement = window.ModelViewerElement || {};
 window.ModelViewerElement.dracoDecoderLocation = 'https://unpkg.com/three@0.152.0/examples/js/libs/draco/';
 

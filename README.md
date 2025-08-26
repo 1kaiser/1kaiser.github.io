@@ -20,6 +20,19 @@ This project leverages several key technologies and AI assistance:
 
 *   **[Piping Server](https://github.com/nwtgck/piping-server)**: Used to facilitate the real-time transfer of model data for the 'Deploy to Mobile' QR code feature. (Textual acknowledgement as no distinct project logo).
 
+*   <a href="https://react.dev" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/reactjs/reactjs.org/main/src/icons/logo.svg" alt="React Logo" title="React" width="40"></a>
+    **[React](https://react.dev)**: A JavaScript library for building user interfaces, used in the `react-test` experimental area.
+
+*   <a href="https://babeljs.io/" target="_blank" rel="noopener noreferrer"><img src="https://icon.icepanel.io/Technology/svg/Babel.svg" alt="Babel Logo" title="Babel" width="40"></a>
+    **[Babel](https://babeljs.io/)**: A JavaScript compiler used to transform modern JavaScript into backwards-compatible versions.
+
+*   <a href="https://cdnjs.com/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/cdnjs/brand/master/logo/standard/dark-1024.png" alt="cdnjs Logo" title="cdnjs" width="40"></a>
+    **[cdnjs](https://cdnjs.com/)**: A free and open-source CDN used for hosting some of the project's dependencies.
+
+*   **[Color Thief](https://lokeshdhakar.com/projects/color-thief/)**: A script for grabbing the dominant color or color palette from an image, used for dynamic color theming.
+
+*   **[unpkg](https://unpkg.com/)**: A fast, global content delivery network for everything on npm, used for hosting some of the project's dependencies.
+
 ## Key Features
 
 *   **3D Model Display**: View various 3D models (GLB format).
