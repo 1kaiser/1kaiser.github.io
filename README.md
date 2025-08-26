@@ -20,16 +20,11 @@ This project leverages several key technologies and AI assistance:
 
 *   **[Piping Server](https://github.com/nwtgck/piping-server)**: Used to facilitate the real-time transfer of model data for the 'Deploy to Mobile' QR code feature. (Textual acknowledgement as no distinct project logo).
 
-*   <a href="https://react.dev" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/reactjs/reactjs.org/main/src/icons/logo.svg" alt="React Logo" title="React" width="40"></a>
-    **[React](https://react.dev)**: A JavaScript library for building user interfaces, used in the `react-test` experimental area.
-
-*   <a href="https://babeljs.io/" target="_blank" rel="noopener noreferrer"><img src="https://icon.icepanel.io/Technology/svg/Babel.svg" alt="Babel Logo" title="Babel" width="40"></a>
-    **[Babel](https://babeljs.io/)**: A JavaScript compiler used to transform modern JavaScript into backwards-compatible versions.
+*   <a href="https://vuejs.org/" target="_blank" rel="noopener noreferrer"><img src="https://vuejs.org/images/logo.png" alt="Vue.js Logo" title="Vue.js" width="40"></a>
+    **[Vue.js](https://vuejs.org/)**: The Progressive JavaScript Framework used for building the user interface of the gallery.
 
 *   <a href="https://cdnjs.com/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/cdnjs/brand/master/logo/standard/dark-1024.png" alt="cdnjs Logo" title="cdnjs" width="40"></a>
     **[cdnjs](https://cdnjs.com/)**: A free and open-source CDN used for hosting some of the project's dependencies.
-
-*   **[Color Thief](https://lokeshdhakar.com/projects/color-thief/)**: A script for grabbing the dominant color or color palette from an image, used for dynamic color theming.
 
 *   **[unpkg](https://unpkg.com/)**: A fast, global content delivery network for everything on npm, used for hosting some of the project's dependencies.
 
@@ -47,18 +42,6 @@ This project leverages several key technologies and AI assistance:
 *   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
 *   **CV Page**: A dedicated page to showcase a curriculum vitae.
 
-## Recent Improvements
-
-*   **CV Page**: Added a new CV page with placeholder content.
-*   **Mobile View Page Refactor (`view/index.html`)**:
-    *   Externalized all inline CSS into a dedicated `view/mobile-view.css` file, cleaning up the HTML structure.
-    *   Replaced the embedded JavaScript logic with the more robust and feature-rich external `view/mobile_view.js`, enhancing the reliability and capabilities of the mobile viewing page.
-*   **Enhanced Modal UX (User Experience)**:
-    *   The modal window now intelligently waits for the selected 3D model to finish loading in its gallery card before appearing, providing a smoother experience.
-    *   Fixed an issue where the modal might not reopen correctly for the same model or could briefly show a previously viewed model; the modal's content is now reliably updated on each interaction.
-*   **Camera Controls**: Confirmed that camera orbit controls are consistently available and functional in the modal viewer, even with repeated opening and closing or model changes.
-*   **Piping Utilities Consolidation**: Consolidated common piping server utilities into a shared `js/piping-utils.js` module, reducing code duplication in `js/qr-deploy.js` and `view/mobile_view.js`.
-
 ## Current Folder Structure
 
 ```ascii
@@ -71,6 +54,7 @@ This project leverages several key technologies and AI assistance:
 │   └── styles.css
 ├── js/
 │   ├── app.js
+│   ├── gallery-vue.js
 │   ├── piping-utils.js
 │   └── qr-deploy.js
 ├── models/
@@ -89,20 +73,3 @@ This project leverages several key technologies and AI assistance:
 ├── LICENSE
 └── README.md
 ```
-
-## TODO
-
--   **Refactor Mobile View Page (`view/index.html`)**:
-    -   [X] Replace the embedded JavaScript in `view/index.html` with a script tag linking to the external `view/mobile_view.js`. *(Done)*
-    -   [X] Move inline CSS from `view/index.html` to a dedicated external CSS file (`view/mobile-view.css`). *(Done)*
--   **Consolidate Piping Server Utilities**:
-    -   [X] Create a shared JavaScript module (`js/piping-utils.js`).
-    -   [X] Move common piping server constants and utility functions into this shared module.
-    -   [X] Update `js/qr-deploy.js` and `view/mobile_view.js` to use this shared module.
--   **CSS Review**:
-    -   [ ] Conduct a thorough review of all CSS (`css/styles.css` and `view/mobile-view.css`) to identify and remove any remaining redundancies or style overlaps.
--   **Testing**:
-    -   [ ] Perform comprehensive cross-browser and cross-device testing of all application features.
--   **Documentation**:
-    -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
-    -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
