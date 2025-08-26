@@ -96,7 +96,7 @@ window.addEventListener('resize', () => {
 });
 
 // FFmpeg.wasm video processing logic
-const initializeFFmpeg = () => {
+window.addEventListener('load', () => {
     const { FFmpeg } = window.FFmpeg;
     const { fetchFile, toBlobURL } = window.FFmpegUtil;
 
@@ -216,17 +216,8 @@ const initializeFFmpeg = () => {
         await processVideo(args, outputFilename);
     });
 
+
     // Lazy load ffmpeg on first interaction
     uploader.addEventListener('focus', load, { once: true });
     applyClipButton.addEventListener('focus', load, { once: true });
-};
-
-const pollForFFmpeg = () => {
-    if (window.FFmpeg && window.FFmpegUtil) {
-        initializeFFmpeg();
-    } else {
-        setTimeout(pollForFFmpeg, 100);
-    }
-};
-
-pollForFFmpeg();
+});
