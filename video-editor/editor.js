@@ -14,12 +14,6 @@ const initializeFFmpeg = () => {
     const applyClipButton = document.getElementById('apply-clip-button');
     let inputFile = null;
 
-    const isValidTimeFormat = (time) => {
-        // Regex to validate HH:MM:SS or HH:MM:SS.ms format
-        const timeRegex = /^(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?$/;
-        return timeRegex.test(time);
-    };
-
     const formatTime = (timeInSeconds) => {
         const hh = Math.floor(timeInSeconds / 3600).toString().padStart(2, '0');
         const mm = Math.floor((timeInSeconds % 3600) / 60).toString().padStart(2, '0');
@@ -44,7 +38,7 @@ const initializeFFmpeg = () => {
             ffmpeg.on('progress', ({ progress, time }) => {
                 const el = document.getElementById('message');
                 if (progress < 1) {
-                    el.innerHTML = `Processing: ${Math.round(progress * 100)}% (transcoded time: ${time / 1000000}s)`;
+                    el.innerHTML = `${Math.round(progress * 100)}% (transcoded time: ${time / 1000000}s)`;
                 }
             });
         }
@@ -63,7 +57,12 @@ const initializeFFmpeg = () => {
     };
 
     const processVideo = async (args, outputFilename) => {
+        if (!inputFile) {
+            alert('Please upload a video file first.');
+            return;
+        }
         await load();
+        message.textContent = 'Processing...';
         const inputFilename = inputFile.name;
         await ffmpeg.writeFile(inputFilename, await fetchFile(inputFile));
 
@@ -71,25 +70,16 @@ const initializeFFmpeg = () => {
         await ffmpeg.exec(command);
 
         const data = await ffmpeg.readFile(outputFilename);
-
-        if (video.src) {
-            URL.revokeObjectURL(video.src);
-        }
         video.src = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
-
+        message.textContent = 'Processing complete.';
         await ffmpeg.deleteFile(inputFilename);
         await ffmpeg.deleteFile(outputFilename);
-        message.textContent = 'Processing complete.';
     };
 
     uploader.addEventListener('change', async (e) => {
         inputFile = e.target.files[0];
         if (inputFile) {
-            if (inputFile.size > 100 * 1024 * 1024) { // 100MB
-                message.textContent = `Warning: Large file (${(inputFile.size/1024/1024).toFixed(1)}MB). Processing may be slow or fail.`;
-            } else {
-                message.textContent = `File "${inputFile.name}" selected.`;
-            }
+            message.textContent = `File "${inputFile.name}" selected.`;
             const duration = await getDuration(inputFile);
             startTimeInput.value = '00:00:00';
             endTimeInput.value = formatTime(duration);
@@ -101,20 +91,14 @@ const initializeFFmpeg = () => {
         const startTime = startTimeInput.value.trim();
         const endTime = endTimeInput.value.trim();
         const duration = durationInput.value.trim();
-        const spinner = document.getElementById('spinner');
 
         if (!inputFile) {
             alert('Please upload a video file first.');
             return;
         }
 
-        if (!startTime || !isValidTimeFormat(startTime)) {
-            alert('Invalid or missing start time. Please use HH:MM:SS format.');
-            return;
-        }
-
-        if (endTime && !isValidTimeFormat(endTime)) {
-            alert('Invalid end time format. Please use HH:MM:SS format.');
+        if (!startTime) {
+            alert('A start time is required for clipping.');
             return;
         }
 
@@ -124,6 +108,7 @@ const initializeFFmpeg = () => {
         }
 
         const args = ['-ss', startTime];
+        // New logic: Prioritize duration over end time
         if (duration) {
             args.push('-t', duration);
         } else if (endTime) {
@@ -131,16 +116,7 @@ const initializeFFmpeg = () => {
         }
 
         const outputFilename = 'clipped.mp4';
-
-        try {
-            spinner.classList.remove('hidden');
-            message.textContent = 'Starting processing...';
-            await processVideo(args, outputFilename);
-        } catch (error) {
-            message.textContent = `An error occurred: ${error.message}`;
-        } finally {
-            spinner.classList.add('hidden');
-        }
+        await processVideo(args, outputFilename);
     });
 
     // Lazy load ffmpeg on first interaction
