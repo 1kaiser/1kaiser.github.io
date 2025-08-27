@@ -5,18 +5,10 @@ const GalleryApp = {
       activeIndex: null,
       cardZIndices: [],
       zCounter: 0,
-      isDragging: false,
-      draggedIndex: null,
-      dragStartX: 0,
-      dragStartY: 0,
-      cardStartOffsetX: 0,
-      cardStartOffsetY: 0,
-      cardOffsets: [],
     };
   },
   methods: {
     handleMouseEnter(i) {
-      if (this.isDragging) return;
       this.activeIndex = i;
       const newZIndices = [...this.cardZIndices];
       newZIndices[i] = this.zCounter;
@@ -37,51 +29,10 @@ const GalleryApp = {
         return model.url;
       }
       return model.url.startsWith('./') ? model.url.substring(2) : model.url;
-    },
-    dragStart(i, event) {
-      this.isDragging = true;
-      this.draggedIndex = i;
-      this.dragStartX = event.clientX;
-      this.dragStartY = event.clientY;
-      this.cardStartOffsetX = this.cardOffsets[i].x;
-      this.cardStartOffsetY = this.cardOffsets[i].y;
-
-      const newZIndices = [...this.cardZIndices];
-      newZIndices[i] = this.zCounter;
-      this.cardZIndices = newZIndices;
-      this.zCounter++;
-
-      window.addEventListener('mousemove', this.drag);
-      window.addEventListener('mouseup', this.dragEnd);
-    },
-    drag(event) {
-      if (!this.isDragging) return;
-      event.preventDefault();
-      const deltaX = event.clientX - this.dragStartX;
-      const deltaY = event.clientY - this.dragStartY;
-
-      const newOffsets = [...this.cardOffsets];
-      newOffsets[this.draggedIndex] = {
-        x: this.cardStartOffsetX + deltaX,
-        y: this.cardStartOffsetY + deltaY,
-      };
-      this.cardOffsets = newOffsets;
-    },
-    dragEnd() {
-      this.isDragging = false;
-      // To prevent a quick hover effect after dragging, we delay setting draggedIndex to null
-      setTimeout(() => {
-        this.draggedIndex = null;
-      }, 100);
-      window.removeEventListener('mousemove', this.drag);
-      window.removeEventListener('mouseup', this.dragEnd);
     }
   },
   computed: {
     cards() {
-      if (!this.cardOffsets || this.cardOffsets.length === 0) {
-        return [];
-      }
       return this.models.map((model, i) => {
         const numCards = this.models.length;
         const isHovered = this.activeIndex === i;
@@ -89,23 +40,15 @@ const GalleryApp = {
         const spread = 147; // 30% overlap
         const offset = (i - (numCards - 1) / 2) * spread;
         const translateY = Math.abs(i - (numCards - 1) / 2) * -35 + 35; // Less pronounced arc
-
-        let baseTransform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg)`;
-
-        if (isHovered && !this.isDragging) {
-          baseTransform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(1.1)`;
+        let transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg)`;
+        if (isHovered) {
+          transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(1.1)`;
         }
-
-        const dragTransform = `translateX(${this.cardOffsets[i].x}px) translateY(${this.cardOffsets[i].y}px)`;
-        const transform = `${baseTransform} ${dragTransform}`;
-
-        const isBeingDragged = this.isDragging && this.draggedIndex === i;
-
         return {
           style: {
             transform: transform,
             zIndex: this.cardZIndices[i],
-            transition: isBeingDragged ? 'none' : 'transform 0.5s ease, z-index 0.5s ease',
+            transition: 'transform 0.5s ease, z-index 0.5s ease',
           },
           model: model,
           isHovered: isHovered,
@@ -118,7 +61,6 @@ const GalleryApp = {
       const initialZIndices = this.models.map((_, i) => i);
       this.cardZIndices = initialZIndices;
       this.zCounter = this.models.length;
-      this.cardOffsets = this.models.map(() => ({ x: 0, y: 0 }));
     }
   },
   template: `
@@ -130,7 +72,6 @@ const GalleryApp = {
         :style="card.style"
         @mouseenter="handleMouseEnter(i)"
         @mouseleave="handleMouseLeave"
-        @mousedown.prevent="dragStart(i, $event)"
       >
         <model-viewer
           :src="getModelUrl(card.model)"
