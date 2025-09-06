@@ -35,18 +35,22 @@ document.querySelectorAll('.download-btn').forEach(btn => {
 // Add click event to each model card
 modelCards.forEach(card => {
   card.addEventListener('click', () => {
-    // Get model data from the card
-    window.currentModelSrc = card.getAttribute('data-model');
-    window.currentModelTitle = card.getAttribute('data-title');
-    const modelDesc = card.getAttribute('data-desc');
-    
-    // Set the source for the modal model viewer
-    modalViewer.setAttribute('src', window.currentModelSrc);
-    modalViewer.setAttribute('alt', window.currentModelTitle);
-    
-    // Update the download button in the modal
-    modalDownloadBtn.href = window.currentModelSrc;
-    modalDownloadBtn.setAttribute('download', window.currentModelTitle + '.glb');
+    if (card.hasAttribute('data-model') && card.hasAttribute('data-title')) {
+      // Get model data from the card
+      window.currentModelSrc = card.getAttribute('data-model');
+      window.currentModelTitle = card.getAttribute('data-title');
+      const modelDesc = card.hasAttribute('data-desc') ? card.getAttribute('data-desc') : '';
+      
+      // Set the source for the modal model viewer
+      modalViewer.src = window.currentModelSrc;
+      modalViewer.alt = window.currentModelTitle;
+      
+      // Update the download button in the modal
+      modalDownloadBtn.href = window.currentModelSrc;
+      modalDownloadBtn.download = window.currentModelTitle + '.glb';
+    } else {
+      console.error('Model card is missing required data attributes.');
+    }
     
     // If mobile deployment is active and there are connected sessions, mark content as changed
     if (window.mobileDeployment && window.mobileDeployment.isDeployed) {

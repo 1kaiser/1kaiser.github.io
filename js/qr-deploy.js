@@ -135,7 +135,7 @@ class MobileDeployment {
       this.updateDeployButtonState('connecting');
       
       // Update UI to show deployment is in progress
-      this.updateStatus('Connecting to piping server...', '#FFA500'); // Orange color for "in progress"
+      this.updateStatus('Connecting to piping server...', '#FFA500', 'connecting'); // Orange color for "in progress"
       
       // Generate the QR code and show the modal
       this.openModal();
@@ -151,14 +151,14 @@ class MobileDeployment {
       // After a short delay, update status to waiting for connections if no connections yet
       setTimeout(() => {
         if (this.sessionList.length === 0 && this.isDeployed) {
-          this.updateStatus('Piping server connected. Waiting for mobile device to scan QR code...', '#4285F4');
+          this.updateStatus('Piping server connected. Waiting for mobile device to scan QR code...', '#4285F4', 'connected');
           this.updateDeployButtonState('ready');
         }
       }, 2000);
       
     } catch (error) {
       console.error('Error deploying to mobile:', error);
-      this.updateStatus('Failed to deploy model to mobile. Please try again.', '#DC143C');
+      this.updateStatus('Failed to deploy model to mobile. Please try again.', '#DC143C', 'error');
       this.updateDeployButtonState('error');
     }
   }
@@ -198,7 +198,7 @@ class MobileDeployment {
   }
   
   // Update status message
-  updateStatus(message, color = 'white') {
+  updateStatus(message, color = 'white', statusType = null) {
     if (this.statusMessage) {
       this.statusMessage.textContent = message;
       this.statusMessage.style.color = color;
@@ -212,22 +212,14 @@ class MobileDeployment {
       }
     }
     
-    // Also update connection status
-    const isConnecting = color === '#FFA500'; // Orange indicates connecting
-    const isConnected = color === '#4285F4'; // Blue indicates connected
-    const isError = color === '#DC143C'; // Red indicates error
-    
-    if (isConnecting) {
-      this.updateConnectionStatus('connecting', message);
-    } else if (isConnected) {
-      this.updateConnectionStatus('connected', message);
-    } else if (isError) {
-      this.updateConnectionStatus('error', message);
+    // Also update connection status if a statusType is provided
+    if (statusType) {
+      this.updateConnectionStatus(statusType);
     }
   }
   
   // Update connection status indicator
-  updateConnectionStatus(state, message) {
+  updateConnectionStatus(state) {
     if (!this.connectionStatus) return;
     
     const indicator = this.connectionStatus.querySelector('.status-indicator');
@@ -249,8 +241,8 @@ class MobileDeployment {
         statusText.textContent = 'Connected to piping server';
         break;
       case 'error':
-        indicator.style.backgroundColor = '#EA4335'; // Red
-        statusText.textContent = 'Connection error';
+        indicator.classList.add('status-error'); // Use class for styling
+        statusText.textContent = 'Connection error'; // Or use message if desired
         break;
       default:
         this.connectionStatus.style.display = 'none';
@@ -335,7 +327,7 @@ class MobileDeployment {
         this.updateDeployButtonState('connected');
         
         // Update UI to show connection success
-        this.updateStatus('Mobile device connected! You can now view your model.', '#4285F4');
+        this.updateStatus('Mobile device connected! You can now view your model.', '#4285F4', 'connected');
         
         // Only update if not currently updating
         if (!this.isSendingData) {
@@ -392,6 +384,7 @@ class MobileDeployment {
     }
     
     try {
+      let refreshTimeoutId;
       console.log('Refreshing mobile view...');
       this.isSendingData = true;
       
@@ -402,12 +395,10 @@ class MobileDeployment {
         this.refreshMobileBtn.disabled = true;
       }
       
-      this.updateStatus('Sending data to mobile device. Textured models will take some time.', 'white');
+      this.updateStatus('Sending data to mobile device. Textured models will take some time.', 'white'); // Informational, no specific connection status type
       
-      // Set a timeout to reset sending state
-      setTimeout(() => {
-        this.isSendingData = false;
-        
+      // Set a timeout to reset button appearance if sending takes too long
+      refreshTimeoutId = setTimeout(() => {
         // Reset refresh button
         if (this.refreshMobileBtn) {
           this.refreshMobileBtn.textContent = 'Refresh Mobile';
@@ -503,7 +494,7 @@ class MobileDeployment {
       }
       
       this.contentHasChanged = false;
-      this.updateStatus('Model successfully refreshed on mobile device!', '#4285F4');
+      this.updateStatus('Model successfully refreshed on mobile device!', '#4285F4', 'connected');
       
       // Update refresh button to success state
       if (this.refreshMobileBtn) {
@@ -521,7 +512,7 @@ class MobileDeployment {
       
     } catch (error) {
       console.error('Error refreshing mobile view:', error);
-      this.updateStatus('Failed to refresh mobile view. Please try again.', '#DC143C');
+      this.updateStatus('Failed to refresh mobile view. Please try again.', '#DC143C', 'error');
       
       // Reset refresh button to error state
       if (this.refreshMobileBtn) {
@@ -530,6 +521,7 @@ class MobileDeployment {
         this.refreshMobileBtn.disabled = false;
       }
     } finally {
+      clearTimeout(refreshTimeoutId); // Clear the fallback timeout
       this.isSendingData = false;
     }
   }
