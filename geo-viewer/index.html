@@ -1,36 +1,29 @@
 <!DOCTYPE html>
-<!--
-- `three-geo` is a three.js extension for 3D geographic visualization.
-- Copyright (c) 2016-2022, Wiaczeslaw Jakimowicz.
--
-- `three-geo` is a free software: you can redistribute it and/or modify
-- it under the terms of the MIT License.
--
-- This program is distributed in the hope that it will be useful,
-- but WITHOUT ANY WARRANTY; without even the implied warranty of
-- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-- MIT License for more details.
--
-- You should have received a copy of the MIT License along with this
-- program. If not, see <https://opensource.org/licenses/MIT>.
--->
-<html>
+<html lang="en">
 <head>
-    <title>three-geo - geo-viewer</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="https://w3reality.github.io/three-geo/examples/geo-viewer/io/main.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three-Geo Viewer</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script>
-      window.THREE_GEO_SETTINGS = {
-        assets: 'https://w3reality.github.io/three-geo/assets',
-      };
-    </script>
+    <div id="container"></div>
+
+    <!-- Third-party libraries -->
     <script src="https://unpkg.com/three@0.142.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.142.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://unpkg.com/three@0.142.0/examples/js/libs/dat.gui.min.js"></script>
-    <script src="https://w3reality.github.io/three-geo/dist/three-geo.min.js"></script>
+
+    <!-- three-geo library -->
+    <script src="https://unpkg.com/three-geo@1.4.5/dist/three-geo.min.js"></script>
+
+    <!-- Custom application script -->
+    <script src="geo-viewer.js"></script>
 </body>
 </html>
