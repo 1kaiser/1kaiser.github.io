@@ -19,6 +19,13 @@
     <title>three-geo - geo-viewer</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://w3reality.github.io;
+        style-src 'self' 'unsafe-inline' https://w3reality.github.io;
+        connect-src 'self' https://w3reality.github.io;
+        img-src 'self' data: blob: https:;
+    ">
     <link rel="stylesheet" type="text/css" href="https://w3reality.github.io/three-geo/examples/geo-viewer/io/main.css" />
 </head>
 <body>
@@ -32,5 +39,6 @@
     <script src="https://unpkg.com/three@0.142.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.142.0/examples/js/libs/dat.gui.min.js"></script>
     <script src="https://w3reality.github.io/three-geo/dist/three-geo.min.js"></script>
+    <script src="https://w3reality.github.io/three-geo/examples/geo-viewer/io/main.js"></script>
 </body>
 </html>
