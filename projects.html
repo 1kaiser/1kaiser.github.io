@@ -4,349 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI/ML Projects - 1kaiser</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: white;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    
-    header {
-      text-align: center;
-      margin-bottom: 50px;
-      color: #333;
-    }
-    
-    h1 {
-      font-size: 3em;
-      margin-bottom: 10px;
-    }
-    
-    .subtitle {
-      font-size: 1.2em;
-      opacity: 0.9;
-    }
-    
-    .back-link {
-      display: inline-block;
-      margin-bottom: 20px;
-      color: #667eea;
-      text-decoration: none;
-      padding: 10px 20px;
-      background: #f5f5f5;
-      border-radius: 30px;
-    }
-    
-    .back-link:hover {
-      background: #eeeeee;
-    }
-    
-    .projects-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 30px;
-      margin-top: 40px;
-    }
-    
-    .project-card {
-      background: white;
-      border-radius: 15px;
-      overflow: hidden;
-      border: 1px solid #e0e0e0;
-      position: relative;
-    }
-    
-    .project-card:hover {
-      border-color: #667eea;
-    }
-    
-    .project-header {
-      padding: 25px;
-      background: #f8f9fa;
-      color: #333;
-      border-bottom: 1px solid #e0e0e0;
-    }
-    
-    .project-title {
-      font-size: 1.5em;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    
-    .project-icon {
-      font-size: 1.2em;
-    }
-    
-    .project-status {
-      display: inline-block;
-      padding: 4px 12px;
-      background: #667eea;
-      color: white;
-      border-radius: 20px;
-      font-size: 0.85em;
-      margin-top: 5px;
-    }
-    
-    .project-body {
-      padding: 25px;
-    }
-    
-    .project-description {
-      color: #555;
-      line-height: 1.6;
-      margin-bottom: 20px;
-    }
-    
-    .project-tech {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    
-    .tech-tag {
-      padding: 5px 12px;
-      background: #f3f4f6;
-      border-radius: 15px;
-      font-size: 0.85em;
-      color: #374151;
-    }
-    
-    .project-links {
-      display: flex;
-      gap: 15px;
-    }
-    
-    .project-link {
-      flex: 1;
-      text-align: center;
-      padding: 12px;
-      background: #667eea;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 500;
-    }
-    
-    .project-link:hover {
-      background: #5a6fe8;
-    }
-    
-    .github-link {
-      background: #24292e;
-    }
-    
-    .github-link:hover {
-      background: #404448;
-    }
-    
-    .section-title {
-      color: #333;
-      font-size: 2em;
-      margin: 40px 0 20px;
-      text-align: center;
-    }
-    
-    @media (max-width: 768px) {
-      .projects-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      h1 {
-        font-size: 2em;
-      }
-    }
-  </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <a href="index.html" class="back-link">← Back to 3D Gallery</a>
-      <h1>🚀 AI/ML Projects</h1>
-      <p class="subtitle">Browser-based AI applications and visualizations</p>
-    </header>
-    
-    <section>
-      <h2 class="section-title">🌟 Featured Projects</h2>
-      
-      <div class="projects-grid">
-        <!-- MuVeRa Browser -->
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">
-              <span class="project-icon">🌌</span>
-              MuVeRa Browser
-            </div>
-            <span class="project-status">NEW • PUBLIC</span>
-          </div>
-          <div class="project-body">
-            <p class="project-description">
-              Multi-Vector Retrieval implementation with EmbeddingGemma. Google Research's algorithm for 90% latency reduction in vector search with browser-native semantic embeddings.
-            </p>
-            <div class="project-tech">
-              <span class="tech-tag">TypeScript</span>
-              <span class="tech-tag">D3.js</span>
-              <span class="tech-tag">EmbeddingGemma</span>
-              <span class="tech-tag">WebGPU</span>
-            </div>
-            <div class="project-links">
-              <a href="https://1kaiser.github.io/muvera-browser/" class="project-link" target="_blank">
-                🌐 Live Demo
-              </a>
-              <a href="https://github.com/1kaiser/muvera-browser" class="project-link github-link" target="_blank">
-                📂 GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <!-- TextGraph -->
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">
-              <span class="project-icon">🎯</span>
-              TextGraph
-            </div>
-            <span class="project-status">PRODUCTION READY</span>
-          </div>
-          <div class="project-body">
-            <p class="project-description">
-              Interactive Graph Attention Networks (GAT) visualization with mathematical precision and transparency-based attention mapping for educational exploration.
-            </p>
-            <div class="project-tech">
-              <span class="tech-tag">D3.js</span>
-              <span class="tech-tag">MathJax</span>
-              <span class="tech-tag">JavaScript</span>
-              <span class="tech-tag">GAT</span>
-            </div>
-            <div class="project-links">
-              <a href="https://1kaiser.github.io/TextGraph/" class="project-link" target="_blank">
-                🌐 Live Demo
-              </a>
-              <a href="https://github.com/1kaiser/TextGraph" class="project-link github-link" target="_blank">
-                📂 GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Gemma Chat App -->
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">
-              <span class="project-icon">🤖</span>
-              Gemma Chat App
-            </div>
-            <span class="project-status">PRODUCTION READY</span>
-          </div>
-          <div class="project-body">
-            <p class="project-description">
-              Browser-based AI chat using Gemma 270M with automatic WebGPU/WASM fallback. Complete privacy with zero API dependencies and real-time streaming responses.
-            </p>
-            <div class="project-tech">
-              <span class="tech-tag">Transformers.js</span>
-              <span class="tech-tag">WebGPU</span>
-              <span class="tech-tag">Web Workers</span>
-              <span class="tech-tag">Gemma 270M</span>
-            </div>
-            <div class="project-links">
-              <a href="https://1kaiser.github.io/gemma-chat-app/" class="project-link" target="_blank">
-                🌐 Live Demo
-              </a>
-              <a href="https://github.com/1kaiser/gemma-chat-app" class="project-link github-link" target="_blank">
-                📂 GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-        
-        <!-- LLM Consistency Vis -->
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">
-              <span class="project-icon">📊</span>
-              LLM Consistency Vis
-            </div>
-            <span class="project-status">FULLY OPERATIONAL</span>
-          </div>
-          <div class="project-body">
-            <p class="project-description">
-              Visualize LLM response distributions with WASM-accelerated UMAP, force simulations, and vector search. Explore patterns in model behavior through interactive graphs.
-            </p>
-            <div class="project-tech">
-              <span class="tech-tag">React</span>
-              <span class="tech-tag">WASM</span>
-              <span class="tech-tag">D3.js</span>
-              <span class="tech-tag">Voy Search</span>
-            </div>
-            <div class="project-links">
-              <a href="https://1kaiser.github.io/llm-consistency-vis/" class="project-link" target="_blank">
-                🌐 Live Demo
-              </a>
-              <a href="https://github.com/1kaiser/llm-consistency-vis" class="project-link github-link" target="_blank">
-                📂 GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    
-    <section>
-      <h2 class="section-title">📚 Other Projects</h2>
-      
-      <div class="projects-grid">
-        
-        <!-- LLM WordGraph Exact -->
-        <div class="project-card">
-          <div class="project-header">
-            <div class="project-title">
-              <span class="project-icon">📝</span>
-              LLM WordGraph Exact
-            </div>
-            <span class="project-status">WORD VISUALIZATION</span>
-          </div>
-          <div class="project-body">
-            <p class="project-description">
-              Word-to-graph visualization system that transforms text into interactive network representations for language model analysis.
-            </p>
-            <div class="project-tech">
-              <span class="tech-tag">JavaScript</span>
-              <span class="tech-tag">D3.js</span>
-              <span class="tech-tag">NLP</span>
-              <span class="tech-tag">Graph Theory</span>
-            </div>
-            <div class="project-links">
-              <a href="https://1kaiser.github.io/llm-wordgraph-exact/" class="project-link" target="_blank">
-                🌐 Live Demo
-              </a>
-              <a href="https://github.com/1kaiser/llm-wordgraph-exact" class="project-link github-link" target="_blank">
-                📂 GitHub
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    
-    <footer style="text-align: center; color: #666; margin-top: 60px; padding: 20px;">
-      <p>All projects are open source and hosted on GitHub Pages (FREE) 🚀</p>
-      <p style="margin-top: 10px;">© 2025 1kaiser • Built with ❤️ for the AI/ML community</p>
-    </footer>
-  </div>
+  <a href="index.html">← Back to 3D Gallery</a>
+  <h1>🚀 AI/ML Projects</h1>
+  <p>Browser-based AI applications and visualizations</p>
+
+  <h2>🌟 Featured Projects</h2>
+  <ul>
+    <li>
+      <h3>MuVeRa Browser</h3>
+      <a href="https://1kaiser.github.io/muvera-browser/" target="_blank">Live Demo</a> |
+      <a href="https://github.com/1kaiser/muvera-browser" target="_blank">GitHub</a>
+    </li>
+    <li>
+      <h3>TextGraph</h3>
+      <a href="https://1kaiser.github.io/TextGraph/" target="_blank">Live Demo</a> |
+      <a href="https://github.com/1kaiser/TextGraph" target="_blank">GitHub</a>
+    </li>
+    <li>
+      <h3>Gemma Chat App</h3>
+      <a href="https://1kaiser.github.io/gemma-chat-app/" target="_blank">Live Demo</a> |
+      <a href="https://github.com/1kaiser/gemma-chat-app" target="_blank">GitHub</a>
+    </li>
+    <li>
+      <h3>LLM Consistency Vis</h3>
+      <a href="https://1kaiser.github.io/llm-consistency-vis/" target="_blank">Live Demo</a> |
+      <a href="https://github.com/1kaiser/llm-consistency-vis" target="_blank">GitHub</a>
+    </li>
+  </ul>
+
+  <h2>📚 Other Projects</h2>
+  <ul>
+    <li>
+      <h3>LLM WordGraph Exact</h3>
+      <a href="https://1kaiser.github.io/llm-wordgraph-exact/" target="_blank">Live Demo</a> |
+      <a href="https://github.com/1kaiser/llm-wordgraph-exact" target="_blank">GitHub</a>
+    </li>
+  </ul>
+
+  <footer>
+    <p>All projects are open source and hosted on GitHub Pages (FREE) 🚀</p>
+    <p>© 2025 1kaiser • Built with ❤️ for the AI/ML community</p>
+  </footer>
 </body>
 </html>
