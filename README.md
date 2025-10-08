@@ -41,6 +41,20 @@ This project leverages several key technologies and AI assistance:
     *   Supports AR mode selection (Scene Viewer default).
 *   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
 *   **CV Page**: A dedicated page to showcase a curriculum vitae.
+*   **AI/ML Projects Page**: A page listing various browser-based AI/ML projects and visualizations.
+
+## 🚀 AI/ML Projects
+
+This repository also includes a page dedicated to various AI/ML projects, which can be found at [`projects.html`](projects.html). These projects showcase browser-based AI applications and visualizations.
+
+### 🌟 Featured Projects
+*   **Wordy**: [Live Demo](https://1kaiser.github.io/wordy/) | [GitHub](https://github.com/1kaiser/wordy)
+*   **TextGraph**: [Live Demo](https://1kaiser.github.io/TextGraph/) | [GitHub](https://github.com/1kaiser/TextGraph)
+*   **Gemma Chat App**: [Live Demo](https://1kaiser.github.io/gemma-chat-app/) | [GitHub](https://github.com/1kaiser/gemma-chat-app)
+*   **LLM Consistency Vis**: [Live Demo](https://1kaiser.github.io/llm-consistency-vis/) | [GitHub](https://github.com/1kaiser/llm-consistency-vis)
+
+### 📚 Other Projects
+*   **LLM WordGraph Exact**: [Live Demo](https://1kaiser.github.io/llm-wordgraph-exact/) | [GitHub](https://github.com/1kaiser/llm-wordgraph-exact)
 
 ## Current Folder Structure
 
