@@ -243,3 +243,43 @@ body {
   z-index: 1000;
   display: none;
 }
+
+/* Timeline styles */
+#timeline {
+  margin-top: 40px;
+}
+
+.milestones-visualization .milestone .label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  text-decoration: none;
+}
+
+.milestones-visualization .milestone .label:hover {
+  text-decoration: underline;
+}
+
+.milestones-visualization .milestone .details {
+  font-size: 14px;
+  color: #666;
+}
+
+.milestones-visualization .axis .domain {
+  stroke: #ccc;
+}
+
+.milestones-visualization .axis .tick line {
+  stroke: #ccc;
+}
+
+.milestones-visualization .axis .tick text {
+  fill: #666;
+  font-size: 12px;
+}
+
+.milestones-visualization .milestone .label img {
+  width: 150px;
+  height: 100px;
+  border-radius: 5px;
+}
