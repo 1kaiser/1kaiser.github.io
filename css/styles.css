@@ -246,7 +246,9 @@ body {
 
 /* Timeline styles */
 #timeline {
-  margin-top: 40px;
+  margin: 40px auto;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .milestones-visualization .milestone .label {
