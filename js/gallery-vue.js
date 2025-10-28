@@ -29,6 +29,53 @@ const GalleryApp = {
         return model.url;
       }
       return model.url.startsWith('./') ? model.url.substring(2) : model.url;
+    },
+    openModal(model) {
+      const overlay = document.getElementById('modelOverlay');
+      const modalViewer = document.getElementById('modalModelViewer');
+      const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+
+      const modelUrl = this.getModelUrl(model);
+      const modelTitle = model.title;
+
+      window.currentModelTitle = modelTitle;
+      window.currentModelSrc = modelUrl;
+
+      modalDownloadBtn.href = modelUrl;
+      modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
+
+      if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
+        window.mobileDeployment.contentHasChanged = true;
+        if (window.mobileDeployment.sessionList.length > 0) {
+          const refreshBtn = document.getElementById('refreshMobileBtn');
+          if (refreshBtn) refreshBtn.style.display = 'block';
+        }
+      }
+
+      if (modalViewer) {
+        caches.open('models-cache').then(cache => {
+          cache.match(modelUrl).then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse.blob();
+            }
+            return fetch(modelUrl).then(networkResponse => {
+              cache.put(modelUrl, networkResponse.clone());
+              return networkResponse.blob();
+            });
+          }).then(blob => {
+            const objectURL = URL.createObjectURL(blob);
+            modalViewer.src = ''; // Clear previous model
+            modalViewer.cameraOrbit = '0deg 75deg 105%';
+            modalViewer.setAttribute('src', objectURL);
+            modalViewer.setAttribute('alt', modelTitle);
+          });
+        });
+      }
+
+      if (overlay) {
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
     }
   },
   computed: {
@@ -72,6 +119,7 @@ const GalleryApp = {
         :style="card.style"
         @mouseenter="handleMouseEnter(i)"
         @mouseleave="handleMouseLeave"
+        @click="openModal(card.model)"
       >
         <model-viewer
           :src="getModelUrl(card.model)"

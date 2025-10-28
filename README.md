@@ -2,6 +2,10 @@
 
 This repository hosts a 3D Model Gallery web application.
 
+## Demo
+
+![Gallery Demo](gallery-demo.gif)
+
 ## Acknowledgements
 
 This project leverages several key technologies and AI assistance:
