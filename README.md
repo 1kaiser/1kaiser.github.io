@@ -87,3 +87,16 @@ This project leverages several key technologies and AI assistance:
 -   **Documentation**:
     -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
     -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
+
+## Interaction GIF
+
+This GIF demonstrates the key interactions of the 3D Model Gallery, such as scrolling, selecting a model, and viewing it in the modal window.
+
+![Interaction GIF](interaction.gif)
+
+### Creating the GIF
+
+The GIF was created using the following process:
+
+1.  **Record Interaction**: A screen recording of the website's interaction was captured using Playwright and Node.js.
+2.  **Convert to GIF**: The video was then converted into a GIF, with optimizations for file size and quality.
