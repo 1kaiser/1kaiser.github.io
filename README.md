@@ -105,32 +105,15 @@ This repository also includes a page dedicated to various AI/ML experiments, whi
     -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
     -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
 
-## Experiments Timeline
+## Interaction GIF
 
-This project includes a script to generate a timeline of your GitHub repositories. To generate the timeline, you need to have Node.js and npm installed.
+This GIF demonstrates the key interactions of the 3D Model Gallery, such as scrolling, selecting a model, and viewing it in the modal window.
 
-1.  **Navigate to the `jules-scratch` directory:**
-    ```bash
-    cd jules-scratch
-    ```
+![Interaction GIF](interaction.gif)
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
+### Creating the GIF
 
-3.  **Run the Playwright script to fetch repository data:**
-    ```bash
-    node run_playwright.js
-    ```
+The GIF was created using the following process:
 
-4.  **Process the data and generate the timeline:**
-    ```bash
-    node process_repos.js
-    ```
-
-5.  **View the timeline:**
-    Open the `experiments.html` file in your browser to view the generated timeline. You can use a simple http server to view the file. For example, you can use the `http-server` package:
-    ```bash
-    npx http-server
-    ```
+1.  **Record Interaction**: A screen recording of the website's interaction was captured using Playwright and Node.js.
+2.  **Convert to GIF**: The video was then converted into a GIF, with optimizations for file size and quality.
