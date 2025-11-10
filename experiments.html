@@ -12,12 +12,6 @@
         font-size: 2em;
         margin-bottom: 20px;
     }
-    .fallback-message {
-      text-align: center;
-      padding: 40px;
-      border: 1px dashed #ccc;
-      margin: 20px;
-    }
   </style>
 </head>
 <body>
@@ -27,26 +21,15 @@
   <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
   <script src="js/repos.js"></script>
   <script>
-    const timelineContainer = document.getElementById('timeline');
-    if (typeof repos !== 'undefined' && Array.isArray(repos)) {
-      milestones('#timeline')
-        .mapping({
-          'timestamp': 'timestamp',
-          'text': 'text'
-        })
-        .parseTime('%Y-%m-%dT%H:%M:%S.%LZ')
-        .aggregateBy('month')
-        .labelFormat('%Y-%m')
-        .render(repos);
-    } else {
-      timelineContainer.innerHTML = `
-        <div class="fallback-message">
-          <h2>Timeline Data Not Found</h2>
-          <p>Please generate the repository data by following the instructions in the <code>README.md</code> file.</p>
-          <p>You can do this by running the scripts in the <code>jules-scratch</code> directory.</p>
-        </div>
-      `;
-    }
+    milestones('#timeline')
+      .mapping({
+        'timestamp': 'timestamp',
+        'text': 'text'
+      })
+      .parseTime('%Y-%m-%dT%H:%M:%S.%LZ')
+      .aggregateBy('month')
+      .labelFormat('%Y-%m')
+      .render(repos);
   </script>
 </body>
 </html>
