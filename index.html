@@ -27,6 +27,21 @@
       https://unpkg.com 
       https://cdn.jsdelivr.net
       https://cdnjs.cloudflare.com;
+    connect-src 'self'
+      https://ppng.io
+      https://piping.onrender.com
+      https://piping-server.herokuapp.com
+      https://pipes.sh
+      https://piping.glitch.me
+      https://*.piping.glitch.me
+      https://api.allorigins.win
+      https://cors-anywhere.herokuapp.com
+      https://cdn.glitch.me
+      https://cdn.glitch.global
+      https://*.github.io
+      https://*.githubusercontent.com
+      https://unpkg.com
+      data: blob:;
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: blob: https:;
     media-src 'self' data: blob: https:;
@@ -38,6 +53,8 @@
   <!-- Model Viewer with Draco support -->
   <script type="module" src="https://unpkg.com/@google/model-viewer@3.3.0/dist/model-viewer.min.js"></script>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <!-- Vue.js Library -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <!-- Load the QRCode library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <!-- External CSS -->
@@ -51,10 +68,20 @@
         <span id="serverStatusText">Connecting...</span>
     </div>
   </div>
-
+  
   <h1>Space</h1>
-  <div class="gallery" id="modelGallery">
-    <!-- Model cards will be dynamically generated here -->
+  
+  <div style="position: absolute; top: 10px; right: 10px;">
+    <a href="cv/cv.html">CV</a>
+    <a href="desktop/desktop.html" style="margin-left: 10px;">Desktop</a>
+    <a href="experiments.html" style="margin-left: 10px;">Experiments</a>
+    <a href="react-test/index.html" style="margin-left: 10px;">React Test</a>
+  </div>
+  <div class="title-container">
+    <h1>Space</h1>
+  </div>
+  <div id="gallery-root">
+    <!-- The React Gallery will be rendered here -->
   </div>
 
   <!-- Modal overlay for enlarged model view -->
@@ -120,5 +147,7 @@
   <script src="js/piping-utils.js"></script>
   <script src="js/qr-deploy.js"></script>
   <script src="js/app.js" defer></script>
+  <!-- Vue App -->
+  <script src="js/gallery-vue.js"></script>
 </body>
 </html>
