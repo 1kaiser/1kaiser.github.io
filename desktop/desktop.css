@@ -1,9 +1,0 @@
-/* Styles for the 3D desktop */
-body {
-    margin: 0;
-    overflow: hidden; /* Hide scrollbars */
-}
-
-canvas {
-    display: block;
-}

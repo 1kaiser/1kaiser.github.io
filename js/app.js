@@ -1,7 +1,6 @@
 // Content from js/main.js
 // Draco Decoder Support
 // Configure Draco decoder before model-viewer loads
-// Sourced from unpkg, which hosts Google's Draco library.
 window.ModelViewerElement = window.ModelViewerElement || {};
 window.ModelViewerElement.dracoDecoderLocation = 'https://unpkg.com/three@0.152.0/examples/js/libs/draco/';
 
@@ -126,60 +125,73 @@ window.currentModelTitle = '';
 // Event delegation for dynamically generated model cards
 // Ensure galleryDisplay is not null before adding event listener
 if (galleryDisplay) {
-  // Handles clicks on the expand button to open the modal
   galleryDisplay.addEventListener('click', (event) => {
-    if (event.target.classList.contains('expand-btn')) {
-      const modelCard = event.target.closest('.model-card');
-      if (modelCard) {
-        const modelUrl = modelCard.dataset.modelUrl;
-        const modelTitle = modelCard.dataset.title;
-        openModalWithModel(modelUrl, modelTitle);
+    if (event.target.classList.contains('download-btn')) {
+      event.stopPropagation();
+      return;
+    }
+
+    const modelCard = event.target.closest('.model-card');
+    if (modelCard) {
+      const modelUrl = modelCard.dataset.modelUrl; // Get URL from data-model-url
+      window.currentModelTitle = modelCard.dataset.title;
+      window.currentModelSrc = modelUrl; // Keep this updated for download and QR deploy
+
+      // Lazy load the model in the card itself
+      const cardModelViewer = modelCard.querySelector('model-viewer');
+      if (cardModelViewer && (!cardModelViewer.src || cardModelViewer.src !== modelUrl)) {
+        console.log(`Loading model in card: ${modelUrl}`);
+        cardModelViewer.src = modelUrl;
+      }
+
+      // Set up the modal viewer
+      // modalViewer.setAttribute('src', modelUrl); // Moved to load event listener
+      // modalViewer.setAttribute('alt', window.currentModelTitle); // Moved to load event listener
+
+      modalDownloadBtn.href = modelUrl;
+      modalDownloadBtn.setAttribute('download', window.currentModelTitle + '.glb');
+
+      if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
+        window.mobileDeployment.contentHasChanged = true;
+        if (window.mobileDeployment.sessionList.length > 0) {
+          const refreshBtn = document.getElementById('refreshMobileBtn');
+          if (refreshBtn) refreshBtn.style.display = 'block';
+        }
+      }
+
+      // Function to open the modal (to avoid code duplication)
+      const openModalWithModel = () => {
+        console.log(`Model ${modelUrl} is ready or loaded in card, preparing and opening modal.`);
+        if (modalViewer) {
+          // Set a default camera orbit BEFORE setting the new src
+          // This can help ensure the camera system is reset/re-initialized
+          modalViewer.cameraOrbit = '0deg 75deg 105%'; // Default starting orbit
+
+          modalViewer.setAttribute('src', modelUrl);
+          modalViewer.setAttribute('alt', window.currentModelTitle);
+        }
+        if (overlay) {
+          overlay.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+        }
+      };
+
+      // Check if the card's model-viewer is already loaded with the correct src
+      if (cardModelViewer && cardModelViewer.loaded && cardModelViewer.src === modelUrl) {
+        // If already loaded and src is correct, open modal immediately
+        openModalWithModel();
+      } else if (cardModelViewer) {
+        // Otherwise, if src is different or not loaded, ensure src is set and wait for it to load
+        // The src attribute might have already been set just above this block if it was new
+        // This event listener will handle the case where it's still loading
+        cardModelViewer.addEventListener('load', openModalWithModel, { once: true });
+      } else {
+        // Fallback if cardModelViewer somehow isn't found (shouldn't happen)
+        console.warn('Card model viewer not found, opening modal immediately (fallback).');
+        openModalWithModel();
       }
     }
   });
-
-  const openModalWithModel = (modelUrl, modelTitle) => {
-    window.currentModelTitle = modelTitle;
-    window.currentModelSrc = modelUrl;
-
-    modalDownloadBtn.href = modelUrl;
-    modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
-
-    if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
-      window.mobileDeployment.contentHasChanged = true;
-      if (window.mobileDeployment.sessionList.length > 0) {
-        const refreshBtn = document.getElementById('refreshMobileBtn');
-        if (refreshBtn) refreshBtn.style.display = 'block';
-      }
-    }
-
-    if (modalViewer) {
-      // The model might be in the browser's cache thanks to the interactive viewer
-      // Fetching it again to be sure and to place it in our specific cache if not already
-      caches.open('models-cache').then(cache => {
-        cache.match(modelUrl).then(cachedResponse => {
-          if (cachedResponse) {
-            return cachedResponse.blob();
-          }
-          return fetch(modelUrl).then(networkResponse => {
-            cache.put(modelUrl, networkResponse.clone());
-            return networkResponse.blob();
-          });
-        }).then(blob => {
-          const objectURL = URL.createObjectURL(blob);
-          modalViewer.src = ''; // Clear previous model
-          modalViewer.cameraOrbit = '0deg 75deg 105%';
-          modalViewer.setAttribute('src', objectURL);
-          modalViewer.setAttribute('alt', modelTitle);
-        });
-      });
-    }
-
-    if (overlay) {
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
-  };
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
@@ -192,6 +204,7 @@ if (closeButton) {
     document.body.style.overflow = 'auto';
     if (modalViewer) {
       modalViewer.src = ''; // Clear the source
+      console.log('Modal closed by button, src cleared.');
     }
   });
 }
@@ -204,6 +217,7 @@ if (overlay) {
       document.body.style.overflow = 'auto';
       if (modalViewer) {
         modalViewer.src = ''; // Clear the source
+        console.log('Modal closed by overlay click, src cleared.');
       }
     }
   });
@@ -217,6 +231,7 @@ document.addEventListener('keydown', (event) => {
       document.body.style.overflow = 'auto';
       if (modalViewer) {
         modalViewer.src = ''; // Clear the source
+        console.log('Modal closed by ESC key, src cleared.');
       }
     }
   }
@@ -282,112 +297,4 @@ function initializeDraggableWindow() {
     if (statusWindow && statusHeader) {
         makeDraggable(statusWindow, statusHeader);
     }
-}
-
-// ===== New Dual-Mode Gallery Logic =====
-
-let isCarouselMode = false;
-let gallery, cards, numCards;
-
-function applyStaticLayout() {
-    if (!gallery || !cards) return;
-
-    cards.forEach((card, i) => {
-        // Store static transform for returning from carousel mode
-        if (!card.dataset.staticTransform) {
-            const center_x = gallery.offsetWidth / 2 - card.offsetWidth / 2;
-            const center_y = gallery.offsetHeight / 2 - card.offsetHeight / 2;
-            const random_rotate_z = (Math.random() * 20) - 10;
-            const random_x = (Math.random() * 100) - 50;
-            const random_y = (Math.random() * 100) - 50;
-            const position_x = center_x + random_x + (i - numCards / 2) * 120; // Reduced spread
-            const position_y = center_y + random_y;
-
-            card.dataset.staticLeft = `${position_x}px`;
-            card.dataset.staticTop = `${position_y}px`;
-            card.dataset.staticTransform = `rotateZ(${random_rotate_z}deg) scale(0.7)`;
-            card.dataset.staticZIndex = i;
-        }
-
-        card.style.left = card.dataset.staticLeft;
-        card.style.top = card.dataset.staticTop;
-        card.style.transform = card.dataset.staticTransform;
-        card.style.zIndex = card.dataset.staticZIndex;
-
-        const modelViewer = card.querySelector('model-viewer');
-        if (modelViewer && !modelViewer.dataset.revealed) {
-            modelViewer.reveal();
-            modelViewer.dataset.revealed = 'true';
-        }
-    });
-}
-
-function applyCarouselLayout(progress) {
-    if (!gallery || !cards) return;
-
-    cards.forEach((card, i) => {
-        const cardOffset = (numCards > 1) ? (i / (numCards - 1)) - 0.5 : 0;
-        const mouseOffset = progress - 0.5;
-        const distance = Math.abs(cardOffset - mouseOffset);
-
-        const rotation = (cardOffset - mouseOffset) * 40;
-        const translationX = (cardOffset - mouseOffset) * 400;
-        const scale = 1 - (distance * 0.2);
-        const zIndex = Math.round(100 - (distance * 50));
-
-        // We need to position the cards from the center
-        const center_x = gallery.offsetWidth / 2 - card.offsetWidth / 2;
-        const center_y = gallery.offsetHeight / 2 - card.offsetHeight / 2;
-
-        card.style.left = `${center_x}px`;
-        card.style.top = `${center_y}px`;
-        card.style.transform = `translateX(${translationX}px) rotateY(${rotation}deg) scale(${scale})`;
-        card.style.zIndex = zIndex;
-    });
-}
-
-// After the gallery is initialized, set up the dual-mode logic.
-document.addEventListener('DOMContentLoaded', () => {
-    gallery = document.getElementById('modelGallery');
-    if (gallery) {
-        const observer = new MutationObserver(() => {
-            cards = gallery.querySelectorAll('.model-card');
-            numCards = cards.length;
-            if (numCards > 0) {
-                // Set the initial static layout
-                setTimeout(() => {
-                    applyStaticLayout();
-                }, 100);
-
-                // Add event listeners for mode switching
-                gallery.addEventListener('mouseenter', handleMouseEnter);
-                gallery.addEventListener('mouseleave', handleMouseLeave);
-
-                observer.disconnect();
-            }
-        });
-        observer.observe(gallery, { childList: true });
-    }
-});
-
-function handleMouseEnter() {
-    isCarouselMode = true;
-    gallery.addEventListener('mousemove', handleMouseMove);
-    // Initial transition to carousel view (center)
-    applyCarouselLayout(0.5);
-}
-
-function handleMouseLeave() {
-    isCarouselMode = false;
-    gallery.removeEventListener('mousemove', handleMouseMove);
-    // Transition back to static layout
-    applyStaticLayout();
-}
-
-function handleMouseMove(e) {
-    if (!isCarouselMode) return;
-    const galleryRect = gallery.getBoundingClientRect();
-    const mouseX = e.clientX - galleryRect.left;
-    const progress = mouseX / galleryRect.width;
-    applyCarouselLayout(progress);
 }
