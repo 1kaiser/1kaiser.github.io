@@ -3,6 +3,8 @@
 // Simplified to use only ppng.io.
 
 // ===== PIPING SERVER CONFIGURATION =====
+// This utility uses Piping Server (https://github.com/nwtgck/piping-server)
+// for real-time data transfer. The default public server is ppng.io.
 const PipingUtils_CURRENT_DOMAIN = 'https://ppng.io/';
 
 // ===== UTILITY FUNCTIONS =====
