@@ -87,3 +87,50 @@ This repository also includes a page dedicated to various AI/ML experiments, whi
 ├── LICENSE
 └── README.md
 ```
+
+## TODO
+
+-   **Refactor Mobile View Page (`view/index.html`)**:
+    -   [X] Replace the embedded JavaScript in `view/index.html` with a script tag linking to the external `view/mobile_view.js`. *(Done)*
+    -   [X] Move inline CSS from `view/index.html` to a dedicated external CSS file (`view/mobile-view.css`). *(Done)*
+-   **Consolidate Piping Server Utilities**:
+    -   [X] Create a shared JavaScript module (`js/piping-utils.js`).
+    -   [X] Move common piping server constants and utility functions into this shared module.
+    -   [X] Update `js/qr-deploy.js` and `view/mobile_view.js` to use this shared module.
+-   **CSS Review**:
+    -   [ ] Conduct a thorough review of all CSS (`css/styles.css` and `view/mobile-view.css`) to identify and remove any remaining redundancies or style overlaps.
+-   **Testing**:
+    -   [ ] Perform comprehensive cross-browser and cross-device testing of all application features.
+-   **Documentation**:
+    -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
+    -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
+
+## Experiments Timeline
+
+This project includes a script to generate a timeline of your GitHub repositories. To generate the timeline, you need to have Node.js and npm installed.
+
+1.  **Navigate to the `jules-scratch` directory:**
+    ```bash
+    cd jules-scratch
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Run the Playwright script to fetch repository data:**
+    ```bash
+    node run_playwright.js
+    ```
+
+4.  **Process the data and generate the timeline:**
+    ```bash
+    node process_repos.js
+    ```
+
+5.  **View the timeline:**
+    Open the `experiments.html` file in your browser to view the generated timeline. You can use a simple http server to view the file. For example, you can use the `http-server` package:
+    ```bash
+    npx http-server
+    ```
