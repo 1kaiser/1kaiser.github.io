@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Repository Timeline</title>
+  <link rel="stylesheet" href="https://unpkg.com/d3-milestones/build/d3-milestones.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    #timeline h1 {
+        text-align: center;
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>GitHub Repository Timeline</h1>
+  <div id="timeline"></div>
+
+  <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
+  <script src="js/repos.js"></script>
+  <script>
+    milestones('#timeline')
+      .mapping({
+        'timestamp': 'timestamp',
+        'text': 'text'
+      })
+      .parseTime('%Y-%m-%dT%H:%M:%S.%LZ')
+      .aggregateBy('month')
+      .labelFormat('%Y-%m')
+      .render(repos);
+  </script>
+</body>
+</html>

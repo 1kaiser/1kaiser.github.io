@@ -87,3 +87,33 @@ This project leverages several key technologies and AI assistance:
 -   **Documentation**:
     -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
     -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
+
+## Experiments Timeline
+
+This project includes a script to generate a timeline of your GitHub repositories. To generate the timeline, you need to have Node.js and npm installed.
+
+1.  **Navigate to the `jules-scratch` directory:**
+    ```bash
+    cd jules-scratch
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Run the Playwright script to fetch repository data:**
+    ```bash
+    node run_playwright.js
+    ```
+
+4.  **Process the data and generate the timeline:**
+    ```bash
+    node process_repos.js
+    ```
+
+5.  **View the timeline:**
+    Open the `experiments.html` file in your browser to view the generated timeline. You can use a simple http server to view the file. For example, you can use the `http-server` package:
+    ```bash
+    npx http-server
+    ```
