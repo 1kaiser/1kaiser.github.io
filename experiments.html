@@ -14,45 +14,49 @@
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         background-color: #f9f9f9;
         margin: 0;
-        padding: 20px;
+        padding: 0;
         overflow-x: auto; /* Horizontal scroll enabled */
     }
     
     h1 {
         text-align: center;
-        margin-bottom: 40px;
+        margin-top: 20px;
+        margin-bottom: 10px;
         color: #333;
         font-size: 2.5em;
         position: sticky;
         left: 0;
+        background: rgba(249, 249, 249, 0.9);
+        z-index: 10;
+        padding: 10px 0;
     }
 
     /* 2. Timeline Container */
     #timeline {
         /* Width is set dynamically via JS */
-        min-height: 600px; 
-        margin-bottom: 50px;
-        padding-top: 20px;
+        min-height: 800px; /* Give plenty of vertical space */
+        margin-bottom: 80px;
+        padding-top: 40px;
     }
 
     /* 3. Tooltip Styling */
     .tooltip {
         position: absolute;
         text-align: left;
-        max-width: 300px;
+        max-width: 320px;
         padding: 12px;
         font-family: sans-serif;
         font-size: 13px;
         line-height: 1.4;
-        background: rgba(30, 30, 30, 0.95);
+        background: rgba(20, 20, 20, 0.95);
         color: #fff;
-        border: 1px solid #555;
+        border: 1px solid #444;
         border-radius: 6px;
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.2s;
-        z-index: 1000;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
+        z-index: 3000; /* Ensure it's above everything */
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
     }
     
     #loading {
@@ -68,24 +72,32 @@
         bottom: 30px;
         right: 30px;
         z-index: 2000;
-        background-color: #333;
+        background-color: #222;
         color: white;
         border: none;
-        padding: 12px 20px;
-        border-radius: 30px;
+        padding: 12px 24px;
+        border-radius: 50px;
         font-size: 14px;
         font-weight: bold;
         cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        transition: transform 0.2s, background-color 0.2s;
     }
-    #downloadBtn:hover { background-color: #555; }
+    #downloadBtn:hover { background-color: #444; transform: translateY(-2px); }
     
     /* 5. Text Optimization */
     .milestone-label text {
         font-size: 11px !important;
+        font-family: 'Segoe UI', sans-serif !important;
+        /* Create a white halo around text so lines don't cross through it */
+        text-shadow: 
+             2px  0px 2px white, 
+            -2px  0px 2px white, 
+             0px  2px 2px white, 
+             0px -2px 2px white;
     }
   </style>
 </head>
@@ -110,7 +122,8 @@
     // --- CONFIGURATION ---
     const GITHUB_USERNAME = '1kaiser'; 
     const MAX_REPOS = 100; 
-    const PIXELS_PER_NODE = 60; // Adjust width spacing here
+    // Increased spacing to prevent overcrowding
+    const PIXELS_PER_NODE = 80; 
 
     document.addEventListener('DOMContentLoaded', function() {
       
@@ -122,8 +135,7 @@
             // 1. Filter and Transform Data
             const repos = githubData
                 .filter(repo => {
-                    // SANITY CHECK: Remove bad dates
-                    // GitHub was founded in 2008. Any date before that is an error/glitch.
+                    // SANITY CHECK: Remove bad dates (older than 2008)
                     if (!repo.created_at) return false;
                     const year = new Date(repo.created_at).getFullYear();
                     return year >= 2008; 
@@ -131,12 +143,12 @@
                 .map(repo => {
                     // Truncate long names
                     let shortText = repo.name; 
-                    if (repo.name.length > 22) shortText = repo.name.substring(0, 22) + "...";
+                    if (repo.name.length > 25) shortText = repo.name.substring(0, 25) + "...";
 
                     return {
                         timestamp: repo.created_at, 
                         text: shortText,
-                        description: repo.description || "No description.",
+                        description: repo.description || "No description available.",
                         isFork: repo.fork,
                         url: repo.html_url,
                         type: 'repo'
@@ -144,11 +156,10 @@
                 });
 
             // 2. DYNAMIC WIDTH CALCULATION
-            // Calculate width based on number of items so they don't overlap
             const requiredWidth = Math.max(window.innerWidth, repos.length * PIXELS_PER_NODE);
             document.getElementById('timeline').style.width = requiredWidth + "px";
 
-            // 3. Add Anchors based on MINIMUM YEAR
+            // 3. Add Anchors (Invisible spacers)
             addSmartAnchors(repos);
 
             // 4. Render
@@ -163,22 +174,21 @@
     function addSmartAnchors(data) {
         if (data.length === 0) return;
 
-        // Find the absolute Min and Max dates from the data
         const allDates = data.map(r => new Date(r.timestamp).getTime());
         const minTimestamp = Math.min(...allDates);
         const maxTimestamp = Math.max(...allDates);
 
-        // Set Start Anchor to (Min Date - 1 Month)
+        // Start Anchor (-1 Month)
         const startAnchor = new Date(minTimestamp);
         startAnchor.setMonth(startAnchor.getMonth() - 1);
 
-        // Set End Anchor to (Max Date + 1 Month)
+        // End Anchor (+1 Month)
         const endAnchor = new Date(maxTimestamp);
         endAnchor.setMonth(endAnchor.getMonth() + 1);
 
-        // Add them to the array
-        data.push({ timestamp: startAnchor.toISOString(), text: "Start", type: 'anchor' });
-        data.push({ timestamp: endAnchor.toISOString(), text: "End", type: 'anchor' });
+        // Note: text is empty string "" to keep it invisible but taking up space
+        data.push({ timestamp: startAnchor.toISOString(), text: "", type: 'anchor' });
+        data.push({ timestamp: endAnchor.toISOString(), text: "", type: 'anchor' });
     }
 
     function renderTimeline(data) {
@@ -196,31 +206,35 @@
                 tooltip.transition().duration(200).style("opacity", 1);
                 
                 const typeLabel = d.isFork ? "FORK" : "SOURCE";
-                const typeColor = d.isFork ? "orange" : "#4CAF50";
+                const typeColor = d.isFork ? "#ff9800" : "#4CAF50";
 
                 tooltip.html(`
-                    <div style="margin-bottom:4px;">
-                        <strong>${d.text}</strong> 
-                        <span style="background:${typeColor}; padding:2px 6px; border-radius:4px; font-size:10px; color:white;">${typeLabel}</span>
+                    <div style="margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="font-size:1.1em;">${d.text}</strong> 
+                        <span style="background:${typeColor}; padding:2px 8px; border-radius:10px; font-size:10px; color:white; font-weight:bold;">${typeLabel}</span>
                     </div>
-                    <span style="color:#ccc; font-size:0.9em;">${d.description}</span>
+                    <div style="color:#ddd; font-size:0.95em; margin-bottom:8px;">${d.description}</div>
+                    <div style="color:#888; font-size:0.8em;">Click to view repository ↗</div>
                 `)
-                .style("left", (d3.event.pageX + 15) + "px")
-                .style("top", (d3.event.pageY - 28) + "px");
+                .style("left", (d3.event.pageX + 20) + "px")
+                .style("top", (d3.event.pageY - 20) + "px");
             })
             .onEventMouseLeave(() => tooltip.transition().duration(500).style("opacity", 0))
             .onEventClick(d => { if(d.url) window.open(d.url, '_blank'); });
 
         timeline.render(data);
 
-        // Coloring Logic
+        // --- COLORING LOGIC ---
+        // 1. Dots
         d3.selectAll('.milestone-marker circle')
-            .style('fill', d => (d && d.type === 'anchor') ? 'transparent' : (d.isFork ? '#FF8C00' : '#2E7D32'))
-            .style('stroke', d => (d && d.type === 'anchor') ? 'none' : '#fff');
+            .style('fill', d => (d && d.type === 'anchor') ? 'none' : (d.isFork ? '#FF8C00' : '#2E7D32'))
+            .style('stroke', d => (d && d.type === 'anchor') ? 'none' : '#fff')
+            .style('stroke-width', '2px');
 
+        // 2. Text Labels
         d3.selectAll('.milestone-label text')
-            .style('fill', d => (d && d.type === 'anchor') ? '#ccc' : (d.isFork ? '#E65100' : '#1565C0'))
-            .style('font-weight', d => (d && d.type === 'anchor') ? 'normal' : 'bold');
+            .style('fill', d => (d && d.type === 'anchor') ? 'none' : (d.isFork ? '#E65100' : '#0D47A1')) // Darker Blue for Source
+            .style('font-weight', d => (d && d.type === 'anchor') ? 'normal' : '700');
     }
 
     function downloadSVG() {
@@ -230,11 +244,12 @@
         const serializer = new XMLSerializer();
         let svgString = serializer.serializeToString(svgElement);
 
+        // Embed simplified CSS for the exported image
         const styleRules = `
             <style>
-                text { font-family: sans-serif; }
-                .milestone-link line { stroke: #333; stroke-width: 1px; }
-                .milestone-label text { font-size: 11px; font-weight: bold; }
+                text { font-family: 'Segoe UI', sans-serif; }
+                .milestone-link line { stroke: #555; stroke-width: 1px; }
+                .milestone-label text { font-size: 12px; font-weight: bold; fill: #333; text-shadow: 2px 0px 2px white, -2px 0px 2px white, 0px 2px 2px white, 0px -2px 2px white; }
             </style>`;
         
         svgString = svgString.replace(/^<svg[^>]*>/, `$&${styleRules}`);
