@@ -18,18 +18,34 @@
   <h1>🏔️ Timeline </h1>
   <div id="timeline"></div>
 
+  <!-- 1. Load D3.js (Required Dependency) -->
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  
+  <!-- 2. Load d3-milestones plugin -->
   <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
+  
+  <!-- 3. Load your data -->
   <script src="js/repos.js"></script>
+
+  <!-- 4. Render the timeline -->
   <script>
-    milestones('#timeline')
-      .mapping({
-        'timestamp': 'timestamp',
-        'text': 'text'
-      })
-      .parseTime('%Y-%m-%dT%H:%M:%S.%LZ')
-      // .aggregateBy('month')
-      .labelFormat('%Y-%m-%d')
-      .render(repos);
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof repos !== 'undefined') {
+        milestones('#timeline')
+          .mapping({
+            'timestamp': 'timestamp',
+            'text': 'text'
+          })
+          // Your data format: "2025-12-31T00:00:00.000Z"
+          // Correct parser: Matches Year-Month-Day T Hour:Min:Sec . Milliseconds Z
+          .parseTime('%Y-%m-%dT%H:%M:%S.%LZ') 
+          .labelFormat('%Y-%m-%d')
+          .render(repos);
+      } else {
+        console.error("Error: 'repos' variable is missing. Check js/repos.js");
+        document.getElementById('timeline').innerText = "Data failed to load.";
+      }
+    });
   </script>
 </body>
 </html>
