@@ -7,123 +7,216 @@
   
   <!-- Stylesheets -->
   <link rel="stylesheet" href="https://unpkg.com/d3-milestones/build/d3-milestones.css">
-  <link rel="stylesheet" href="css/styles.css">
   
   <style>
-    /* 1. Page Title Styling */
-    #timeline h1 {
+    /* 1. Global Styling */
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 20px;
+        overflow-x: auto; /* Allow horizontal scrolling for the wide timeline */
+    }
+    
+    /* 2. Header Styling */
+    h1 {
         text-align: center;
-        font-size: 2em;
-        margin-bottom: 20px;
-        font-family: sans-serif;
+        margin-bottom: 40px;
+        color: #333;
+        font-size: 2.5em;
     }
 
-    /* 2. Timeline Container Styling */
+    /* 3. Timeline Container */
     #timeline {
-        /* Makes the timeline wider so items don't crash into each other */
-        width: 2500px; 
+        /* Wide container so items have room to breathe */
+        width: 3000px; 
         margin-bottom: 50px;
-        overflow-x: visible; /* Allows the SVG to overflow if needed */
+        padding-top: 20px;
     }
 
-    /* 3. Tooltip Styling (The popup box) */
+    /* 4. Tooltip Styling (The Popup) */
     .tooltip {
         position: absolute;
         text-align: left;
         max-width: 350px;
         padding: 12px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: sans-serif;
         font-size: 14px;
-        line-height: 1.4;
-        background: rgba(30, 30, 30, 0.95);
+        line-height: 1.5;
+        background: rgba(30, 30, 30, 0.95); /* Dark background */
         color: #fff;
         border: 1px solid #555;
         border-radius: 6px;
-        pointer-events: none; /* Let mouse events pass through */
+        pointer-events: none; /* Ignore mouse events so they pass through */
         opacity: 0;
         transition: opacity 0.2s;
         z-index: 1000;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.3);
     }
-
-    /* Optional: Add horizontal scroll to body if timeline is huge */
-    body {
-        overflow-x: auto;
+    
+    /* Loading Message */
+    #loading {
+        text-align: center;
+        font-size: 1.2em;
+        color: #666;
+        margin-top: 50px;
     }
   </style>
 </head>
 <body>
 
+  <!-- THE TITLE -->
   <h1>🏔️ Timeline</h1>
   
+  <!-- Loading Indicator -->
+  <div id="loading">Fetching latest data from GitHub...</div>
+
   <!-- Timeline Container -->
   <div id="timeline"></div>
 
-  <!-- 1. Load D3.js (Required Dependency) -->
+  <!-- SCRIPTS -->
   <script src="https://d3js.org/d3.v5.min.js"></script>
-  
-  <!-- 2. Load d3-milestones plugin -->
   <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
-  
-  <!-- 3. Load your data -->
-  <script src="js/repos.js"></script>
 
-  <!-- 4. Render the timeline with Tooltips -->
   <script>
+    // --- CONFIGURATION ---
+    const GITHUB_USERNAME = '1kaiser'; 
+    const MAX_REPOS = 100; // Max items to fetch
+
     document.addEventListener('DOMContentLoaded', function() {
-      // Check if data loaded correctly
-      if (typeof repos === 'undefined') {
-        console.error("Error: 'repos' variable is missing. Check js/repos.js");
-        document.getElementById('timeline').innerText = "Data failed to load.";
-        return;
-      }
-
-      // --- A. Create Tooltip Container ---
-      const tooltip = d3.select("body").append("div")
-        .attr("class", "tooltip");
-
-      // --- B. Process Data (Truncate Text) ---
-      const processedRepos = repos.map(repo => {
-        const fullText = repo.text || "";
-        
-        // Strategy: Split by ':' to get title, OR take first 35 chars
-        let shortText = fullText.split(':')[0].trim();
-        if (shortText.length > 35) {
-            shortText = shortText.substring(0, 35) + "...";
-        }
-
-        return {
-          timestamp: repo.timestamp,
-          text: shortText,       // Truncated title for the timeline
-          description: fullText  // Full text for the tooltip
-        };
-      });
-
-      // --- C. Render Timeline ---
-      milestones('#timeline')
-        .mapping({
-          'timestamp': 'timestamp',
-          'text': 'text'
+      
+      // 1. Fetch Data from GitHub API
+      fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=created&direction=desc&per_page=${MAX_REPOS}`)
+        .then(response => {
+          if (!response.ok) throw new Error("Network response was not ok");
+          return response.json();
         })
-        .parseTime('%Y-%m-%dT%H:%M:%S.%LZ') // Matches "2025-12-31T00:00:00.000Z"
-        .labelFormat('%Y-%m-%d')
-        .optimize(true) // Attempts to layout labels to avoid collision
-        
-        // --- Hover Events ---
-        .onEventMouseOver(function(d) {
-          tooltip.transition().duration(200).style("opacity", 1);
-          
-          tooltip.html(`<strong>${d.text}</strong><br/><span style="color:#ccc; font-size:0.9em;">${d.description}</span>`)
-            .style("left", (d3.event.pageX + 15) + "px")
-            .style("top", (d3.event.pageY - 28) + "px");
-        })
-        .onEventMouseLeave(function() {
-          tooltip.transition().duration(500).style("opacity", 0);
-        })
-        // --------------------
+        .then(githubData => {
+            // Hide loading text
+            document.getElementById('loading').style.display = 'none';
 
-        .render(processedRepos);
+            // 2. Transform GitHub Data
+            let repos = githubData.map(repo => {
+                // Truncate title for visual clarity
+                let shortText = repo.name; 
+                if (repo.name.length > 35) {
+                    shortText = repo.name.substring(0, 35) + "...";
+                }
+
+                return {
+                    timestamp: repo.created_at, // GitHub ISO format
+                    text: shortText,
+                    description: repo.description || "No description provided.",
+                    isFork: repo.fork, // Boolean
+                    url: repo.html_url,
+                    type: 'repo' // Tag as a real repo
+                };
+            });
+
+            // 3. ADD PADDING (Min Year - 1 and Max Year + 1)
+            if (repos.length > 0) {
+                const allDates = repos.map(r => new Date(r.timestamp));
+                const minDate = new Date(Math.min.apply(null, allDates));
+                const maxDate = new Date(Math.max.apply(null, allDates));
+
+                // Create Start Anchor (-1 Year)
+                const startAnchor = new Date(minDate);
+                startAnchor.setFullYear(startAnchor.getFullYear() - 1);
+                repos.push({
+                    timestamp: startAnchor.toISOString(),
+                    text: "Start",
+                    type: 'anchor'
+                });
+
+                // Create End Anchor (+1 Year)
+                const endAnchor = new Date(maxDate);
+                endAnchor.setFullYear(endAnchor.getFullYear() + 1);
+                repos.push({
+                    timestamp: endAnchor.toISOString(),
+                    text: "End",
+                    type: 'anchor'
+                });
+            }
+
+            // 4. Render
+            renderTimeline(repos);
+        })
+        .catch(error => {
+            console.error(error);
+            document.getElementById('loading').innerText = "Error loading data from GitHub.";
+        });
     });
+
+    function renderTimeline(data) {
+        // Create Tooltip Div
+        const tooltip = d3.select("body").append("div").attr("class", "tooltip");
+
+        // Initialize Timeline
+        const timeline = milestones('#timeline')
+            .mapping({
+                'timestamp': 'timestamp',
+                'text': 'text'
+            })
+            .parseTime('%Y-%m-%dT%H:%M:%SZ') // GitHub timestamp format
+            .labelFormat('%Y-%m-%d')
+            .optimize(true) // Tries to arrange labels nicely
+            
+            // --- INTERACTION: Mouse Over ---
+            .onEventMouseOver(function(d) {
+                // Ignore anchor points
+                if (d.type === 'anchor') return;
+
+                tooltip.transition().duration(200).style("opacity", 1);
+                
+                // Create Badge (Source vs Fork)
+                const badge = d.isFork 
+                    ? '<span style="background:orange; padding:2px 6px; border-radius:4px; font-size:10px; color:black; font-weight:bold;">FORK</span>' 
+                    : '<span style="background:#4CAF50; padding:2px 6px; border-radius:4px; font-size:10px; color:white; font-weight:bold;">SOURCE</span>';
+
+                // Tooltip Content
+                tooltip.html(`
+                    <div style="margin-bottom:5px;"><strong>${d.text}</strong> ${badge}</div>
+                    <div style="color:#ddd; font-size:0.9em; margin-bottom:5px;">${d.description}</div>
+                    <div style="color:#888; font-size:0.8em;">Click to view repository ↗</div>
+                `)
+                .style("left", (d3.event.pageX + 15) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+            })
+            
+            // --- INTERACTION: Mouse Leave ---
+            .onEventMouseLeave(function() {
+                tooltip.transition().duration(500).style("opacity", 0);
+            })
+            
+            // --- INTERACTION: Click ---
+            .onEventClick(function(d) {
+                if(d.url) window.open(d.url, '_blank');
+            });
+
+        timeline.render(data);
+
+        // --- POST-RENDER STYLING (The Magic) ---
+
+        // 1. Color the Dots (Nodes)
+        d3.selectAll('.milestone-marker circle')
+            .style('fill', function(d) {
+                if (d && d.type === 'anchor') return 'transparent'; // Invisible anchors
+                return (d && d.isFork) ? 'orange' : '#4CAF50';      // Orange=Fork, Green=Source
+            })
+            .style('stroke', function(d) {
+                return (d && d.type === 'anchor') ? 'none' : '#fff';
+            });
+
+        // 2. Color the Text Labels
+        d3.selectAll('.milestone-label text')
+            .style('fill', function(d) {
+                if (d && d.type === 'anchor') return '#e0e0e0'; // Faint gray for anchors
+                return (d && d.isFork) ? '#ffcc80' : '#2c3e50'; // Light Orange vs Dark Blue
+            })
+            .style('font-style', function(d) {
+                return (d && d.type === 'anchor') ? 'italic' : 'normal';
+            });
+    }
   </script>
 </body>
 </html>
