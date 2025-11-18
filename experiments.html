@@ -15,7 +15,7 @@
         background-color: #f9f9f9;
         margin: 0;
         padding: 0;
-        overflow-x: auto; /* Horizontal scroll enabled */
+        overflow-x: hidden; /* Prevent horizontal scrollbar */
     }
     
     h1 {
@@ -25,17 +25,18 @@
         color: #333;
         font-size: 2.5em;
         position: sticky;
-        left: 0;
-        background: rgba(249, 249, 249, 0.9);
+        top: 0;
+        background: rgba(249, 249, 249, 0.95);
         z-index: 10;
         padding: 10px 0;
     }
 
     /* 2. Timeline Container */
     #timeline {
-        /* Width is set dynamically via JS */
-        min-height: 800px; /* Give plenty of vertical space */
-        margin-bottom: 80px;
+        /* FIT TO SCREEN WIDTH ONLY */
+        width: 100%; 
+        min-height: 800px; 
+        margin-bottom: 50px;
         padding-top: 40px;
     }
 
@@ -55,7 +56,7 @@
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.2s;
-        z-index: 3000; /* Ensure it's above everything */
+        z-index: 3000;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.4);
     }
     
@@ -92,12 +93,7 @@
     .milestone-label text {
         font-size: 11px !important;
         font-family: 'Segoe UI', sans-serif !important;
-        /* Create a white halo around text so lines don't cross through it */
-        text-shadow: 
-             2px  0px 2px white, 
-            -2px  0px 2px white, 
-             0px  2px 2px white, 
-             0px -2px 2px white;
+        text-shadow: 2px 0px 2px white, -2px 0px 2px white, 0px 2px 2px white, 0px -2px 2px white;
     }
   </style>
 </head>
@@ -122,8 +118,9 @@
     // --- CONFIGURATION ---
     const GITHUB_USERNAME = '1kaiser'; 
     const MAX_REPOS = 100; 
-    // Increased spacing to prevent overcrowding
-    const PIXELS_PER_NODE = 80; 
+
+    // Global variable to store data for resizing
+    let cachedRepos = [];
 
     document.addEventListener('DOMContentLoaded', function() {
       
@@ -135,10 +132,10 @@
             // 1. Filter and Transform Data
             const repos = githubData
                 .filter(repo => {
-                    // SANITY CHECK: Remove bad dates (older than 2008)
+                    // Basic sanity check: ensure date exists and is not the 1970 epoch error
                     if (!repo.created_at) return false;
                     const year = new Date(repo.created_at).getFullYear();
-                    return year >= 2008; 
+                    return year > 2000; 
                 })
                 .map(repo => {
                     // Truncate long names
@@ -155,15 +152,11 @@
                     };
                 });
 
-            // 2. DYNAMIC WIDTH CALCULATION
-            const requiredWidth = Math.max(window.innerWidth, repos.length * PIXELS_PER_NODE);
-            document.getElementById('timeline').style.width = requiredWidth + "px";
+            // 2. Store cleaned data
+            cachedRepos = repos;
 
-            // 3. Add Anchors (Invisible spacers)
-            addSmartAnchors(repos);
-
-            // 4. Render
-            renderTimeline(repos);
+            // 3. Render the timeline
+            drawTimeline();
         })
         .catch(error => {
             console.error(error);
@@ -171,28 +164,44 @@
         });
     });
 
-    function addSmartAnchors(data) {
-        if (data.length === 0) return;
+    // --- RESIZE LISTENER ---
+    // Re-draws the timeline when window size changes to keep it fitting 100%
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            drawTimeline();
+        }, 200);
+    });
 
-        const allDates = data.map(r => new Date(r.timestamp).getTime());
-        const minTimestamp = Math.min(...allDates);
-        const maxTimestamp = Math.max(...allDates);
+    function drawTimeline() {
+        if (cachedRepos.length === 0) return;
 
-        // Start Anchor (-1 Month)
-        const startAnchor = new Date(minTimestamp);
-        startAnchor.setMonth(startAnchor.getMonth() - 1);
-
-        // End Anchor (+1 Month)
-        const endAnchor = new Date(maxTimestamp);
-        endAnchor.setMonth(endAnchor.getMonth() + 1);
-
-        // Note: text is empty string "" to keep it invisible but taking up space
-        data.push({ timestamp: startAnchor.toISOString(), text: "", type: 'anchor' });
-        data.push({ timestamp: endAnchor.toISOString(), text: "", type: 'anchor' });
-    }
-
-    function renderTimeline(data) {
+        // Clear existing timeline
+        document.getElementById('timeline').innerHTML = '';
         d3.selectAll('.tooltip').remove();
+
+        // Create a COPY of data to modify (add anchors) without polluting the original cache
+        const renderData = JSON.parse(JSON.stringify(cachedRepos));
+
+        // --- ANCHOR LOGIC (Min - 1 / Max + 1) ---
+        const allDates = renderData.map(r => new Date(r.timestamp).getTime());
+        const minDate = new Date(Math.min(...allDates));
+        const maxDate = new Date(Math.max(...allDates));
+
+        // Start Anchor: Min Year - 1
+        const startAnchor = new Date(minDate);
+        startAnchor.setFullYear(startAnchor.getFullYear() - 1);
+        
+        // End Anchor: Max Year + 1
+        const endAnchor = new Date(maxDate);
+        endAnchor.setFullYear(endAnchor.getFullYear() + 1);
+
+        // Add Anchors (Blank Text)
+        renderData.push({ timestamp: startAnchor.toISOString(), text: "", type: 'anchor' });
+        renderData.push({ timestamp: endAnchor.toISOString(), text: "", type: 'anchor' });
+        // -----------------------------------------
+
         const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 
         const timeline = milestones('#timeline')
@@ -200,7 +209,7 @@
             .parseTime('%Y-%m-%dT%H:%M:%SZ')
             .labelFormat('%Y-%m-%d')
             .distribution('top-bottom') 
-            .optimize(true)
+            .optimize(true) // Essential for fitting many items in screen width
             .onEventMouseOver(function(d) {
                 if (d.type === 'anchor') return;
                 tooltip.transition().duration(200).style("opacity", 1);
@@ -222,18 +231,16 @@
             .onEventMouseLeave(() => tooltip.transition().duration(500).style("opacity", 0))
             .onEventClick(d => { if(d.url) window.open(d.url, '_blank'); });
 
-        timeline.render(data);
+        timeline.render(renderData);
 
         // --- COLORING LOGIC ---
-        // 1. Dots
         d3.selectAll('.milestone-marker circle')
             .style('fill', d => (d && d.type === 'anchor') ? 'none' : (d.isFork ? '#FF8C00' : '#2E7D32'))
             .style('stroke', d => (d && d.type === 'anchor') ? 'none' : '#fff')
             .style('stroke-width', '2px');
 
-        // 2. Text Labels
         d3.selectAll('.milestone-label text')
-            .style('fill', d => (d && d.type === 'anchor') ? 'none' : (d.isFork ? '#E65100' : '#0D47A1')) // Darker Blue for Source
+            .style('fill', d => (d && d.type === 'anchor') ? 'none' : (d.isFork ? '#E65100' : '#0D47A1'))
             .style('font-weight', d => (d && d.type === 'anchor') ? 'normal' : '700');
     }
 
@@ -244,7 +251,6 @@
         const serializer = new XMLSerializer();
         let svgString = serializer.serializeToString(svgElement);
 
-        // Embed simplified CSS for the exported image
         const styleRules = `
             <style>
                 text { font-family: 'Segoe UI', sans-serif; }
@@ -262,7 +268,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "timeline.svg";
+        link.download = "timeline_full.svg";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
