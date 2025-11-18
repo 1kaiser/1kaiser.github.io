@@ -1,4 +1,4 @@
-const repos = [
+var repos = [
   {
     "timestamp": "2025-12-31T00:00:00.000Z",
     "text": ""
