@@ -3,271 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineering Experiments Timeline</title>
+    <title>Timeline</title>
     
-    <!-- 1. LOAD CSS (CRITICAL) -->
+    <!-- 1. LOAD LIBRARY CSS -->
     <link rel="stylesheet" href="https://unpkg.com/d3-milestones/build/d3-milestones.css">
     
     <style>
-        /* --- GLOBAL STYLES --- */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f4f9;
+        /* --- 1. LOCK THE SCREEN SIZE (No Global Scrollbars) --- */
+        html, body {
+            height: 100%;
+            width: 100%;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
+            overflow: hidden; /* Prevents page scrolling */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
         }
 
-        h1 {
+        /* --- 2. HEADER (Fixed Height) --- */
+        header {
+            flex: 0 0 auto; /* Don't grow/shrink */
             text-align: center;
-            padding: 20px;
-            margin: 0;
             background: #fff;
             border-bottom: 1px solid #ddd;
-            color: #333;
-            position: sticky;
-            top: 0;
+            padding: 15px;
             z-index: 100;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-
-        #loading {
-            text-align: center;
-            margin-top: 50px;
-            font-size: 1.2em;
-            color: #666;
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #333;
         }
 
-        /* --- TIMELINE CONTAINER --- */
-        #timeline {
+        /* --- 3. TIMELINE CONTAINER (Takes remaining space) --- */
+        #timeline-container {
+            flex: 1 1 auto; /* Take all remaining height */
             width: 100%;
-            padding-top: 40px;
-            padding-bottom: 100px; /* Space for tooltips at bottom */
-            min-height: 80vh;
+            height: 100%;
+            position: relative;
+            overflow: hidden; /* Hide overflow, we rely on SVG scaling */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* --- TOOLTIP STYLING --- */
+        /* Make the SVG responsive */
+        #timeline-container svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* --- 4. TOOLTIPS --- */
         .tooltip {
             position: absolute;
             text-align: left;
-            width: auto;
             max-width: 300px;
-            padding: 12px;
-            font-size: 13px;
-            background: rgba(25, 25, 25, 0.95);
+            padding: 10px;
+            font-size: 12px;
+            background: rgba(30, 30, 30, 0.95);
             color: #fff;
-            border-radius: 6px;
+            border-radius: 5px;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s;
             z-index: 9999;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            border: 1px solid #444;
+            border: 1px solid #555;
         }
 
-        /* --- CUSTOMIZING THE TIMELINE ELEMENTS --- */
-        
-        /* 1. Make labels smaller and readable */
+        /* --- 5. STYLING OVERRIDES --- */
         .milestone-label text {
-            font-size: 11px !important;
-            font-family: 'Segoe UI', sans-serif !important;
+            font-size: 12px !important; 
             font-weight: 600;
-            fill: #333;
-            /* White halo to read text over lines */
-            text-shadow: 2px 0px 2px #f4f4f9, -2px 0px 2px #f4f4f9, 0px 2px 2px #f4f4f9, 0px -2px 2px #f4f4f9;
+            text-shadow: 
+                1px 1px 0 #f4f4f9, -1px 1px 0 #f4f4f9, 
+                -1px -1px 0 #f4f4f9, 1px -1px 0 #f4f4f9;
+        }
+        
+        /* Loading State */
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
         }
 
-        /* 2. Subtler connector lines */
-        .milestone-link line {
-            stroke: #ccc !important;
-            stroke-width: 1px !important;
-        }
-
-        /* 3. Download Button */
+        /* Download Button */
         #downloadBtn {
-            position: fixed;
+            position: absolute;
             bottom: 20px;
             right: 20px;
             background: #333;
             color: #fff;
             border: none;
-            padding: 10px 20px;
-            border-radius: 30px;
+            padding: 8px 16px;
+            border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 2000;
-            display: none; /* Hidden until data loads */
+            opacity: 0.8;
+            z-index: 200;
+            display: none;
         }
-        #downloadBtn:hover { background: #555; }
+        #downloadBtn:hover { opacity: 1; }
     </style>
 </head>
 <body>
 
-    <!-- UPDATED TITLE HERE -->
-    <h1>⛰️ Timeline</h1>
+    <header>
+        <h1>⛰️ Timeline</h1>
+    </header>
     
-    <div id="loading">Fetching data from GitHub...</div>
+    <div id="timeline-container">
+        <div id="loading">Fetching data...</div>
+    </div>
     
-    <div id="timeline"></div>
-    
-    <button id="downloadBtn" onclick="downloadSVG()">⬇ Download SVG</button>
+    <button id="downloadBtn" onclick="downloadSVG()">⬇ Save SVG</button>
 
-    <!-- 2. LOAD SCRIPTS -->
+    <!-- SCRIPTS -->
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
 
     <script>
-        // --- CONFIGURATION ---
         const GITHUB_USERNAME = '1kaiser'; 
-        const START_YEAR = 2016; // Filter out old forked repos or noise
-        
-        // Store data globally for resizing
+        const START_YEAR = 2016; 
         let cachedData = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
-        });
-
-        // Handle Window Resize (Redraw)
+        document.addEventListener('DOMContentLoaded', fetchData);
+        
+        // Resize listener to re-draw and re-fit the timeline
         let resizeTimer;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(() => {
                 if(cachedData.length > 0) drawTimeline(cachedData);
-            }, 300);
+            }, 200);
         });
 
         function fetchData() {
             fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=created&direction=desc&per_page=100`)
-                .then(response => {
-                    if (!response.ok) throw new Error("GitHub API limit or error");
-                    return response.json();
+                .then(res => {
+                    if (!res.ok) throw new Error("API Error");
+                    return res.json();
                 })
                 .then(data => {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('downloadBtn').style.display = 'block';
 
                     cachedData = data
-                        .filter(repo => {
-                            if (!repo.created_at) return false;
-                            const year = new Date(repo.created_at).getFullYear();
-                            return year >= START_YEAR; 
-                        })
-                        .map(repo => {
-                            return {
-                                timestamp: repo.created_at, 
-                                text: repo.name,
-                                description: repo.description || "No description.",
-                                url: repo.html_url,
-                                isFork: repo.fork,
-                                language: repo.language
-                            };
-                        });
+                        .filter(repo => repo.created_at && new Date(repo.created_at).getFullYear() >= START_YEAR)
+                        .map(repo => ({
+                            timestamp: repo.created_at, 
+                            text: repo.name,
+                            description: repo.description || "No description.",
+                            url: repo.html_url,
+                            isFork: repo.fork,
+                            language: repo.language
+                        }));
 
                     if (cachedData.length === 0) {
-                        document.getElementById('timeline').innerHTML = `<p style="text-align:center">No repositories found since ${START_YEAR}.</p>`;
+                        document.getElementById('timeline-container').innerHTML = `<p>No data.</p>`;
                         return;
                     }
-
                     drawTimeline(cachedData);
                 })
                 .catch(err => {
                     console.error(err);
-                    document.getElementById('loading').innerText = "Error loading data (check console).";
+                    document.getElementById('loading').innerText = "Error loading data.";
                 });
         }
 
         function drawTimeline(data) {
-            const container = document.getElementById('timeline');
+            const container = document.getElementById('timeline-container');
             container.innerHTML = ''; 
             d3.selectAll('.tooltip').remove(); 
 
             const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 
-            // Prepare Data with Anchors
+            // Copy data and add anchors to stretch timeline fully
             const finalData = JSON.parse(JSON.stringify(data));
             
-            finalData.push({ 
-                timestamp: `${START_YEAR}-01-01T00:00:00Z`, 
-                text: "", 
-                type: 'anchor' 
-            });
-
+            // Anchor Start
+            finalData.push({ timestamp: `${START_YEAR}-01-01T00:00:00Z`, text: "", type: 'anchor' });
+            // Anchor End (Next Month)
             const nextMonth = new Date();
             nextMonth.setMonth(nextMonth.getMonth() + 1);
-            finalData.push({
-                timestamp: nextMonth.toISOString(),
-                text: "",
-                type: 'anchor'
-            });
+            finalData.push({ timestamp: nextMonth.toISOString(), text: "", type: 'anchor' });
 
-            // Initialize Library
-            const timeline = milestones('#timeline')
-                .mapping({
-                    'timestamp': 'timestamp',
-                    'text': 'text'
-                })
+            // Initialize Timeline
+            const timeline = milestones('#timeline-container')
+                .mapping({ 'timestamp': 'timestamp', 'text': 'text' })
                 .parseTime('%Y-%m-%dT%H:%M:%SZ') 
                 .optimize(true) 
-                .distribution('top-bottom')
-                
-                .onEventMouseOver(function(d) {
-                    if (d.type === 'anchor') return;
+                .distribution('top-bottom');
 
-                    tooltip.transition().duration(200).style("opacity", 1);
-                    
-                    const badgeColor = d.isFork ? "#ff9800" : "#4CAF50"; 
-                    const typeText = d.isFork ? "Fork" : "Source";
+            // Events
+            timeline.onEventMouseOver(function(d) {
+                if (d.type === 'anchor') return;
+                tooltip.transition().duration(200).style("opacity", 1);
+                const badgeColor = d.isFork ? "#ff9800" : "#4CAF50"; 
+                tooltip.html(`
+                    <strong style="font-size:1.1em">${d.text}</strong>
+                    <span style="background:${badgeColor}; color:#000; padding:1px 5px; border-radius:3px; font-size:9px; margin-left:5px;">${d.isFork ? "Fork" : "Source"}</span><br>
+                    <div style="margin-top:4px; color:#ddd;">${d.description.substring(0, 100)}${d.description.length>100?'...':''}</div>
+                `)
+                .style("left", (d3.event.pageX + 15) + "px")
+                .style("top", (d3.event.pageY - 15) + "px");
+            })
+            .onEventMouseLeave(() => tooltip.transition().duration(500).style("opacity", 0))
+            .onEventClick(d => { if(d.url) window.open(d.url, '_blank'); });
 
-                    tooltip.html(`
-                        <div style="border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:5px;">
-                            <strong style="font-size:1.1em">${d.text}</strong>
-                            <span style="background:${badgeColor}; color:#000; padding:1px 5px; border-radius:4px; font-size:10px; margin-left:5px;">${typeText}</span>
-                        </div>
-                        <div>${d.description}</div>
-                        <div style="color:#aaa; font-size:0.85em; margin-top:8px;">
-                            📅 ${d.timestamp.split('T')[0]} 
-                            ${d.language ? ` • 💻 ${d.language}` : ''}
-                        </div>
-                    `)
-                    .style("left", (d3.event.pageX + 15) + "px")
-                    .style("top", (d3.event.pageY - 15) + "px");
-                })
-                .onEventMouseLeave(function() {
-                    tooltip.transition().duration(500).style("opacity", 0);
-                })
-                .onEventClick(function(d) {
-                    if(d.url) window.open(d.url, '_blank');
-                });
-
+            // RENDER
             timeline.render(finalData);
+
+            // --- KEY FIX: FORCE SVG TO FIT CONTAINER ---
+            const svg = d3.select('#timeline-container svg');
+            
+            // 1. Get the computed size of the generated SVG
+            const originalWidth = svg.attr('width');
+            const originalHeight = svg.attr('height');
+
+            // 2. Set viewBox to match the generated size
+            svg.attr('viewBox', `0 0 ${originalWidth} ${originalHeight}`)
+            // 3. Remove static width/height and set to 100%
+               .attr('width', '100%')
+               .attr('height', '100%')
+            // 4. Preserve Aspect Ratio (fit within box, center it)
+               .attr('preserveAspectRatio', 'xMidYMid meet');
 
             // Post-Render Colors
             d3.selectAll('.milestone-marker circle')
-                .style('fill', d => {
-                    if (d.type === 'anchor') return 'none'; 
-                    return d.isFork ? '#ff9800' : '#2E7D32';
-                })
-                .style('stroke', d => (d.type === 'anchor' ? 'none' : '#fff'));
-                
+                .style('fill', d => d.type === 'anchor' ? 'none' : (d.isFork ? '#ff9800' : '#2E7D32'))
+                .style('stroke', d => d.type === 'anchor' ? 'none' : '#fff');
+            
             d3.selectAll('.milestone-label text')
-                .style('display', d => (d.type === 'anchor' ? 'none' : 'block'));
+                .style('display', d => d.type === 'anchor' ? 'none' : 'block');
         }
 
         function downloadSVG() {
-            const svg = document.querySelector('#timeline svg');
+            const svg = document.querySelector('#timeline-container svg');
             if(!svg) return;
-            
             const serializer = new XMLSerializer();
             let source = serializer.serializeToString(svg);
-            
             if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
                 source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
             }
-            
             source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
-            
             const url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
             const link = document.createElement("a");
             link.href = url;
