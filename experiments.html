@@ -22,43 +22,42 @@
     h1 {
         text-align: center;
         margin: 0;
-        padding: 20px 0;
+        padding: 15px 0;
         color: #333;
-        font-size: 2em;
+        font-size: 1.8em;
         background: rgba(249, 249, 249, 0.95);
         position: sticky;
         top: 0;
         z-index: 10;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-bottom: 1px solid #eee;
     }
 
-    /* 2. Timeline Container - FIT TO SCREEN */
+    /* 2. Timeline Container */
     #timeline {
-        width: 100%; /* Dynamic Width */
-        padding-top: 40px;
+        width: 100%; /* Fit Screen Width */
+        padding-top: 20px;
         padding-bottom: 100px;
-        /* Height will be calculated automatically by the library */
+        min-height: 80vh; /* Occupy vertical screen space */
     }
 
     /* 3. Tooltip (The Bubble) Styling */
     .tooltip {
         position: absolute;
         text-align: left;
-        max-width: 350px;
-        padding: 15px;
+        max-width: 320px;
+        padding: 12px;
         font-family: sans-serif;
         font-size: 13px;
-        line-height: 1.5;
-        background: rgba(25, 25, 25, 0.95);
+        line-height: 1.4;
+        background: rgba(20, 20, 20, 0.95);
         color: #fff;
         border: 1px solid #444;
-        border-radius: 8px;
+        border-radius: 6px;
         pointer-events: none;
         opacity: 0;
-        transition: opacity 0.2s, transform 0.2s;
+        transition: opacity 0.2s;
         z-index: 3000;
         box-shadow: 0px 8px 20px rgba(0,0,0,0.4);
-        backdrop-filter: blur(4px);
     }
     
     #loading {
@@ -77,9 +76,9 @@
         background-color: #222;
         color: white;
         border: none;
-        padding: 12px 20px;
+        padding: 10px 18px;
         border-radius: 50px;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: bold;
         cursor: pointer;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -90,9 +89,9 @@
     }
     #downloadBtn:hover { background-color: #444; transform: translateY(-2px); }
     
-    /* 5. Text Label Optimization */
+    /* 5. Text Label Optimization (Reduces line height) */
     .milestone-label text {
-        font-size: 11px !important;
+        font-size: 10px !important; /* Smaller font = less crowding */
         font-family: 'Segoe UI', sans-serif !important;
         /* White halo to make text readable over lines */
         text-shadow: 
@@ -100,6 +99,12 @@
             -2px  0px 2px #f9f9f9, 
              0px  2px 2px #f9f9f9, 
              0px -2px 2px #f9f9f9;
+    }
+    
+    /* Make connector lines thinner/subtle */
+    .milestone-link line {
+        stroke-width: 1px !important;
+        stroke: #ccc !important;
     }
   </style>
 </head>
@@ -124,7 +129,7 @@
     // --- CONFIGURATION ---
     const GITHUB_USERNAME = '1kaiser'; 
     const MAX_REPOS = 100; 
-    const START_YEAR = 2016; // Force start year
+    const START_YEAR = 2016; // Strict Start Date
 
     // Global storage for resizing
     let cachedRepos = [];
@@ -139,15 +144,16 @@
             // 1. Filter and Transform Data
             cachedRepos = githubData
                 .filter(repo => {
-                    // FILTER: Exclude anything created before START_YEAR
+                    // STRICT FILTER: Exclude anything created before START_YEAR
+                    // This removes the 1970 bug
                     if (!repo.created_at) return false;
                     const year = new Date(repo.created_at).getFullYear();
                     return year >= START_YEAR; 
                 })
                 .map(repo => {
-                    // Truncate long names for the label (full name in tooltip)
+                    // Truncate long names for the label
                     let shortText = repo.name; 
-                    if (repo.name.length > 25) shortText = repo.name.substring(0, 25) + "...";
+                    if (repo.name.length > 20) shortText = repo.name.substring(0, 20) + "...";
 
                     return {
                         timestamp: repo.created_at, 
@@ -170,7 +176,6 @@
     });
 
     // --- DYNAMIC RESIZE ---
-    // Redraw timeline when screen size changes to fit width
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
@@ -181,7 +186,7 @@
 
     function drawTimeline() {
         if (cachedRepos.length === 0) {
-             document.getElementById('timeline').innerHTML = '<p style="text-align:center">No repositories found after ' + START_YEAR + '</p>';
+             document.getElementById('timeline').innerHTML = '<p style="text-align:center; margin-top:20px;">No repositories found after ' + START_YEAR + '</p>';
              return;
         }
 
@@ -192,19 +197,23 @@
         // Create a copy to add anchors safely
         const renderData = JSON.parse(JSON.stringify(cachedRepos));
 
-        // --- ANCHOR LOGIC ---
-        // 1. Start Anchor: Explicitly Jan 1, 2016
+        // --- ANCHOR LOGIC (THE FIX FOR 1970) ---
+        
+        // 1. Start Anchor: FORCE to Jan 1, 2016
         renderData.push({ 
             timestamp: `${START_YEAR}-01-01T00:00:00Z`, 
             text: "", 
             type: 'anchor' 
         });
 
-        // 2. End Anchor: Max Date + Padding
-        const allDates = renderData.map(r => new Date(r.timestamp).getTime());
-        const maxDate = new Date(Math.max(...allDates));
-        const endAnchor = new Date(maxDate);
-        endAnchor.setMonth(endAnchor.getMonth() + 1); // +1 Month padding
+        // 2. End Anchor: Max Date from data + 1 Month padding
+        const allDates = renderData
+            .filter(d => d.type !== 'anchor') // Only check real repos
+            .map(r => new Date(r.timestamp).getTime());
+            
+        const maxDateTimestamp = allDates.length > 0 ? Math.max(...allDates) : Date.now();
+        const endAnchor = new Date(maxDateTimestamp);
+        endAnchor.setMonth(endAnchor.getMonth() + 1);
 
         renderData.push({ 
             timestamp: endAnchor.toISOString(), 
@@ -220,31 +229,31 @@
             .mapping({ 'timestamp': 'timestamp', 'text': 'text' })
             .parseTime('%Y-%m-%dT%H:%M:%SZ')
             .labelFormat('%Y-%m-%d')
-            .distribution('top-bottom') // Efficient vertical packing
-            .optimize(true)             // Prevent overlap
+            .distribution('top-bottom') 
+            .optimize(true)             
             
             // --- BUBBLE / TOOLTIP LOGIC ---
             .onEventMouseOver(function(d) {
                 if (d.type === 'anchor') return;
                 
-                tooltip.transition().duration(200).style("opacity", 1).style("transform", "translateY(-5px)");
+                tooltip.transition().duration(200).style("opacity", 1);
                 
-                const typeLabel = d.isFork ? "FORKED" : "SOURCE";
+                const typeLabel = d.isFork ? "FORK" : "SOURCE";
                 const typeColor = d.isFork ? "#ff9800" : "#4CAF50"; // Orange vs Green
 
                 tooltip.html(`
-                    <div style="margin-bottom:8px; border-bottom:1px solid #444; padding-bottom:5px;">
-                        <strong style="font-size:1.2em; color:#fff;">${d.fullName}</strong> 
-                        <span style="background:${typeColor}; padding:3px 8px; border-radius:12px; font-size:10px; color:black; font-weight:bold; margin-left:8px; vertical-align:middle;">${typeLabel}</span>
+                    <div style="margin-bottom:6px; padding-bottom:4px; border-bottom:1px solid #555;">
+                        <strong style="font-size:1.1em; color:#fff;">${d.fullName}</strong> 
+                        <span style="background:${typeColor}; padding:2px 6px; border-radius:4px; font-size:9px; color:black; font-weight:bold; margin-left:6px; vertical-align:middle;">${typeLabel}</span>
                     </div>
-                    <div style="color:#ddd; font-size:0.95em; margin-bottom:10px;">${d.description}</div>
+                    <div style="color:#ddd; font-size:0.9em; margin-bottom:6px;">${d.description}</div>
                     <div style="color:#888; font-size:0.8em;">📅 ${d.timestamp.split('T')[0]}</div>
                 `)
-                .style("left", (d3.event.pageX + 20) + "px")
-                .style("top", (d3.event.pageY - 20) + "px");
+                .style("left", (d3.event.pageX + 15) + "px")
+                .style("top", (d3.event.pageY - 15) + "px");
             })
             .onEventMouseLeave(() => {
-                tooltip.transition().duration(500).style("opacity", 0).style("transform", "translateY(0)");
+                tooltip.transition().duration(500).style("opacity", 0);
             })
             .onEventClick(d => { if(d.url) window.open(d.url, '_blank'); });
 
@@ -259,7 +268,7 @@
                 return d.isFork ? '#FF8C00' : '#2E7D32'; // Fork=Orange, Source=Green
             })
             .style('stroke', d => (d && d.type === 'anchor') ? 'none' : '#fff')
-            .style('stroke-width', '2px');
+            .style('stroke-width', '1.5px');
 
         // 2. TEXT LABELS
         d3.selectAll('.milestone-label text')
@@ -281,8 +290,8 @@
         const styleRules = `
             <style>
                 text { font-family: 'Segoe UI', sans-serif; }
-                .milestone-link line { stroke: #555; stroke-width: 1px; }
-                .milestone-label text { font-size: 11px; font-weight: bold; fill: #333; text-shadow: 2px 0px 2px white, -2px 0px 2px white, 0px 2px 2px white, 0px -2px 2px white; }
+                .milestone-link line { stroke: #ccc; stroke-width: 1px; }
+                .milestone-label text { font-size: 10px; font-weight: bold; fill: #333; text-shadow: 2px 0px 2px white, -2px 0px 2px white, 0px 2px 2px white, 0px -2px 2px white; }
             </style>`;
         
         svgString = svgString.replace(/^<svg[^>]*>/, `$&${styleRules}`);
@@ -295,7 +304,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "timeline_2016.svg";
+        link.download = "timeline_clean.svg";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
