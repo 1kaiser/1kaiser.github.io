@@ -104,7 +104,8 @@
 </head>
 <body>
 
-    <h1>🚀 Project History</h1>
+    <!-- UPDATED TITLE HERE -->
+    <h1>⛰️ Timeline</h1>
     
     <div id="loading">Fetching data from GitHub...</div>
     
@@ -113,9 +114,7 @@
     <button id="downloadBtn" onclick="downloadSVG()">⬇ Download SVG</button>
 
     <!-- 2. LOAD SCRIPTS -->
-    <!-- We load D3 v5 first because d3-milestones relies on it for event handling in this specific setup -->
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <!-- Load the library -->
     <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
 
     <script>
@@ -140,7 +139,6 @@
         });
 
         function fetchData() {
-            // Fetch repos (sorted by creation date)
             fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=created&direction=desc&per_page=100`)
                 .then(response => {
                     if (!response.ok) throw new Error("GitHub API limit or error");
@@ -150,7 +148,6 @@
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('downloadBtn').style.display = 'block';
 
-                    // Process Data
                     cachedData = data
                         .filter(repo => {
                             if (!repo.created_at) return false;
@@ -158,11 +155,9 @@
                             return year >= START_YEAR; 
                         })
                         .map(repo => {
-                            // Format for timeline
                             return {
-                                timestamp: repo.created_at, // ISO string: 2023-01-01T00:00:00Z
+                                timestamp: repo.created_at, 
                                 text: repo.name,
-                                // Custom properties for tooltip
                                 description: repo.description || "No description.",
                                 url: repo.html_url,
                                 isFork: repo.fork,
@@ -185,24 +180,20 @@
 
         function drawTimeline(data) {
             const container = document.getElementById('timeline');
-            container.innerHTML = ''; // Clear previous
-            d3.selectAll('.tooltip').remove(); // Clear old tooltips
+            container.innerHTML = ''; 
+            d3.selectAll('.tooltip').remove(); 
 
-            // Initialize Tooltip
             const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 
-            // 1. Prepare Data with Anchors (fixes the "clumped" look if range is small)
-            // We add an invisible 'anchor' at the start and end to stretch the timeline line
+            // Prepare Data with Anchors
             const finalData = JSON.parse(JSON.stringify(data));
             
-            // Add Start Anchor (Jan 1 of Start Year)
             finalData.push({ 
                 timestamp: `${START_YEAR}-01-01T00:00:00Z`, 
                 text: "", 
                 type: 'anchor' 
             });
 
-            // Add End Anchor (Today + 1 month padding)
             const nextMonth = new Date();
             nextMonth.setMonth(nextMonth.getMonth() + 1);
             finalData.push({
@@ -211,26 +202,22 @@
                 type: 'anchor'
             });
 
-            // 2. Initialize Library
+            // Initialize Library
             const timeline = milestones('#timeline')
                 .mapping({
                     'timestamp': 'timestamp',
                     'text': 'text'
                 })
-                // IMPORTANT: Match GitHub ISO format
                 .parseTime('%Y-%m-%dT%H:%M:%SZ') 
-                .optimize(true) // Layout optimization
-                .distribution('top-bottom') // Text alternates up/down
+                .optimize(true) 
+                .distribution('top-bottom')
                 
-                // --- EVENTS ---
                 .onEventMouseOver(function(d) {
-                    // Ignore anchors
                     if (d.type === 'anchor') return;
 
-                    // Show Tooltip
                     tooltip.transition().duration(200).style("opacity", 1);
                     
-                    const badgeColor = d.isFork ? "#ff9800" : "#4CAF50"; // Orange vs Green
+                    const badgeColor = d.isFork ? "#ff9800" : "#4CAF50"; 
                     const typeText = d.isFork ? "Fork" : "Source";
 
                     tooltip.html(`
@@ -244,7 +231,6 @@
                             ${d.language ? ` • 💻 ${d.language}` : ''}
                         </div>
                     `)
-                    // Position near mouse
                     .style("left", (d3.event.pageX + 15) + "px")
                     .style("top", (d3.event.pageY - 15) + "px");
                 })
@@ -255,25 +241,20 @@
                     if(d.url) window.open(d.url, '_blank');
                 });
 
-            // 3. Render
             timeline.render(finalData);
 
-            // 4. Post-Render Customization (Colors)
-            // We manually select the nodes to color them based on 'fork' vs 'source'
+            // Post-Render Colors
             d3.selectAll('.milestone-marker circle')
                 .style('fill', d => {
-                    // 'd' here is the data object bound by the library
                     if (d.type === 'anchor') return 'none'; 
                     return d.isFork ? '#ff9800' : '#2E7D32';
                 })
                 .style('stroke', d => (d.type === 'anchor' ? 'none' : '#fff'));
                 
-            // Hide text for anchors
             d3.selectAll('.milestone-label text')
                 .style('display', d => (d.type === 'anchor' ? 'none' : 'block'));
         }
 
-        // Download Functionality
         function downloadSVG() {
             const svg = document.querySelector('#timeline svg');
             if(!svg) return;
@@ -281,12 +262,10 @@
             const serializer = new XMLSerializer();
             let source = serializer.serializeToString(svg);
             
-            // Add namespaces
             if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
                 source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
             }
             
-            // Prepend XML declaration
             source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
             
             const url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
