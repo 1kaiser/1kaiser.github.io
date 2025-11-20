@@ -35,11 +35,16 @@
             border-radius: 4px;
         }
 
-        #download-btn {
+        .download-container {
             position: fixed;
             bottom: 20px;
             right: 20px;
             z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-btn {
             padding: 10px 20px;
             font-size: 14px;
             cursor: pointer;
@@ -49,7 +54,7 @@
             border-radius: 5px;
         }
 
-        #download-btn:hover {
+        .download-btn:hover {
             background-color: #0056b3;
         }
 
@@ -117,7 +122,10 @@
         <span style="color: #008000; font-style: italic;">● Forked Repositories</span>
     </div>
 
-    <button id="download-btn">Download SVG</button>
+    <div class="download-container">
+        <button id="download-svg-btn" class="download-btn">Download SVG</button>
+        <button id="download-png-btn" class="download-btn">Download PNG</button>
+    </div>
 
     <div class="timeline-wrapper">
         <div id="timeline"></div>
@@ -130,14 +138,28 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Download Handler
-            document.getElementById('download-btn').addEventListener('click', () => {
-                const node = document.getElementById('timeline');
+            const node = document.getElementById('timeline');
 
+            // Download SVG Handler
+            document.getElementById('download-svg-btn').addEventListener('click', () => {
                 domtoimage.toSvg(node)
                     .then(function (dataUrl) {
                         const link = document.createElement('a');
                         link.download = 'timeline.svg';
+                        link.href = dataUrl;
+                        link.click();
+                    })
+                    .catch(function (error) {
+                        console.error('oops, something went wrong!', error);
+                    });
+            });
+
+            // Download PNG Handler
+            document.getElementById('download-png-btn').addEventListener('click', () => {
+                domtoimage.toPng(node)
+                    .then(function (dataUrl) {
+                        const link = document.createElement('a');
+                        link.download = 'timeline.png';
                         link.href = dataUrl;
                         link.click();
                     })
