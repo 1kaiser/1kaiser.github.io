@@ -79,9 +79,9 @@
 
     <h1>⛰️ Repository Timeline</h1>
     <div style="text-align: center; margin-bottom: 10px; font-size: 14px;">
-        <span style="color: #2980b9; font-weight: bold;">● Source Repositories</span>
+        <span style="color: #008000; font-weight: bold;">● Source Repositories</span>
         &nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style="color: #7f8c8d; font-style: italic;">● Forked Repositories</span>
+        <span style="color: #FF2400; font-style: italic;">● Forked Repositories</span>
     </div>
 
     <div class="timeline-wrapper">
@@ -91,9 +91,32 @@
     <!-- Dependencies -->
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <button id="downloadBtn" style="padding: 10px 20px; background-color: #333; color: #fff; border: none; cursor: pointer; font-size: 16px;">
+            📸 Download Timeline Image
+        </button>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+
+            // Download functionality
+            document.getElementById('downloadBtn').addEventListener('click', () => {
+                const element = document.getElementById('timeline');
+                console.log('Starting download...');
+                html2canvas(element, {
+                    backgroundColor: '#ffffff',
+                    scale: 2 // Better resolution
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'timeline.png';
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    console.log('Download triggered.');
+                }).catch(err => console.error('Download failed:', err));
+            });
 
             // Tooltip
             const tooltip = d3.select("body").append("div").attr("class", "tooltip");
@@ -139,7 +162,7 @@
                         text: repo.name,
                         url: repo.html_url,
                         customStyle: {
-                            'color': repo.fork ? '#7f8c8d' : '#2980b9', // Grey for forks, Blue for sources
+                            'color': repo.fork ? '#FF2400' : '#008000', // Scarlet for forks, Green for sources
                             'font-style': repo.fork ? 'italic' : 'normal',
                             'font-weight': repo.fork ? 'normal' : 'bold'
                         }
