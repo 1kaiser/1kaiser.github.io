@@ -79,9 +79,9 @@
 
     <h1>⛰️ Repository Timeline</h1>
     <div style="text-align: center; margin-bottom: 10px; font-size: 14px;">
-        <span style="color: #2980b9; font-weight: bold;">● Source Repositories</span>
+        <span style="color: #FF2400; font-weight: bold;">● Source Repositories</span>
         &nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style="color: #7f8c8d; font-style: italic;">● Forked Repositories</span>
+        <span style="color: #008000; font-style: italic;">● Forked Repositories</span>
     </div>
 
     <div class="timeline-wrapper">
@@ -139,7 +139,7 @@
                         text: repo.name,
                         url: repo.html_url,
                         customStyle: {
-                            'color': repo.fork ? '#7f8c8d' : '#2980b9', // Grey for forks, Blue for sources
+                            'color': repo.fork ? '#FF2400' : '#008000', // Scarlet for forks, Green for sources
                             'font-style': repo.fork ? 'italic' : 'normal',
                             'font-weight': repo.fork ? 'normal' : 'bold'
                         }
