@@ -117,3 +117,9 @@ The GIF was created using the following process:
 
 1.  **Record Interaction**: A screen recording of the website's interaction was captured using Playwright and Node.js.
 2.  **Convert to GIF**: The video was then converted into a GIF, with optimizations for file size and quality.
+
+## Timeline Scrolling GIF
+
+This GIF demonstrates the horizontal scrolling feature of the timeline on the `experiments.html` page.
+
+![Timeline Scrolling GIF](timeline_scrolling.gif)
