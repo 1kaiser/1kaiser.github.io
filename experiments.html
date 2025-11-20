@@ -37,22 +37,22 @@
             height: 12px;
         }
         .timeline-wrapper::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f1f1; 
         }
         .timeline-wrapper::-webkit-scrollbar-thumb {
-            background: #888;
+            background: #888; 
             border-radius: 6px;
         }
         .timeline-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: #555; 
         }
 
         /* The Timeline Itself */
         #timeline {
             /* Fixed large width to accommodate many nodes without overlapping */
-            width: 3000px;
+            width: 3000px; 
             /* Fixed height is crucial for d3-milestones to calculate layout */
-            height: 400px;
+            height: 400px; 
             position: relative;
         }
 
@@ -60,7 +60,7 @@
         .milestone-label text {
             font-size: 12px !important;
         }
-
+        
         .tooltip {
             position: absolute;
             background: rgba(0,0,0,0.85);
@@ -79,9 +79,9 @@
 
     <h1>⛰️ Repository Timeline</h1>
     <div style="text-align: center; margin-bottom: 10px; font-size: 14px;">
-        <span style="color: #008000; font-weight: bold;">● Source Repositories</span>
+        <span style="color: #FF2400; font-weight: bold;">● Source Repositories</span>
         &nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style="color: #FF2400; font-style: italic;">● Forked Repositories</span>
+        <span style="color: #008000; font-style: italic;">● Forked Repositories</span>
     </div>
 
     <div class="timeline-wrapper">
@@ -91,33 +91,10 @@
     <!-- Dependencies -->
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <div style="text-align: center; margin-top: 20px;">
-        <button id="downloadBtn" style="padding: 10px 20px; background-color: #333; color: #fff; border: none; cursor: pointer; font-size: 16px;">
-            📸 Download Timeline Image
-        </button>
-    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-
-            // Download functionality
-            document.getElementById('downloadBtn').addEventListener('click', () => {
-                const element = document.getElementById('timeline');
-                console.log('Starting download...');
-                html2canvas(element, {
-                    backgroundColor: '#ffffff',
-                    scale: 2 // Better resolution
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'timeline.png';
-                    link.href = canvas.toDataURL();
-                    link.click();
-                    console.log('Download triggered.');
-                }).catch(err => console.error('Download failed:', err));
-            });
-
+            
             // Tooltip
             const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 
@@ -148,7 +125,7 @@
             const apiUrl = `https://api.github.com/users/${username}/repos?sort=created&direction=asc&per_page=100`;
 
             console.log(`Fetching repos for ${username}...`);
-
+            
             fetch(apiUrl)
                 .then(response => {
                     if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
@@ -169,7 +146,7 @@
                     }));
 
                     console.log(`Fetched ${timelineData.length} repositories.`);
-
+                    
                     if (timelineData.length === 0) {
                         console.warn('No repositories found.');
                         return;

@@ -20,6 +20,14 @@ This project leverages several key technologies and AI assistance:
 
 *   **[Piping Server](https://github.com/nwtgck/piping-server)**: Used to facilitate the real-time transfer of model data for the 'Deploy to Mobile' QR code feature. (Textual acknowledgement as no distinct project logo).
 
+*   <a href="https://vuejs.org/" target="_blank" rel="noopener noreferrer"><img src="https://vuejs.org/images/logo.png" alt="Vue.js Logo" title="Vue.js" width="40"></a>
+    **[Vue.js](https://vuejs.org/)**: The Progressive JavaScript Framework used for building the user interface of the gallery.
+
+*   <a href="https://cdnjs.com/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/cdnjs/brand/master/logo/standard/dark-1024.png" alt="cdnjs Logo" title="cdnjs" width="40"></a>
+    **[cdnjs](https://cdnjs.com/)**: A free and open-source CDN used for hosting some of the project's dependencies.
+
+*   **[unpkg](https://unpkg.com/)**: A fast, global content delivery network for everything on npm, used for hosting some of the project's dependencies.
+
 ## Key Features
 
 *   **3D Model Display**: View various 3D models (GLB format).
@@ -32,26 +40,35 @@ This project leverages several key technologies and AI assistance:
     *   Uses piping servers for data transfer without permanent server-side storage.
     *   Supports AR mode selection (Scene Viewer default).
 *   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
+*   **CV Page**: A dedicated page to showcase a curriculum vitae.
+*   **AI/ML Experiments Page**: A page listing various browser-based AI/ML experiments and visualizations.
 
-## Recent Improvements
+## 🚀 AI/ML Experiments
 
-*   **Mobile View Page Refactor (`view/index.html`)**:
-    *   Externalized all inline CSS into a dedicated `view/mobile-view.css` file, cleaning up the HTML structure.
-    *   Replaced the embedded JavaScript logic with the more robust and feature-rich external `view/mobile_view.js`, enhancing the reliability and capabilities of the mobile viewing page.
-*   **Enhanced Modal UX (User Experience)**:
-    *   The modal window now intelligently waits for the selected 3D model to finish loading in its gallery card before appearing, providing a smoother experience.
-    *   Fixed an issue where the modal might not reopen correctly for the same model or could briefly show a previously viewed model; the modal's content is now reliably updated on each interaction.
-*   **Camera Controls**: Confirmed that camera orbit controls are consistently available and functional in the modal viewer, even with repeated opening and closing or model changes.
-*   **Piping Utilities Consolidation**: Consolidated common piping server utilities into a shared `js/piping-utils.js` module, reducing code duplication in `js/qr-deploy.js` and `view/mobile_view.js`.
+This repository also includes a page dedicated to various AI/ML experiments, which can be found at [`experiments.html`](experiments.html). These experiments showcase browser-based AI applications and visualizations.
+
+### 🌟 Featured Experiments
+*   **Wordy**: [Live Demo](https://1kaiser.github.io/wordy/) | [GitHub](https://github.com/1kaiser/wordy)
+*   **TextGraph**: [Live Demo](https://1kaiser.github.io/TextGraph/) | [GitHub](https://github.com/1kaiser/TextGraph)
+*   **Gemma Chat App**: [Live Demo](https://1kaiser.github.io/gemma-chat-app/) | [GitHub](https://github.com/1kaiser/gemma-chat-app)
+*   **LLM Consistency Vis**: [Live Demo](https://1kaiser.github.io/llm-consistency-vis/) | [GitHub](https://github.com/1kaiser/llm-consistency-vis)
+
+### 📚 Other Experiments
+*   **LLM WordGraph Exact**: [Live Demo](https://1kaiser.github.io/llm-wordgraph-exact/) | [GitHub](https://github.com/1kaiser/llm-wordgraph-exact)
 
 ## Current Folder Structure
 
 ```ascii
 .
+├── cv/
+│   ├── cv.css
+│   ├── cv.html
+│   └── cv.js
 ├── css/
 │   └── styles.css
 ├── js/
 │   ├── app.js
+│   ├── gallery-vue.js
 │   ├── piping-utils.js
 │   └── qr-deploy.js
 ├── models/
@@ -87,3 +104,16 @@ This project leverages several key technologies and AI assistance:
 -   **Documentation**:
     -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
     -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
+
+## Interaction GIF
+
+This GIF demonstrates the key interactions of the 3D Model Gallery, such as scrolling, selecting a model, and viewing it in the modal window.
+
+![Interaction GIF](interaction.gif)
+
+### Creating the GIF
+
+The GIF was created using the following process:
+
+1.  **Record Interaction**: A screen recording of the website's interaction was captured using Playwright and Node.js.
+2.  **Convert to GIF**: The video was then converted into a GIF, with optimizations for file size and quality.
