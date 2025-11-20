@@ -5,56 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Timeline</title>
     
-    <!-- 1. REQUIRED CSS -->
+    <!-- Required CSS -->
     <link rel="stylesheet" href="https://unpkg.com/d3-milestones/build/d3-milestones.css">
     
     <style>
-        /* --- LAYOUT: FIT SCREEN --- */
-        html, body {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-            overflow: hidden; /* Disable scrolling */
+        body {
             font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
+            margin: 0;
+            padding: 20px;
             background-color: #f4f4f9;
         }
 
-        header {
+        h1 {
             text-align: center;
-            padding: 15px;
-            background: #fff;
-            border-bottom: 1px solid #ddd;
-            flex: 0 0 auto; /* Fixed height */
-            z-index: 10;
         }
 
-        #timeline {
-            flex: 1 1 auto; /* Fills remaining space */
+        /* Scrollable Container */
+        .timeline-wrapper {
             width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            overflow-x: auto;
+            border: 1px solid #ddd; /* Visual boundary */
+            background-color: #fff;
+            padding: 20px 0;
+            /* Scrollbar styling for Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+
+        /* Scrollbar styling for WebKit (Chrome, Safari, Edge) */
+        .timeline-wrapper::-webkit-scrollbar {
+            height: 12px;
+        }
+        .timeline-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .timeline-wrapper::-webkit-scrollbar-thumb {
+            background: #888; 
+            border-radius: 6px;
+        }
+        .timeline-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+
+        /* The Timeline Itself */
+        #timeline {
+            /* Fixed large width to accommodate many nodes without overlapping */
+            width: 3000px; 
+            /* Fixed height is crucial for d3-milestones to calculate layout */
+            height: 400px; 
             position: relative;
         }
 
-        /* Responsive SVG */
-        #timeline svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        /* --- CUSTOM STYLES --- */
+        /* Custom Styles for Labels */
         .milestone-label text {
             font-size: 12px !important;
-            font-weight: 600;
-            text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff; /* Halo effect */
         }
-
-        /* Tooltip */
+        
         .tooltip {
             position: absolute;
             background: rgba(0,0,0,0.85);
@@ -71,65 +77,91 @@
 </head>
 <body>
 
-    <header>
-        <h1>⛰️ Timeline</h1>
-    </header>
+    <h1>⛰️ Repository Timeline</h1>
+    <div style="text-align: center; margin-bottom: 10px; font-size: 14px;">
+        <span style="color: #2980b9; font-weight: bold;">● Source Repositories</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style="color: #7f8c8d; font-style: italic;">● Forked Repositories</span>
+    </div>
 
-    <div id="timeline"></div>
+    <div class="timeline-wrapper">
+        <div id="timeline"></div>
+    </div>
 
-    <!-- 2. REQUIRED SCRIPTS -->
+    <!-- Dependencies -->
     <script src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             
-            // 3. YOUR DATA (Example Data)
-            const data = [
-                { timestamp: '2023-01-01T00:00', text: 'Project Start' },
-                { timestamp: '2023-03-15T00:00', text: 'Design Phase' },
-                { timestamp: '2023-06-10T00:00', text: 'Alpha Release' },
-                { timestamp: '2023-09-05T00:00', text: 'Beta Testing' },
-                { timestamp: '2023-12-20T00:00', text: 'Go Live' },
-                { timestamp: '2024-02-10T00:00', text: 'v1.1 Update' }
-            ];
-
-            // Tooltip setup
+            // Tooltip
             const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 
-            // 4. INITIALIZE TIMELINE
+            // Initialize Timeline
             const timeline = milestones('#timeline')
                 .mapping({
                     'timestamp': 'timestamp',
-                    'text': 'text'
+                    'text': 'text',
+                    'textStyle': 'customStyle'
                 })
-                // Define date format (ISO 8601)
-                .parseTime('%Y-%m-%dT%H:%M') 
-                .optimize(true) // Avoids label overlap
-                .distribution('top-bottom'); // Alternates labels
+                .parseTime('%Y-%m-%dT%H:%M:%SZ')
+                .aggregateBy('day') // Aggregate by day to avoid stacking too much
+                .optimize(true)
+                .distribution('top-bottom');
 
-            // Mouse Events
+            // Tooltip events
             timeline.onEventMouseOver((d) => {
+                const dateStr = d.timestamp ? d.timestamp.split('T')[0] : '';
                 tooltip.style("opacity", 1)
-                       .html(`<strong>${d.text}</strong><br>${d.timestamp.split('T')[0]}`)
+                       .html(`<strong>${d.text}</strong><br>${dateStr}`)
                        .style("left", (d3.event.pageX + 15) + "px")
                        .style("top", (d3.event.pageY - 15) + "px");
             });
             timeline.onEventMouseLeave(() => tooltip.style("opacity", 0));
 
-            // 5. RENDER
-            timeline.render(data);
+            // Fetch Data
+            const username = '1kaiser';
+            const apiUrl = `https://api.github.com/users/${username}/repos?sort=created&direction=asc&per_page=100`;
 
-            // 6. CRITICAL: FORCE FIT TO SCREEN (Responsive)
-            const svg = d3.select('#timeline svg');
-            const originalWidth = svg.attr('width');
-            const originalHeight = svg.attr('height');
+            console.log(`Fetching repos for ${username}...`);
+            
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+                    return response.json();
+                })
+                .then(repos => {
+                    if (!Array.isArray(repos)) throw new Error('Invalid response');
 
-            // Use ViewBox to scale the SVG down to fit the div
-            svg.attr('viewBox', `0 0 ${originalWidth} ${originalHeight}`)
-               .attr('width', '100%')
-               .attr('height', '100%')
-               .attr('preserveAspectRatio', 'xMidYMid meet');
+                    const timelineData = repos.map(repo => ({
+                        timestamp: repo.created_at,
+                        text: repo.name,
+                        url: repo.html_url,
+                        customStyle: {
+                            'color': repo.fork ? '#7f8c8d' : '#2980b9', // Grey for forks, Blue for sources
+                            'font-style': repo.fork ? 'italic' : 'normal',
+                            'font-weight': repo.fork ? 'normal' : 'bold'
+                        }
+                    }));
+
+                    console.log(`Fetched ${timelineData.length} repositories.`);
+                    
+                    if (timelineData.length === 0) {
+                        console.warn('No repositories found.');
+                        return;
+                    }
+
+                    timeline.render(timelineData);
+                    console.log('Timeline rendered with GitHub data.');
+                })
+                .catch(error => {
+                    console.error('Error fetching GitHub data:', error);
+                    // Fallback
+                    timeline.render([
+                        { timestamp: '2023-01-01T00:00:00Z', text: 'Error Fetching Data' }
+                    ]);
+                });
         });
     </script>
 </body>
