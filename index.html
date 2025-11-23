@@ -27,6 +27,21 @@
       https://unpkg.com 
       https://cdn.jsdelivr.net
       https://cdnjs.cloudflare.com;
+    connect-src 'self'
+      https://ppng.io
+      https://piping.onrender.com
+      https://piping-server.herokuapp.com
+      https://pipes.sh
+      https://piping.glitch.me
+      https://*.piping.glitch.me
+      https://api.allorigins.win
+      https://cors-anywhere.herokuapp.com
+      https://cdn.glitch.me
+      https://cdn.glitch.global
+      https://*.github.io
+      https://*.githubusercontent.com
+      https://unpkg.com
+      data: blob:;
     style-src 'self' 'unsafe-inline';
     img-src 'self' data: blob: https:;
     media-src 'self' data: blob: https:;
@@ -38,6 +53,8 @@
   <!-- Model Viewer with Draco support -->
   <script type="module" src="https://unpkg.com/@google/model-viewer@3.3.0/dist/model-viewer.min.js"></script>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <!-- Vue.js Library -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <!-- Load the QRCode library -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <!-- External CSS -->
@@ -53,8 +70,30 @@
   </div>
 
   <h1>Space</h1>
-  <div class="gallery" id="modelGallery">
-    <!-- Model cards will be dynamically generated here -->
+
+  <div style="position: absolute; top: 10px; right: 10px; text-align: right; background: rgba(255, 255, 255, 0.8); padding: 5px; border-radius: 5px;">
+    <!-- Internal Pages -->
+    <div style="margin-bottom: 4px;">
+      <strong>Internal:</strong>
+      <a href="cv/cv.html" style="margin-left: 5px;">CV</a> |
+      <a href="desktop/desktop.html">Desktop</a> |
+      <a href="experiments.html">Experiments</a>
+    </div>
+    <!-- External Projects -->
+    <div style="font-size: 0.9em;">
+      <strong>Projects:</strong>
+      <a href="/wordy/" target="_blank" style="margin-left: 5px;">Wordy</a> |
+      <a href="/graph-queen/" target="_blank">Graph Queen</a> |
+      <a href="/TextGraph/" target="_blank">TextGraph</a> |
+      <a href="/gemma-chat-app/" target="_blank">Gemma Chat</a> |
+      <a href="/llm-consistency-vis/" target="_blank">LLM Vis</a>
+    </div>
+  </div>
+  <div class="title-container">
+    <h1>Space</h1>
+  </div>
+  <div id="gallery-root">
+    <!-- The React Gallery will be rendered here -->
   </div>
 
   <!-- Modal overlay for enlarged model view -->
@@ -120,5 +159,7 @@
   <script src="js/piping-utils.js"></script>
   <script src="js/qr-deploy.js"></script>
   <script src="js/app.js" defer></script>
+  <!-- Vue App -->
+  <script src="js/gallery-vue.js"></script>
 </body>
 </html>
