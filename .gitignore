@@ -1,2 +1,10 @@
 js/repos.js
 node_modules/
+test-results/
+playwright-report/
+jules-scratch/
+repos.json
+scan_pages.py
+verify_nav.js
+*.log
+.DS_Store
