@@ -12,11 +12,14 @@ test('navigation links check', async ({ page }) => {
   const desktopLink = page.locator('a[href="desktop/desktop.html"]');
   await expect(desktopLink).toBeVisible();
 
+  const demLink = page.locator('a[href="cv/dem-to-glb.html"]');
+  await expect(demLink).toBeVisible();
+
   // 3. Verify External Project Links exist
-  const wordyLink = page.locator('a[href="/wordy/"]');
+  const wordyLink = page.locator('a[href="/wordy/index.html"]');
   await expect(wordyLink).toBeVisible();
 
-  const graphQueenLink = page.locator('a[href="/graph-queen/"]');
+  const graphQueenLink = page.locator('a[href="/graph-queen/index.html"]');
   await expect(graphQueenLink).toBeVisible();
 
   // 4. Interaction Check: Click an internal link and verify navigation
