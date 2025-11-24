@@ -75,22 +75,22 @@
             height: 12px;
         }
         .timeline-wrapper::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f1f1; 
         }
         .timeline-wrapper::-webkit-scrollbar-thumb {
-            background: #888;
+            background: #888; 
             border-radius: 6px;
         }
         .timeline-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: #555; 
         }
 
         /* The Timeline Itself */
         #timeline {
             /* Fixed large width to accommodate many nodes without overlapping */
-            width: 3000px;
+            width: 3000px; 
             /* Fixed height is crucial for d3-milestones to calculate layout */
-            height: 400px;
+            height: 400px; 
             position: relative;
         }
 
@@ -98,7 +98,7 @@
         .milestone-label text {
             font-size: 12px !important;
         }
-
+        
         .tooltip {
             position: absolute;
             background: rgba(0,0,0,0.85);
@@ -167,7 +167,7 @@
                         console.error('oops, something went wrong!', error);
                     });
             });
-
+            
             // Tooltip
             const tooltip = d3.select("body").append("div").attr("class", "tooltip");
 
@@ -198,7 +198,7 @@
             const apiUrl = `https://api.github.com/users/${username}/repos?sort=created&direction=asc&per_page=100`;
 
             console.log(`Fetching repos for ${username}...`);
-
+            
             fetch(apiUrl)
                 .then(response => {
                     if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
@@ -219,7 +219,7 @@
                     }));
 
                     console.log(`Fetched ${timelineData.length} repositories.`);
-
+                    
                     if (timelineData.length === 0) {
                         console.warn('No repositories found.');
                         return;
