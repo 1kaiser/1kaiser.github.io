@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  
+
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +23,7 @@
       block; margin-top: 10px; font-size: 12px; }
     </style>
   </head>
-  
+
   <body>
     <h3>
       DEM to GLB Converter
@@ -148,12 +148,11 @@
       function hideProgress() {
         progress.style.display = 'none';
       }
-      async
-      function init() {
+      async function init() {
         await window.loam.initialize('https://unpkg.com/loam@1.2.0/lib/', 'https://unpkg.com/gdal-js@2.2.0/');
         console.log('Loam ready');
       }
-      demInput.addEventListener('change', async(e) = >{
+      demInput.addEventListener('change', async(e) => {
         const file = e.target.files[0];
         if (!file) return;
         try {
@@ -172,24 +171,13 @@
             minValue: min,
             maxValue: max
           };
-          status.textContent = `Loaded: $ {
-            w
-          }×$ {
-            h
-          }
-          px,
-          Range: $ {
-            min.toFixed(0)
-          } - $ {
-            max.toFixed(0)
-          }
-          m`;
+          status.textContent = `Loaded: ${w}×${h} px, Range: ${min.toFixed(0)} - ${max.toFixed(0)} m`;
           convertBtn.disabled = false;
         } catch(err) {
           status.textContent = 'Error loading DEM: ' + err.message;
         }
       });
-      textureInput.addEventListener('change', async(e) = >{
+      textureInput.addEventListener('change', async(e) => {
         const file = e.target.files[0];
         if (file) {
           try {
@@ -200,7 +188,7 @@
           }
         }
       });
-      convertBtn.addEventListener('click', async() = >{
+      convertBtn.addEventListener('click', async() => {
         if (!demDataset) return;
         try {
           convertBtn.disabled = true;
@@ -277,7 +265,7 @@
           mesh.rotation.x = -Math.PI / 2;
           setProgress(90, 'Exporting GLB...');
           const exporter = new GLTFExporter();
-          exporter.parse(mesh, (result) = >{
+          exporter.parse(mesh, (result) => {
             glbBlob = new Blob([result], {
               type: 'model/gltf-binary'
             });
@@ -287,20 +275,10 @@
             downloadBtn.style.display = 'inline-block';
             setProgress(100, 'Complete!');
             setTimeout(hideProgress, 1000);
-            status.textContent = `Done ! $ {
-              w
-            }×$ {
-              h
-            } | Valid: $ {
-              valid.toLocaleString()
-            } | NoData: $ {
-              removed.toLocaleString()
-            } | Faces removed: $ {
-              facesRemoved.toLocaleString()
-            }`;
+            status.textContent = `Done ! ${w}×${h} | Valid: ${valid.toLocaleString()} | NoData: ${removed.toLocaleString()} | Faces removed: ${facesRemoved.toLocaleString()}`;
             convertBtn.disabled = false;
           },
-          (err) = >{
+          (err) => {
             hideProgress();
             status.textContent = 'Export failed: ' + err;
             convertBtn.disabled = false;
@@ -314,7 +292,7 @@
           convertBtn.disabled = false;
         }
       });
-      downloadBtn.addEventListener('click', () = >{
+      downloadBtn.addEventListener('click', () => {
         if (!glbBlob) return;
         const url = URL.createObjectURL(glbBlob);
         const a = document.createElement('a');
