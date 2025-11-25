@@ -4,65 +4,185 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DEM to GLB (Fixed Alignment)</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer@3.4.0/dist/model-viewer.min.js"></script>
+  <title>
+    DEM to GLB
+  </title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.4.0/dist/model-viewer.min.js">
+  </script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: monospace; padding: 20px; background: #fff; }
-    input, button { padding: 8px; margin: 5px 0; font-family: monospace; }
-    input[type="file"] { width: 100%; max-width: 400px; }
-    button { cursor: pointer; }
-    button:disabled { opacity: 0.5; }
-    #progress { margin: 10px 0; height: 20px; background: #eee; position: relative; display: none; }
-    #progressBar { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
-    #progressText { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 12px; }
-    #status { margin: 10px 0; }
-    model-viewer { width: 100%; height: 500px; background: #eee; margin-top: 10px; display: none; }
-    label { display: block; margin-top: 10px; font-size: 12px; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family:
+        monospace;
+      padding: 20px;
+      background: #fff;
+    }
+
+    input,
+    button {
+      padding:
+        8px;
+      margin: 5px 0;
+      font-family: monospace;
+    }
+
+    input[type="file"] {
+      width:
+        100%;
+      max-width: 400px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+    }
+
+    #progress {
+      margin: 10px 0;
+      height: 20px;
+      background: #eee;
+      position: relative;
+      display: none;
+    }
+
+    #progressBar {
+      height: 100%;
+      background:
+        #4CAF50;
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    #progressText {
+      position:
+        absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size:
+        12px;
+    }
+
+    #status {
+      margin: 10px 0;
+    }
+
+    model-viewer {
+      width: 100%;
+      height:
+        500px;
+      background: #eee;
+      margin-top: 10px;
+      display: none;
+    }
+
+    label {
+      display:
+        block;
+      margin-top: 10px;
+      font-size: 12px;
+    }
   </style>
 </head>
 
 <body>
-  <h3>DEM to GLB Converter (Fixed Alignment)</h3>
-  
+  <h3>
+    DEM to GLB Converter
+  </h3>
   <label>
     DEM File:
     <input type="file" id="demInput" accept=".tif,.tiff">
   </label>
-  
   <label>
     Texture (optional):
     <input type="file" id="textureInput" accept=".tif,.tiff">
   </label>
-  
   <label>
     <input type="checkbox" id="downloadSatellite" checked>
     Download Satellite Texture (Google Maps)
   </label>
-  
   <label>
     Width:
-    <input type="number" id="widthInput" value="500" min="100" max="8000"> px (height auto)
+    <input type="number" id="widthInput" value="500" min="100" max="8000">
+    px (height auto)
   </label>
-  
   <label>
     <input type="checkbox" id="removeNoData" checked>
     Remove NoData vertices
   </label>
-  
-  <button id="convertBtn" disabled>Generate GLB</button>
-  <button id="downloadBtn" style="display:none;">Download GLB</button>
-  
+  <button id="convertBtn" disabled>
+    Generate GLB
+  </button>
+  <button id="downloadBtn" style="display:none;">
+    Download GLB
+  </button>
   <div id="progress">
-    <div id="progressBar"></div>
-    <div id="progressText"></div>
+    <div id="progressBar">
+    </div>
+    <div id="progressText">
+    </div>
   </div>
-  
-  <div id="status"></div>
-  
-  <model-viewer id="viewer" camera-controls auto-rotate></model-viewer>
-
-  <script src="https://unpkg.com/loam@1.2.0/lib/loam.min.js"></script>
+  <div id="status">
+  </div>
+  <model-viewer id="viewer" camera-controls auto-rotate>
+  </model-viewer>
+  <br>
+  <hr>
+  <h3>
+    References
+  </h3>
+  <ul>
+    <li>
+      <a href="https://github.com/CesiumGS/quantized-mesh" target="_blank">
+        quantized-mesh
+      </a>
+    </li>
+    <li>
+      <a href="https://github.com/CesiumGS/3d-tiles/tree/main" target="_blank">
+        3d-tiles
+      </a>
+    </li>
+    <li>
+      <a href="https://cesium.com/learn/data-formats/" target="_blank">
+        Cesium Data Formats
+      </a>
+    </li>
+    <li>
+      <a href="https://www.ogc.org/standards/3dtiles/" target="_blank">
+        OGC 3D Tiles Standard
+      </a>
+    </li>
+    <li>
+      <a href="https://www.jsdelivr.com/package/npm/loam?tab=files" target="_blank">
+        loam on jsDelivr
+      </a>
+    </li>
+    <li>
+      <a href="https://github.com/azavea/loam/blob/develop/demo/index.js" target="_blank">
+        loam demo
+      </a>
+    </li>
+    <li>
+      <a href="https://github.com/kylebarron/quantized-mesh-encoder" target="_blank">
+        quantized-mesh-encoder
+      </a>
+    </li>
+    <li>
+      <a href="https://github.com/kylebarron/pydelatin?tab=readme-ov-file" target="_blank">
+        pydelatin
+      </a>
+    </li>
+  </ul>
+  <script src="https://unpkg.com/loam@1.2.0/lib/loam.min.js">
+  </script>
   <script type="importmap">
       {
         "imports": {
@@ -70,12 +190,13 @@
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
         }
       }
-  </script>
-  
+    </script>
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-
+    import {
+      GLTFExporter
+    }
+      from 'three/addons/exporters/GLTFExporter.js';
     const demInput = document.getElementById('demInput');
     const textureInput = document.getElementById('textureInput');
     const downloadSatellite = document.getElementById('downloadSatellite');
@@ -88,45 +209,49 @@
     const progressText = document.getElementById('progressText');
     const status = document.getElementById('status');
     const viewer = document.getElementById('viewer');
-
     let demDataset = null;
     let textureDataset = null;
     let demFile = null;
     let glbBlob = null;
     let demMeta = {};
 
-    // --- ALIGNMENT FIX: Web Mercator Helper Functions ---
-    
-    // Converts Lat/Lon to Global Pixel Coordinates at a specific zoom level
-    // This handles the non-linear stretching of the Y-axis in Web Maps
-    function latLonToGlobalPixel(lat, lon, zoom) {
-      const scale = 256 * Math.pow(2, zoom);
-      const x = (lon + 180) / 360 * scale;
-      
-      let siny = Math.sin(lat * Math.PI / 180);
-      // Truncate to keep within web mercator bounds
-      siny = Math.min(Math.max(siny, -0.9999), 0.9999);
-      
-      const y = (0.5 - Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI)) * scale;
-      return { x, y };
+    // --- Helper Functions for Satellite Tiles ---
+    function latlngToTile(lat, lon, zoom) {
+      const n = Math.pow(2, zoom);
+      const x = Math.floor((lon + 180) / 360 * n);
+      const latRad = lat * Math.PI / 180;
+      const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+      return { x, y, z: zoom };
+    }
+
+    function tileToLatlng(x, y, z) {
+      const n = Math.pow(2, z);
+      const lonDeg = x / n * 360.0 - 180.0;
+      const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n)));
+      const latDeg = latRad * 180.0 / Math.PI;
+      return { lat: latDeg, lon: lonDeg };
     }
 
     function validateCoordinates(west, south, east, north) {
       west = Math.max(-180, Math.min(180, west));
       east = Math.max(-180, Math.min(180, east));
-      // Web Mercator cuts off around 85 degrees
-      south = Math.max(-85, Math.min(85, south)); 
-      north = Math.max(-85, Math.min(85, north));
+      south = Math.max(-90, Math.min(90, south));
+      north = Math.max(-90, Math.min(90, north));
 
       if (west > east) [west, east] = [east, west];
       if (south > north) [south, north] = [north, south];
 
       return { west, south, east, north };
     }
+    // --------------------------------------------
+
+    // --------------------------------------------
 
     async function getDEMBounds(dataset) {
       try {
         if (!dataset) throw new Error("Dataset is null");
+
+        // Loam's dataset object should have a transform method
         const gt = await dataset.transform();
         const w = await dataset.width();
         const h = await dataset.height();
@@ -135,6 +260,11 @@
         const maxY = gt[3];
         const maxX = minX + (gt[1] * w) + (gt[2] * h);
         const minY = maxY + (gt[4] * w) + (gt[5] * h);
+
+        // Assuming WGS84 (EPSG:4326) for simplicity as per common web DEMs.
+        // If the DEM is in another projection (e.g. UTM), we would need to reproject the bounds to Lat/Lon.
+        // Loam/GDAL-js has limited reprojection capabilities in the browser without full proj4 support.
+        // We will proceed assuming the coordinates are effectively lat/lon or can be treated as such for tile fetching.
 
         return validateCoordinates(minX, minY, maxX, maxY);
       } catch (e) {
@@ -145,29 +275,27 @@
 
     async function downloadAndStitchTiles(bounds, zoom = 12) {
       const { west, south, east, north } = bounds;
+
       console.log(`Fetching tiles for bounds: ${west}, ${south}, ${east}, ${north} at zoom ${zoom}`);
 
-      // 1. Calculate Global Pixel Coordinates for the DEM bounds
-      const nwPixel = latLonToGlobalPixel(north, west, zoom);
-      const sePixel = latLonToGlobalPixel(south, east, zoom);
+      const nwTile = latlngToTile(north, west, zoom);
+      const seTile = latlngToTile(south, east, zoom);
 
-      // 2. Determine which tiles cover these pixels
-      const minTileX = Math.floor(nwPixel.x / 256);
-      const maxTileX = Math.floor(sePixel.x / 256);
-      const minTileY = Math.floor(nwPixel.y / 256);
-      const maxTileY = Math.floor(sePixel.y / 256);
+      const minX = Math.min(nwTile.x, seTile.x);
+      const maxX = Math.max(nwTile.x, seTile.x);
+      const minY = Math.min(nwTile.y, seTile.y);
+      const maxY = Math.max(nwTile.y, seTile.y);
 
-      const tileCount = (maxTileX - minTileX + 1) * (maxTileY - minTileY + 1);
+      const tileCount = (maxX - minX + 1) * (maxY - minY + 1);
       if (tileCount > 100) {
         if (!confirm(`This will download ${tileCount} tiles. Continue?`)) {
           throw new Error("Download cancelled by user.");
         }
       }
 
-      // 3. Create a canvas to hold the full tiles
       const tileSize = 256;
-      const canvasWidth = (maxTileX - minTileX + 1) * tileSize;
-      const canvasHeight = (maxTileY - minTileY + 1) * tileSize;
+      const canvasWidth = (maxX - minX + 1) * tileSize;
+      const canvasHeight = (maxY - minY + 1) * tileSize;
 
       const canvas = document.createElement('canvas');
       canvas.width = canvasWidth;
@@ -178,16 +306,21 @@
       setProgress(0, `Downloading ${tileCount} tiles...`);
 
       const promises = [];
-      for (let x = minTileX; x <= maxTileX; x++) {
-        for (let y = minTileY; y <= maxTileY; y++) {
-          const p = new Promise(async (resolve) => {
+      for (let x = minX; x <= maxX; x++) {
+        for (let y = minY; y <= maxY; y++) {
+          const p = new Promise(async (resolve, reject) => {
             try {
+              // Using a CORS proxy would be ideal here, but for now we try direct.
+              // Note: Google Maps tiles usually require a session or API key for legitimate use, 
+              // and direct access might be blocked or violate TOS. 
+              // The user requested this specific URL structure.
               const url = `https://mt1.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${zoom}`;
+
               const img = new Image();
-              img.crossOrigin = "Anonymous";
+              img.crossOrigin = "Anonymous"; // Try to request with CORS
               img.onload = () => {
-                const xPos = (x - minTileX) * tileSize;
-                const yPos = (y - minTileY) * tileSize;
+                const xPos = (x - minX) * tileSize;
+                const yPos = (y - minY) * tileSize;
                 ctx.drawImage(img, xPos, yPos);
                 downloaded++;
                 setProgress(Math.floor((downloaded / tileCount) * 100), `Downloading tiles (${downloaded}/${tileCount})...`);
@@ -195,10 +328,13 @@
               };
               img.onerror = (e) => {
                 console.warn(`Failed to load tile ${x},${y}`, e);
+                // Continue even if a tile fails, just leave it blank
                 resolve();
               };
               img.src = url;
-            } catch (e) { resolve(); }
+            } catch (e) {
+              resolve();
+            }
           });
           promises.push(p);
         }
@@ -206,25 +342,37 @@
 
       await Promise.all(promises);
 
-      // 4. Calculate Crop Dimensions using accurate Global Pixel coordinates
-      // The canvas starts at the top-left of 'minTileX, minTileY'
-      const canvasOriginX = minTileX * 256;
-      const canvasOriginY = minTileY * 256;
+      // We need to crop the canvas to the exact DEM bounds
+      // Calculate the pixel bounds of the DEM within the tile grid
+      const nwLatLon = tileToLatlng(minX, minY, zoom);
+      const seLatLon = tileToLatlng(maxX + 1, maxY + 1, zoom); // Bottom-right of the last tile
 
-      const cropX = nwPixel.x - canvasOriginX;
-      const cropY = nwPixel.y - canvasOriginY;
-      const cropW = sePixel.x - nwPixel.x;
-      const cropH = sePixel.y - nwPixel.y;
+      // This part is tricky: we need to map the DEM's lat/lon bounds to pixel coordinates on the stitched canvas.
+      // Canvas covers: nwLatLon.lon (West) to seLatLon.lon (East)
+      //                nwLatLon.lat (North) to seLatLon.lat (South)
+
+      const canvasLonSpan = seLatLon.lon - nwLatLon.lon;
+      const canvasLatSpan = nwLatLon.lat - seLatLon.lat; // Lat decreases downwards
+
+      const demLonSpan = east - west;
+      const demLatSpan = north - south;
+
+      // Normalize DEM position relative to canvas top-left (nwLatLon)
+      const demRelLon = west - nwLatLon.lon;
+      const demRelLat = nwLatLon.lat - north; // Distance from top
+
+      const cropX = (demRelLon / canvasLonSpan) * canvasWidth;
+      const cropY = (demRelLat / canvasLatSpan) * canvasHeight;
+      const cropW = (demLonSpan / canvasLonSpan) * canvasWidth;
+      const cropH = (demLatSpan / canvasLatSpan) * canvasHeight;
 
       console.log(`Cropping texture: x=${cropX}, y=${cropY}, w=${cropW}, h=${cropH}`);
 
-      // 5. Create final cropped canvas
+      // Create final cropped canvas
       const finalCanvas = document.createElement('canvas');
       finalCanvas.width = cropW;
       finalCanvas.height = cropH;
       const finalCtx = finalCanvas.getContext('2d');
-      
-      // We draw the specific region from the stitched canvas to the new canvas
       finalCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
       // Check if canvas is tainted
@@ -243,11 +391,9 @@
       progressBar.style.width = percent + '%';
       progressText.textContent = text;
     }
-
     function hideProgress() {
       progress.style.display = 'none';
     }
-
     async function init() {
       await window.loam.initialize('https://unpkg.com/loam@1.2.0/lib/', 'https://unpkg.com/gdal-js@2.2.0/');
       console.log('Loam ready');
@@ -264,7 +410,13 @@
         const nd = await demDataset.bandNoDataValue(1);
         const min = await demDataset.bandMinimum(1);
         const max = await demDataset.bandMaximum(1);
-        demMeta = { width: w, height: h, noDataValue: nd, minValue: min, maxValue: max };
+        demMeta = {
+          width: w,
+          height: h,
+          noDataValue: nd,
+          minValue: min,
+          maxValue: max
+        };
         status.textContent = `Loaded: ${w}×${h} px, Range: ${min.toFixed(0)} - ${max.toFixed(0)} m`;
         convertBtn.disabled = false;
       } catch (err) {
@@ -287,51 +439,55 @@
         }
       }
     });
-
     convertBtn.addEventListener('click', async () => {
       if (!demDataset) return;
       try {
         convertBtn.disabled = true;
         viewer.style.display = 'none';
         downloadBtn.style.display = 'none';
-        
         const targetWidth = parseInt(widthInput.value);
         const aspectRatio = demMeta.height / demMeta.width;
         const targetHeight = Math.floor(targetWidth * aspectRatio);
-        
         setProgress(10, 'Resampling DEM...');
         console.log('Step: Resampling DEM...');
         const resampledDEM = await demDataset.convert(['-outsize', String(targetWidth), String(targetHeight), '-r', 'bilinear', '-of', 'GTiff']);
-        
         const w = await resampledDEM.width();
         const h = await resampledDEM.height();
         const nd = await resampledDEM.bandNoDataValue(1);
-        
         setProgress(30, 'Extracting elevation...');
         console.log('Step: Extracting elevation...');
         const rawDem = await resampledDEM.convert(['-of', 'EHdr', '-ot', 'Int16']);
         const demBytes = await rawDem.bytes();
         const elevData = new Int16Array(demBytes.buffer);
-        
         let texData = null;
         let satelliteCanvas = null;
 
-        // Handle Satellite Download
         if (downloadSatellite.checked) {
           try {
             setProgress(40, 'Fetching satellite imagery...');
+            console.log('Step: Fetching satellite imagery...');
             const bounds = await getDEMBounds(demDataset);
-            satelliteCanvas = await downloadAndStitchTiles(bounds, 13); // Changed zoom to 13 for better detail
+            satelliteCanvas = await downloadAndStitchTiles(bounds, 12); // Zoom 12 as per user request example
             console.log('Step: Satellite imagery ready');
           } catch (e) {
             console.error("Satellite download failed:", e);
-            status.textContent += " (Satellite failed: " + e.message + ")";
+            status.textContent += " (Satellite download failed: " + e.message + ")";
+            // Fallback to no texture or manual texture if available?
+            // For now, we just log and proceed without it, or maybe fail?
+            // Let's proceed without it to avoid breaking everything.
           }
         }
 
-        // Handle Manual Texture (fallback if satellite failed or wasn't checked, but user provided file)
-        if (!satelliteCanvas && textureDataset) {
-          setProgress(45, 'Processing user texture...');
+        if (satelliteCanvas) {
+          // If we have a satellite canvas, we need to resize it to match the DEM mesh resolution (w x h)
+          // or just use it as is? THREE.CanvasTexture can handle it, but for vertex matching it might be better to resample.
+          // However, the mesh UVs are 0..1, so any texture size works.
+          // But wait, the previous logic for 'textureDataset' resampled the texture to match DEM WxH.
+          // Let's keep it simple: use the canvas as a texture directly.
+          // We don't need 'texData' array for this path.
+        } else if (textureDataset) {
+          setProgress(45, 'Processing texture...');
+          console.log('Step: Processing texture...');
           const resTex = await textureDataset.convert(['-outsize', String(w), String(h), '-r', 'bilinear', '-of', 'GTiff']);
           const texBytes = await resTex.bytes();
           await resTex.close();
@@ -342,9 +498,9 @@
         console.log('Step: Building mesh...');
         const geom = new THREE.PlaneGeometry(w, h, w - 1, h - 1);
         const verts = geom.attributes.position.array;
-        let valid = 0, removed = 0;
+        let valid = 0,
+          removed = 0;
         const nodataSet = new Set();
-        
         for (let i = 0; i < Math.min(elevData.length, verts.length / 3); i++) {
           const elev = elevData[i];
           if (elev === nd || elev === demMeta.noDataValue || elev <= -30000 || elev >= 30000) {
@@ -352,14 +508,12 @@
             verts[i * 3 + 2] = 0;
             removed++;
           } else {
-            verts[i * 3 + 2] = elev * 0.03; // Exaggeration for visibility
+            verts[i * 3 + 2] = elev * 0.01;
             valid++;
           }
         }
-        
         geom.attributes.position.needsUpdate = true;
         let facesRemoved = 0;
-        
         if (removeNoData.checked && nodataSet.size > 0) {
           const idx = geom.index.array;
           const newIdx = [];
@@ -375,24 +529,21 @@
         geom.computeVertexNormals();
 
         setProgress(75, 'Creating material...');
+        console.log('Step: Creating material...');
         let mat;
 
         if (satelliteCanvas) {
           const tex = new THREE.CanvasTexture(satelliteCanvas);
-          // Critical: Maps usually shouldn't be Y-flipped for plane geometry aligned this way,
-          // but sometimes GLB export behaves oddly. 
-          // Standard Three.js Plane UVs: (0,1) top-left.
-          // Canvas: (0,0) top-left.
-          tex.flipY = false; 
-          tex.colorSpace = THREE.SRGBColorSpace;
+          tex.flipY = false; // Important for GLTF export usually
 
+          // Use MeshBasicMaterial to avoid lighting issues
           mat = new THREE.MeshBasicMaterial({
             map: tex,
             side: THREE.DoubleSide
           });
+          console.log("Created MeshBasicMaterial with satellite texture");
         } else if (texData) {
           const tex = new THREE.DataTexture(texData, w, h, THREE.RGBFormat);
-          tex.flipY = true; // Geotiffs often need flip depending on read method
           tex.needsUpdate = true;
           mat = new THREE.MeshStandardMaterial({
             map: tex,
@@ -401,54 +552,53 @@
         } else {
           mat = new THREE.MeshStandardMaterial({
             color: 0x8B7355,
-            roughness: 1.0,
             side: THREE.DoubleSide
           });
         }
-
         const mesh = new THREE.Mesh(geom, mat);
-        mesh.rotation.x = -Math.PI / 2; // Rotate to sit flat on grid
-
+        mesh.rotation.x = -Math.PI / 2;
         setProgress(90, 'Exporting GLB...');
+        console.log('Step: Exporting GLB...');
         const exporter = new GLTFExporter();
         exporter.parse(mesh, (result) => {
-          glbBlob = new Blob([result], { type: 'model/gltf-binary' });
+          console.log('Step: GLB Generation Complete');
+          glbBlob = new Blob([result], {
+            type: 'model/gltf-binary'
+          });
           const url = URL.createObjectURL(glbBlob);
           viewer.src = url;
           viewer.style.display = 'block';
           downloadBtn.style.display = 'inline-block';
-          
           setProgress(100, 'Complete!');
           setTimeout(hideProgress, 1000);
-          
-          status.textContent = `Done! ${w}×${h} | Valid: ${valid} | Removed: ${removed}`;
+          status.textContent = `Done ! ${w}×${h} | Valid: ${valid.toLocaleString()} | NoData: ${removed.toLocaleString()} | Faces removed: ${facesRemoved.toLocaleString()}`;
           convertBtn.disabled = false;
         },
-        (err) => {
-          hideProgress();
-          console.error('Export Failed', err);
-          status.textContent = 'Export failed: ' + err;
-          convertBtn.disabled = false;
-        },
-        { binary: true });
-        
+          (err) => {
+            hideProgress();
+            console.error('Step: Export Failed', err);
+            status.textContent = 'Export failed: ' + err;
+            convertBtn.disabled = false;
+          },
+          {
+            binary: true
+          });
       } catch (err) {
         hideProgress();
-        console.error(err);
         status.textContent = 'Error: ' + err.message;
         convertBtn.disabled = false;
       }
     });
-
     downloadBtn.addEventListener('click', () => {
       if (!glbBlob) return;
       const url = URL.createObjectURL(glbBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = demFile ? demFile.name.replace(/\.(tif|tiff)$/i, '.glb') : 'terrain.glb';
+      a.download = demFile.name.replace(/\.(tif|tiff)$/i, '.glb');
       a.click();
       URL.revokeObjectURL(url);
     });
   </script>
 </body>
+
 </html>
