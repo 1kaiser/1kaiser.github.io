@@ -136,6 +136,50 @@
   </model-viewer>
   <br>
   <hr>
+  <h3>Process Flow</h3>
+  <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto; font-size: 10px; line-height: 1.2;">
++----------------+       +----------------+
+|    DEM File    | ----> |  Loam (GDAL)   |
+|  (.tif/.tiff)  |       |  (Browser JS)  |
++----------------+       +----------------+
+        |                        |
+        |                        v
+        |              +-------------------+
+        |              |   Resample DEM    |
+        |              | (Target Width/Ht) |
+        |              +-------------------+
+        |                        |
+        |                        v
+        |              +-------------------+       +----------------------+
+        +------------> |  Elevation Data   | ----> |    Generate Mesh     |
+        |              |    (Float32)      |       | (Three.js Geometry)  |
+        |              +-------------------+       +----------------------+
+        |                                                     |
+        v                                                     v
++----------------+                                 +----------------------+
+|   Get Bounds   |                                 |   Apply Material     |
+| (Lat/Lon Box)  |                                 | (Texture/Color/Wire) |
++----------------+                                 +----------------------+
+        |                                                     |
+        v                                                     |
++----------------+       +----------------+                   |
+| Calc Opt Zoom  | ----> |  Google Maps   |                   |
+| (Res Match)    |       |     Tiles      |                   |
++----------------+       +----------------+                   |
+                                 |                            |
+                                 v                            |
+                       +-------------------+                  |
+                       |  Stitch & Crop    | -----------------+
+                       |     Canvas        |
+                       +-------------------+
+                                 |
+                                 v
+                       +-------------------+
+                       |    GLB Export     |
+                       |  (Binary glTF)    |
+                       +-------------------+
+  </pre>
+  <hr>
   <h3>
     References
   </h3>
@@ -243,6 +287,26 @@
 
       return { west, south, east, north };
     }
+
+    function calculateOptimalZoom(bounds, targetResolution = 2048) {
+      const { west, east } = bounds;
+      let lonSpan = east - west;
+      if (lonSpan < 0) lonSpan += 360;
+      if (lonSpan === 0) return 12; // Fallback
+
+      // Formula: 2^z = (360 * targetResolution) / (256 * lonSpan)
+      // targetResolution should ideally match the DEM width (e.g. 1000px)
+      // If we want 1:1 mapping with the DEM width:
+
+      const val = (targetResolution * 360) / (256 * lonSpan);
+      let zoom = Math.round(Math.log2(val));
+
+      // Clamp zoom to reasonable Google Maps levels
+      zoom = Math.max(0, Math.min(20, zoom));
+
+      console.log(`Auto-calculated zoom: ${zoom} for span ${lonSpan.toFixed(4)} deg and target res ${targetResolution}px`);
+      return zoom;
+    }
     // --------------------------------------------
 
     // --------------------------------------------
@@ -261,11 +325,6 @@
         const maxX = minX + (gt[1] * w) + (gt[2] * h);
         const minY = maxY + (gt[4] * w) + (gt[5] * h);
 
-        // Assuming WGS84 (EPSG:4326) for simplicity as per common web DEMs.
-        // If the DEM is in another projection (e.g. UTM), we would need to reproject the bounds to Lat/Lon.
-        // Loam/GDAL-js has limited reprojection capabilities in the browser without full proj4 support.
-        // We will proceed assuming the coordinates are effectively lat/lon or can be treated as such for tile fetching.
-
         return validateCoordinates(minX, minY, maxX, maxY);
       } catch (e) {
         console.error("Error getting bounds:", e);
@@ -273,8 +332,12 @@
       }
     }
 
-    async function downloadAndStitchTiles(bounds, zoom = 12) {
+    async function downloadAndStitchTiles(bounds, zoom = null) {
       const { west, south, east, north } = bounds;
+
+      if (zoom === null) {
+        zoom = calculateOptimalZoom(bounds);
+      }
 
       console.log(`Fetching tiles for bounds: ${west}, ${south}, ${east}, ${north} at zoom ${zoom}`);
 
@@ -287,8 +350,9 @@
       const maxY = Math.max(nwTile.y, seTile.y);
 
       const tileCount = (maxX - minX + 1) * (maxY - minY + 1);
-      if (tileCount > 100) {
-        if (!confirm(`This will download ${tileCount} tiles. Continue?`)) {
+      console.log(`Estimated tile count: ${tileCount}`);
+      if (tileCount > 1000) {
+        if (!confirm(`This will download ${tileCount} tiles. This might take a while. Continue?`)) {
           throw new Error("Download cancelled by user.");
         }
       }
@@ -296,6 +360,10 @@
       const tileSize = 256;
       const canvasWidth = (maxX - minX + 1) * tileSize;
       const canvasHeight = (maxY - minY + 1) * tileSize;
+
+      if (canvasWidth <= 0 || canvasHeight <= 0) {
+        throw new Error(`Invalid canvas dimensions: ${canvasWidth}x${canvasHeight}`);
+      }
 
       const canvas = document.createElement('canvas');
       canvas.width = canvasWidth;
@@ -310,14 +378,10 @@
         for (let y = minY; y <= maxY; y++) {
           const p = new Promise(async (resolve, reject) => {
             try {
-              // Using a CORS proxy would be ideal here, but for now we try direct.
-              // Note: Google Maps tiles usually require a session or API key for legitimate use, 
-              // and direct access might be blocked or violate TOS. 
-              // The user requested this specific URL structure.
               const url = `https://mt1.google.com/vt/lyrs=s&x=${x}&y=${y}&z=${zoom}`;
 
               const img = new Image();
-              img.crossOrigin = "Anonymous"; // Try to request with CORS
+              img.crossOrigin = "Anonymous";
               img.onload = () => {
                 const xPos = (x - minX) * tileSize;
                 const yPos = (y - minY) * tileSize;
@@ -328,7 +392,6 @@
               };
               img.onerror = (e) => {
                 console.warn(`Failed to load tile ${x},${y}`, e);
-                // Continue even if a tile fails, just leave it blank
                 resolve();
               };
               img.src = url;
@@ -343,39 +406,53 @@
       await Promise.all(promises);
 
       // We need to crop the canvas to the exact DEM bounds
-      // Calculate the pixel bounds of the DEM within the tile grid
       const nwLatLon = tileToLatlng(minX, minY, zoom);
-      const seLatLon = tileToLatlng(maxX + 1, maxY + 1, zoom); // Bottom-right of the last tile
-
-      // This part is tricky: we need to map the DEM's lat/lon bounds to pixel coordinates on the stitched canvas.
-      // Canvas covers: nwLatLon.lon (West) to seLatLon.lon (East)
-      //                nwLatLon.lat (North) to seLatLon.lat (South)
+      const seLatLon = tileToLatlng(maxX + 1, maxY + 1, zoom);
 
       const canvasLonSpan = seLatLon.lon - nwLatLon.lon;
-      const canvasLatSpan = nwLatLon.lat - seLatLon.lat; // Lat decreases downwards
+      const canvasLatSpan = nwLatLon.lat - seLatLon.lat;
 
       const demLonSpan = east - west;
       const demLatSpan = north - south;
 
-      // Normalize DEM position relative to canvas top-left (nwLatLon)
       const demRelLon = west - nwLatLon.lon;
-      const demRelLat = nwLatLon.lat - north; // Distance from top
+      const demRelLat = nwLatLon.lat - north;
 
-      const cropX = (demRelLon / canvasLonSpan) * canvasWidth;
-      const cropY = (demRelLat / canvasLatSpan) * canvasHeight;
-      const cropW = (demLonSpan / canvasLonSpan) * canvasWidth;
-      const cropH = (demLatSpan / canvasLatSpan) * canvasHeight;
+      let cropX = (demRelLon / canvasLonSpan) * canvasWidth;
+      let cropY = (demRelLat / canvasLatSpan) * canvasHeight;
+      let cropW = (demLonSpan / canvasLonSpan) * canvasWidth;
+      let cropH = (demLatSpan / canvasLatSpan) * canvasHeight;
 
       console.log(`Cropping texture: x=${cropX}, y=${cropY}, w=${cropW}, h=${cropH}`);
 
-      // Create final cropped canvas
+      // Validation to prevent 0-size canvas error
+      if (cropW <= 0 || cropH <= 0) {
+        console.warn("Calculated crop dimensions are invalid (<=0). Using full canvas fallback.");
+        // Fallback: just return the whole canvas or a 1x1 pixel to prevent crash
+        // But 'whole canvas' might be huge and wrong. 
+        // If cropW is 0, it means the DEM span is tiny compared to the tile span?
+        // Or math error.
+        // Let's clamp to at least 1px.
+        cropW = Math.max(1, cropW);
+        cropH = Math.max(1, cropH);
+      }
+
+      // Also clamp cropX/Y to be within canvas?
+      // cropX = Math.max(0, cropX);
+      // cropY = Math.max(0, cropY);
+
       const finalCanvas = document.createElement('canvas');
       finalCanvas.width = cropW;
       finalCanvas.height = cropH;
       const finalCtx = finalCanvas.getContext('2d');
-      finalCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-      // Check if canvas is tainted
+      try {
+        finalCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+      } catch (e) {
+        console.error("drawImage failed:", e);
+        throw new Error("Failed to crop texture: " + e.message);
+      }
+
       try {
         finalCtx.getImageData(0, 0, 1, 1);
       } catch (e) {
@@ -456,36 +533,30 @@
         const nd = await resampledDEM.bandNoDataValue(1);
         setProgress(30, 'Extracting elevation...');
         console.log('Step: Extracting elevation...');
-        const rawDem = await resampledDEM.convert(['-of', 'EHdr', '-ot', 'Int16']);
+
+        // Use Float32 to avoid overflow with UInt16 data or high elevations
+        const rawDem = await resampledDEM.convert(['-of', 'EHdr', '-ot', 'Float32']);
         const demBytes = await rawDem.bytes();
-        const elevData = new Int16Array(demBytes.buffer);
-        let texData = null;
+        const elevData = new Float32Array(demBytes.buffer);
         let satelliteCanvas = null;
+        let texData = null;
 
         if (downloadSatellite.checked) {
           try {
             setProgress(40, 'Fetching satellite imagery...');
             console.log('Step: Fetching satellite imagery...');
             const bounds = await getDEMBounds(demDataset);
-            satelliteCanvas = await downloadAndStitchTiles(bounds, 12); // Zoom 12 as per user request example
+            // Auto-zoom is now handled inside downloadAndStitchTiles if second arg is null/undefined
+            // Pass demMeta.width to match ORIGINAL DEM resolution, not the resampled mesh width
+            satelliteCanvas = await downloadAndStitchTiles(bounds, calculateOptimalZoom(bounds, demMeta.width));
             console.log('Step: Satellite imagery ready');
           } catch (e) {
             console.error("Satellite download failed:", e);
             status.textContent += " (Satellite download failed: " + e.message + ")";
-            // Fallback to no texture or manual texture if available?
-            // For now, we just log and proceed without it, or maybe fail?
-            // Let's proceed without it to avoid breaking everything.
           }
         }
 
-        if (satelliteCanvas) {
-          // If we have a satellite canvas, we need to resize it to match the DEM mesh resolution (w x h)
-          // or just use it as is? THREE.CanvasTexture can handle it, but for vertex matching it might be better to resample.
-          // However, the mesh UVs are 0..1, so any texture size works.
-          // But wait, the previous logic for 'textureDataset' resampled the texture to match DEM WxH.
-          // Let's keep it simple: use the canvas as a texture directly.
-          // We don't need 'texData' array for this path.
-        } else if (textureDataset) {
+        if (!satelliteCanvas && textureDataset) {
           setProgress(45, 'Processing texture...');
           console.log('Step: Processing texture...');
           const resTex = await textureDataset.convert(['-outsize', String(w), String(h), '-r', 'bilinear', '-of', 'GTiff']);
@@ -494,101 +565,121 @@
           texData = new Uint8Array(texBytes.buffer, 1024);
         }
 
-        setProgress(60, 'Building mesh...');
-        console.log('Step: Building mesh...');
-        const geom = new THREE.PlaneGeometry(w, h, w - 1, h - 1);
-        const verts = geom.attributes.position.array;
-        let valid = 0,
-          removed = 0;
-        const nodataSet = new Set();
-        for (let i = 0; i < Math.min(elevData.length, verts.length / 3); i++) {
-          const elev = elevData[i];
-          if (elev === nd || elev === demMeta.noDataValue || elev <= -30000 || elev >= 30000) {
-            if (removeNoData.checked) nodataSet.add(i);
-            verts[i * 3 + 2] = 0;
-            removed++;
-          } else {
-            verts[i * 3 + 2] = elev * 0.01;
-            valid++;
-          }
-        }
-        geom.attributes.position.needsUpdate = true;
-        let facesRemoved = 0;
-        if (removeNoData.checked && nodataSet.size > 0) {
-          const idx = geom.index.array;
-          const newIdx = [];
-          for (let i = 0; i < idx.length; i += 3) {
-            if (!nodataSet.has(idx[i]) && !nodataSet.has(idx[i + 1]) && !nodataSet.has(idx[i + 2])) {
-              newIdx.push(idx[i], idx[i + 1], idx[i + 2]);
-            } else {
-              facesRemoved++;
-            }
-          }
-          geom.setIndex(newIdx);
-        }
-        geom.computeVertexNormals();
+        await generateGLB(elevData, w, h, nd, satelliteCanvas, texData, demMeta.noDataValue);
 
-        setProgress(75, 'Creating material...');
-        console.log('Step: Creating material...');
-        let mat;
-
-        if (satelliteCanvas) {
-          const tex = new THREE.CanvasTexture(satelliteCanvas);
-          tex.flipY = false; // Important for GLTF export usually
-
-          // Use MeshBasicMaterial to avoid lighting issues
-          mat = new THREE.MeshBasicMaterial({
-            map: tex,
-            side: THREE.DoubleSide
-          });
-          console.log("Created MeshBasicMaterial with satellite texture");
-        } else if (texData) {
-          const tex = new THREE.DataTexture(texData, w, h, THREE.RGBFormat);
-          tex.needsUpdate = true;
-          mat = new THREE.MeshStandardMaterial({
-            map: tex,
-            side: THREE.DoubleSide
-          });
-        } else {
-          mat = new THREE.MeshStandardMaterial({
-            color: 0x8B7355,
-            side: THREE.DoubleSide
-          });
-        }
-        const mesh = new THREE.Mesh(geom, mat);
-        mesh.rotation.x = -Math.PI / 2;
-        setProgress(90, 'Exporting GLB...');
-        console.log('Step: Exporting GLB...');
-        const exporter = new GLTFExporter();
-        exporter.parse(mesh, (result) => {
-          console.log('Step: GLB Generation Complete');
-          glbBlob = new Blob([result], {
-            type: 'model/gltf-binary'
-          });
-          const url = URL.createObjectURL(glbBlob);
-          viewer.src = url;
-          viewer.style.display = 'block';
-          downloadBtn.style.display = 'inline-block';
-          setProgress(100, 'Complete!');
-          setTimeout(hideProgress, 1000);
-          status.textContent = `Done ! ${w}×${h} | Valid: ${valid.toLocaleString()} | NoData: ${removed.toLocaleString()} | Faces removed: ${facesRemoved.toLocaleString()}`;
-          convertBtn.disabled = false;
-        },
-          (err) => {
-            hideProgress();
-            console.error('Step: Export Failed', err);
-            status.textContent = 'Export failed: ' + err;
-            convertBtn.disabled = false;
-          },
-          {
-            binary: true
-          });
       } catch (err) {
         hideProgress();
         status.textContent = 'Error: ' + err.message;
         convertBtn.disabled = false;
       }
     });
+
+    async function generateGLB(elevData, w, h, nd, satelliteCanvas, texData, metaNoData) {
+      setProgress(60, 'Building mesh...');
+      console.log('Step: Building mesh...', { w, h });
+      const geom = new THREE.PlaneGeometry(w, h, w - 1, h - 1);
+      const verts = geom.attributes.position.array;
+      let valid = 0,
+        removed = 0;
+      const nodataSet = new Set();
+
+      // PlaneGeometry vertices are row-by-row, top-to-bottom (Y decreases)
+      // Raster data is row-by-row, top-to-bottom
+      // So indices should match.
+
+      for (let i = 0; i < Math.min(elevData.length, verts.length / 3); i++) {
+        const elev = elevData[i];
+        if (elev === nd || elev === metaNoData || elev <= -300000 || elev >= 300000) { // Increased limits for Float32
+          if (removeNoData.checked) nodataSet.add(i);
+          verts[i * 3 + 2] = 0;
+          removed++;
+        } else {
+          verts[i * 3 + 2] = elev * 0.01; // Scale factor
+          valid++;
+        }
+      }
+      geom.attributes.position.needsUpdate = true;
+      let facesRemoved = 0;
+      if (removeNoData.checked && nodataSet.size > 0) {
+        const idx = geom.index.array;
+        const newIdx = [];
+        for (let i = 0; i < idx.length; i += 3) {
+          if (!nodataSet.has(idx[i]) && !nodataSet.has(idx[i + 1]) && !nodataSet.has(idx[i + 2])) {
+            newIdx.push(idx[i], idx[i + 1], idx[i + 2]);
+          } else {
+            facesRemoved++;
+          }
+        }
+        geom.setIndex(newIdx);
+      }
+      geom.computeVertexNormals();
+
+      setProgress(75, 'Creating material...');
+      console.log('Step: Creating material...');
+      let mat;
+
+      if (satelliteCanvas) {
+        const tex = new THREE.CanvasTexture(satelliteCanvas);
+
+        // Hardcoded Flip Y as per user requirement
+        // This is necessary because the coordinate system of the satellite tiles 
+        // (top-left origin) matches the DOM/Canvas, but Three.js textures 
+        // often expect bottom-left origin or the mesh UVs are flipped relative to the image.
+        // We flip Y to align the texture correctly with the DEM mesh.
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.y = -1;
+        tex.offset.y = 1;
+
+        tex.flipY = false; // Baseline
+
+        // Use MeshBasicMaterial to avoid lighting issues
+        mat = new THREE.MeshBasicMaterial({
+          map: tex,
+          side: THREE.DoubleSide
+        });
+        console.log("Created MeshBasicMaterial with satellite texture");
+      } else if (texData) {
+        const tex = new THREE.DataTexture(texData, w, h, THREE.RGBFormat);
+        tex.needsUpdate = true;
+        mat = new THREE.MeshStandardMaterial({
+          map: tex,
+          side: THREE.DoubleSide
+        });
+      } else {
+        mat = new THREE.MeshStandardMaterial({
+          color: 0x8B7355,
+          side: THREE.DoubleSide
+        });
+      }
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.rotation.x = -Math.PI / 2;
+      setProgress(90, 'Exporting GLB...');
+      console.log('Step: Exporting GLB...');
+      const exporter = new GLTFExporter();
+      exporter.parse(mesh, (result) => {
+        console.log('Step: GLB Generation Complete');
+        glbBlob = new Blob([result], {
+          type: 'model/gltf-binary'
+        });
+        const url = URL.createObjectURL(glbBlob);
+        viewer.src = url;
+        viewer.style.display = 'block';
+        downloadBtn.style.display = 'inline-block';
+        setProgress(100, 'Complete!');
+        setTimeout(hideProgress, 1000);
+        status.textContent = `Done ! ${w}×${h} | Valid: ${valid.toLocaleString()} | NoData: ${removed.toLocaleString()} | Faces removed: ${facesRemoved.toLocaleString()}`;
+        convertBtn.disabled = false;
+      },
+        (err) => {
+          hideProgress();
+          console.error('Step: Export Failed', err);
+          status.textContent = 'Export failed: ' + err;
+          convertBtn.disabled = false;
+        },
+        {
+          binary: true
+        });
+    }
     downloadBtn.addEventListener('click', () => {
       if (!glbBlob) return;
       const url = URL.createObjectURL(glbBlob);
