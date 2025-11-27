@@ -4,140 +4,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>
-    DEM to GLB
-  </title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer@3.4.0/dist/model-viewer.min.js">
-  </script>
+  <title>DEM to GLB</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.4.0/dist/model-viewer.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      font-family:
-        monospace;
       padding: 20px;
-      background: #fff;
+      background: #f5f5f5;
     }
-
-    input,
-    button {
-      padding:
-        8px;
-      margin: 5px 0;
-      font-family: monospace;
-    }
-
-    input[type="file"] {
-      width:
-        100%;
-      max-width: 400px;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-    }
-
-    #progress {
-      margin: 10px 0;
-      height: 20px;
-      background: #eee;
-      position: relative;
-      display: none;
-    }
-
-    #progressBar {
-      height: 100%;
-      background:
-        #4CAF50;
-      width: 0%;
-      transition: width 0.3s;
-    }
-
-    #progressText {
-      position:
-        absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      font-size:
-        12px;
-    }
-
-    #status {
-      margin: 10px 0;
-    }
-
     model-viewer {
       width: 100%;
-      height:
-        500px;
+      height: 500px;
       background: #eee;
-      margin-top: 10px;
-      display: none;
+      border-radius: 6px;
     }
-
-    label {
-      display:
-        block;
-      margin-top: 10px;
-      font-size: 12px;
+    #texturePreview {
+        border: 1px solid #dbdbdb;
+        border-radius: 4px;
+        background: #fff;
+    }
+    /* Edge to edge overrides */
+    .container {
+        max-width: 100% !important;
+        width: 100%;
+    }
+    .box {
+        border-radius: 0;
+        box-shadow: none;
     }
   </style>
 </head>
 
 <body>
-  <h3>
-    DEM to GLB Converter
-  </h3>
-  <label>
-    DEM File:
-    <input type="file" id="demInput" accept=".tif,.tiff">
-  </label>
-  <label>
-    Texture (optional):
-    <input type="file" id="textureInput" accept=".tif,.tiff">
-  </label>
-  <label>
-    <input type="checkbox" id="downloadSatellite" checked>
-    Download Satellite Texture (Google Maps)
-  </label>
-  <label>
-    Width:
-    <input type="number" id="widthInput" value="500" min="100" max="8000">
-    px (height auto)
-  </label>
-  <label>
-    <input type="checkbox" id="removeNoData" checked>
-    Remove NoData vertices
-  </label>
-  <button id="convertBtn" disabled>
-    Generate GLB
-  </button>
-  <button id="downloadBtn" style="display:none;">
-    Download GLB
-  </button>
-  <div id="progress">
-    <div id="progressBar">
+  <div class="container">
+    <div class="box">
+      <h1 class="title is-4">DEM to GLB Converter</h1>
+      
+      <div class="columns is-multiline">
+        <div class="column is-4">
+          <div class="field">
+            <label class="label">DEM File</label>
+            <div class="control">
+              <div class="file has-name is-fullwidth">
+                <label class="file-label">
+                  <input class="file-input" type="file" id="demInput" accept=".tif,.tiff">
+                  <span class="file-cta">
+                    <span class="file-label">Choose a file…</span>
+                  </span>
+                  <span class="file-name" id="demFileName">No file selected</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="column is-2">
+            <div class="field">
+              <label class="label">Width (px)</label>
+              <div class="control">
+                <input class="input" type="number" id="widthInput" value="500" min="100" max="8000">
+              </div>
+              <p class="help">Mesh width (height auto-calculated)</p>
+            </div>
+        </div>
+
+        <div class="column is-4">
+            <div class="field">
+              <label class="label">Texture File (Optional)</label>
+               <div class="control">
+                  <div class="file has-name is-fullwidth">
+                    <label class="file-label">
+                      <input class="file-input" type="file" id="textureInput" accept=".tif,.tiff">
+                      <span class="file-cta">
+                        <span class="file-label">Choose…</span>
+                      </span>
+                      <span class="file-name" id="textureFileName">No file selected</span>
+                    </label>
+                  </div>
+               </div>
+            </div>
+        </div>
+
+        <div class="column is-2">
+            <div class="field">
+              <label class="label">Options</label>
+               <div class="control">
+                 <label class="checkbox" style="display:block;">
+                  <input type="checkbox" id="downloadSatellite" checked>
+                  Download Satellite
+                </label>
+                 <label class="checkbox" style="display:block;">
+                  <input type="checkbox" id="removeNoData" checked>
+                  Remove NoData
+                </label>
+               </div>
+            </div>
+        </div>
+
+        <div class="column is-12">
+            <div class="field is-grouped">
+                <div class="control">
+                  <button class="button is-primary" id="convertBtn" disabled>Generate GLB</button>
+                </div>
+                <div class="control">
+                  <button class="button is-link" id="downloadBtn" style="display:none;">Download GLB</button>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <div id="progress" style="display:none;" class="mb-4">
+        <progress class="progress is-info" id="progressBar" value="0" max="100">0%</progress>
+        <p class="has-text-centered is-size-7" id="progressText"></p>
+      </div>
+
+      <div class="notification is-light" id="status" style="display:none;"></div>
+
+      <model-viewer id="viewer" camera-controls auto-rotate></model-viewer>
+      
+      <div class="field mt-4">
+          <label class="checkbox">
+              <input type="checkbox" id="showTextureCheck">
+              Show Debug Texture Preview
+          </label>
+      </div>
+      <div id="texturePreview" class="box" style="overflow: auto; max-height: 500px; padding: 0;"></div>
     </div>
-    <div id="progressText">
-    </div>
-  </div>
-  <div id="status">
-  </div>
-  <model-viewer id="viewer" camera-controls auto-rotate>
-  </model-viewer>
-  <br>
-  <hr>
-  <h3>Process Flow</h3>
-  <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto; font-size: 10px; line-height: 1.2;">
+
+    <div class="box content">
+      <h3>Process Flow</h3>
+      <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto; font-size: 10px; line-height: 1.2;">
 +----------------+       +----------------+
 |    DEM File    | ----> |  Loam (GDAL)   |
 |  (.tif/.tiff)  |       |  (Browser JS)  |
@@ -146,7 +142,7 @@
         |                        v
         |              +-------------------+
         |              |   Resample DEM    |
-        |              | (Target Width/Ht) |
+        |              |   (Match Width)   |
         |              +-------------------+
         |                        |
         |                        v
@@ -163,8 +159,8 @@
         |                                                     |
         v                                                     |
 +----------------+       +----------------+                   |
-| Calc Opt Zoom  | ----> |  Google Maps   |                   |
-| (Res Match)    |       |     Tiles      |                   |
+| Auto-Calc Zoom | ----> |  Google Maps   |                   |
+| (Width Based)  |       |     Tiles      |                   |
 +----------------+       +----------------+                   |
                                  |                            |
                                  v                            |
@@ -178,55 +174,23 @@
                        |    GLB Export     |
                        |  (Binary glTF)    |
                        +-------------------+
-  </pre>
-  <hr>
-  <h3>
-    References
-  </h3>
-  <ul>
-    <li>
-      <a href="https://github.com/CesiumGS/quantized-mesh" target="_blank">
-        quantized-mesh
-      </a>
-    </li>
-    <li>
-      <a href="https://github.com/CesiumGS/3d-tiles/tree/main" target="_blank">
-        3d-tiles
-      </a>
-    </li>
-    <li>
-      <a href="https://cesium.com/learn/data-formats/" target="_blank">
-        Cesium Data Formats
-      </a>
-    </li>
-    <li>
-      <a href="https://www.ogc.org/standards/3dtiles/" target="_blank">
-        OGC 3D Tiles Standard
-      </a>
-    </li>
-    <li>
-      <a href="https://www.jsdelivr.com/package/npm/loam?tab=files" target="_blank">
-        loam on jsDelivr
-      </a>
-    </li>
-    <li>
-      <a href="https://github.com/azavea/loam/blob/develop/demo/index.js" target="_blank">
-        loam demo
-      </a>
-    </li>
-    <li>
-      <a href="https://github.com/kylebarron/quantized-mesh-encoder" target="_blank">
-        quantized-mesh-encoder
-      </a>
-    </li>
-    <li>
-      <a href="https://github.com/kylebarron/pydelatin?tab=readme-ov-file" target="_blank">
-        pydelatin
-      </a>
-    </li>
-  </ul>
-  <script src="https://unpkg.com/loam@1.2.0/lib/loam.min.js">
-  </script>
+      </pre>
+      <hr>
+      <h3>References</h3>
+      <ul>
+        <li><a href="https://github.com/CesiumGS/quantized-mesh" target="_blank">quantized-mesh</a></li>
+        <li><a href="https://github.com/CesiumGS/3d-tiles/tree/main" target="_blank">3d-tiles</a></li>
+        <li><a href="https://cesium.com/learn/data-formats/" target="_blank">Cesium Data Formats</a></li>
+        <li><a href="https://www.ogc.org/standards/3dtiles/" target="_blank">OGC 3D Tiles Standard</a></li>
+        <li><a href="https://www.jsdelivr.com/package/npm/loam?tab=files" target="_blank">loam on jsDelivr</a></li>
+        <li><a href="https://github.com/azavea/loam/blob/develop/demo/index.js" target="_blank">loam demo</a></li>
+        <li><a href="https://github.com/kylebarron/quantized-mesh-encoder" target="_blank">quantized-mesh-encoder</a></li>
+        <li><a href="https://github.com/kylebarron/pydelatin?tab=readme-ov-file" target="_blank">pydelatin</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/loam@1.2.0/lib/loam.min.js"></script>
   <script type="importmap">
       {
         "imports": {
@@ -234,16 +198,16 @@
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
         }
       }
-    </script>
+  </script>
   <script type="module">
     import * as THREE from 'three';
-    import {
-      GLTFExporter
-    }
-      from 'three/addons/exporters/GLTFExporter.js';
+    import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
     const demInput = document.getElementById('demInput');
     const textureInput = document.getElementById('textureInput');
     const downloadSatellite = document.getElementById('downloadSatellite');
+    // Removed specific target/zoom inputs
+    const showTextureCheck = document.getElementById('showTextureCheck');
     const widthInput = document.getElementById('widthInput');
     const removeNoData = document.getElementById('removeNoData');
     const convertBtn = document.getElementById('convertBtn');
@@ -253,6 +217,7 @@
     const progressText = document.getElementById('progressText');
     const status = document.getElementById('status');
     const viewer = document.getElementById('viewer');
+    
     let demDataset = null;
     let textureDataset = null;
     let demFile = null;
@@ -288,6 +253,7 @@
       return { west, south, east, north };
     }
 
+    // Simplified Zoom Calculation Logic
     function calculateOptimalZoom(bounds, targetResolution = 2048) {
       const { west, east } = bounds;
       let lonSpan = east - west;
@@ -295,9 +261,8 @@
       if (lonSpan === 0) return 12; // Fallback
 
       // Formula: 2^z = (360 * targetResolution) / (256 * lonSpan)
-      // targetResolution should ideally match the DEM width (e.g. 1000px)
-      // If we want 1:1 mapping with the DEM width:
-
+      // targetResolution matches the DEM width
+      
       const val = (targetResolution * 360) / (256 * lonSpan);
       let zoom = Math.round(Math.log2(val));
 
@@ -307,9 +272,6 @@
       console.log(`Auto-calculated zoom: ${zoom} for span ${lonSpan.toFixed(4)} deg and target res ${targetResolution}px`);
       return zoom;
     }
-    // --------------------------------------------
-
-    // --------------------------------------------
 
     async function getDEMBounds(dataset) {
       try {
@@ -387,7 +349,8 @@
                 const yPos = (y - minY) * tileSize;
                 ctx.drawImage(img, xPos, yPos);
                 downloaded++;
-                setProgress(Math.floor((downloaded / tileCount) * 100), `Downloading tiles (${downloaded}/${tileCount})...`);
+                const pct = Math.floor((downloaded / tileCount) * 100);
+                setProgress(pct, `Downloading Satellite Tiles: ${downloaded} / ${tileCount} (${pct}%)`);
                 resolve();
               };
               img.onerror = (e) => {
@@ -425,21 +388,11 @@
 
       console.log(`Cropping texture: x=${cropX}, y=${cropY}, w=${cropW}, h=${cropH}`);
 
-      // Validation to prevent 0-size canvas error
       if (cropW <= 0 || cropH <= 0) {
         console.warn("Calculated crop dimensions are invalid (<=0). Using full canvas fallback.");
-        // Fallback: just return the whole canvas or a 1x1 pixel to prevent crash
-        // But 'whole canvas' might be huge and wrong. 
-        // If cropW is 0, it means the DEM span is tiny compared to the tile span?
-        // Or math error.
-        // Let's clamp to at least 1px.
         cropW = Math.max(1, cropW);
         cropH = Math.max(1, cropH);
       }
-
-      // Also clamp cropX/Y to be within canvas?
-      // cropX = Math.max(0, cropX);
-      // cropY = Math.max(0, cropY);
 
       const finalCanvas = document.createElement('canvas');
       finalCanvas.width = cropW;
@@ -465,12 +418,13 @@
 
     function setProgress(percent, text) {
       progress.style.display = 'block';
-      progressBar.style.width = percent + '%';
+      progressBar.value = percent;
       progressText.textContent = text;
     }
     function hideProgress() {
       progress.style.display = 'none';
     }
+    
     async function init() {
       await window.loam.initialize('https://unpkg.com/loam@1.2.0/lib/', 'https://unpkg.com/gdal-js@2.2.0/');
       console.log('Loam ready');
@@ -494,20 +448,27 @@
           minValue: min,
           maxValue: max
         };
+        status.style.display = 'block';
         status.textContent = `Loaded: ${w}×${h} px, Range: ${min.toFixed(0)} - ${max.toFixed(0)} m`;
         convertBtn.disabled = false;
       } catch (err) {
+        status.style.display = 'block';
         status.textContent = 'Error loading DEM: ' + err.message;
       }
     }
 
     demInput.addEventListener('change', async (e) => {
-      await processFile(e.target.files[0]);
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('demFileName').textContent = file.name;
+        await processFile(file);
+      }
     });
 
     textureInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (file) {
+        document.getElementById('textureFileName').textContent = file.name;
         try {
           textureDataset = await window.loam.open(file);
           console.log('Texture loaded');
@@ -516,6 +477,7 @@
         }
       }
     });
+    
     convertBtn.addEventListener('click', async () => {
       if (!demDataset) return;
       try {
@@ -534,7 +496,6 @@
         setProgress(30, 'Extracting elevation...');
         console.log('Step: Extracting elevation...');
 
-        // Use Float32 to avoid overflow with UInt16 data or high elevations
         const rawDem = await resampledDEM.convert(['-of', 'EHdr', '-ot', 'Float32']);
         const demBytes = await rawDem.bytes();
         const elevData = new Float32Array(demBytes.buffer);
@@ -546,12 +507,24 @@
             setProgress(40, 'Fetching satellite imagery...');
             console.log('Step: Fetching satellite imagery...');
             const bounds = await getDEMBounds(demDataset);
-            // Auto-zoom is now handled inside downloadAndStitchTiles if second arg is null/undefined
-            // Pass demMeta.width to match ORIGINAL DEM resolution, not the resampled mesh width
-            satelliteCanvas = await downloadAndStitchTiles(bounds, calculateOptimalZoom(bounds, demMeta.width));
+            
+            // Auto-calculate zoom based on the TARGET width
+            let zoomLevel = calculateOptimalZoom(bounds, targetWidth);
+
+            satelliteCanvas = await downloadAndStitchTiles(bounds, zoomLevel);
             console.log('Step: Satellite imagery ready');
+
+            if (showTextureCheck.checked && satelliteCanvas) {
+                const preview = document.getElementById('texturePreview');
+                preview.innerHTML = '';
+                satelliteCanvas.style.maxWidth = '100%';
+                satelliteCanvas.style.display = 'block';
+                preview.appendChild(satelliteCanvas);
+                preview.scrollIntoView({ behavior: "smooth" });
+            }
           } catch (e) {
             console.error("Satellite download failed:", e);
+            status.style.display = 'block';
             status.textContent += " (Satellite download failed: " + e.message + ")";
           }
         }
@@ -569,6 +542,7 @@
 
       } catch (err) {
         hideProgress();
+        status.style.display = 'block';
         status.textContent = 'Error: ' + err.message;
         convertBtn.disabled = false;
       }
@@ -583,18 +557,14 @@
         removed = 0;
       const nodataSet = new Set();
 
-      // PlaneGeometry vertices are row-by-row, top-to-bottom (Y decreases)
-      // Raster data is row-by-row, top-to-bottom
-      // So indices should match.
-
       for (let i = 0; i < Math.min(elevData.length, verts.length / 3); i++) {
         const elev = elevData[i];
-        if (elev === nd || elev === metaNoData || elev <= -300000 || elev >= 300000) { // Increased limits for Float32
+        if (elev === nd || elev === metaNoData || elev <= -300000 || elev >= 300000) { 
           if (removeNoData.checked) nodataSet.add(i);
           verts[i * 3 + 2] = 0;
           removed++;
         } else {
-          verts[i * 3 + 2] = elev * 0.01; // Scale factor
+          verts[i * 3 + 2] = elev * 0.01; 
           valid++;
         }
       }
@@ -620,19 +590,11 @@
 
       if (satelliteCanvas) {
         const tex = new THREE.CanvasTexture(satelliteCanvas);
-
-        // Hardcoded Flip Y as per user requirement
-        // This is necessary because the coordinate system of the satellite tiles 
-        // (top-left origin) matches the DOM/Canvas, but Three.js textures 
-        // often expect bottom-left origin or the mesh UVs are flipped relative to the image.
-        // We flip Y to align the texture correctly with the DEM mesh.
         tex.wrapT = THREE.RepeatWrapping;
         tex.repeat.y = -1;
         tex.offset.y = 1;
+        tex.flipY = false;
 
-        tex.flipY = false; // Baseline
-
-        // Use MeshBasicMaterial to avoid lighting issues
         mat = new THREE.MeshBasicMaterial({
           map: tex,
           side: THREE.DoubleSide
@@ -667,12 +629,14 @@
         downloadBtn.style.display = 'inline-block';
         setProgress(100, 'Complete!');
         setTimeout(hideProgress, 1000);
+        status.style.display = 'block';
         status.textContent = `Done ! ${w}×${h} | Valid: ${valid.toLocaleString()} | NoData: ${removed.toLocaleString()} | Faces removed: ${facesRemoved.toLocaleString()}`;
         convertBtn.disabled = false;
       },
         (err) => {
           hideProgress();
           console.error('Step: Export Failed', err);
+          status.style.display = 'block';
           status.textContent = 'Export failed: ' + err;
           convertBtn.disabled = false;
         },
@@ -680,6 +644,7 @@
           binary: true
         });
     }
+    
     downloadBtn.addEventListener('click', () => {
       if (!glbBlob) return;
       const url = URL.createObjectURL(glbBlob);
@@ -691,5 +656,4 @@
     });
   </script>
 </body>
-
 </html>
