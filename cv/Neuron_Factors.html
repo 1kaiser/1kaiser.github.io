@@ -43,9 +43,8 @@
         <div class="control-group">
             <label for="model-select">Select Model:</label>
             <select id="model-select">
-                
-                <option value="Xenova/bert-base-uncased">Xenova/bert-base-uncased (Encoder, 30k+ output dims)  - Recommended</option>
-                <option value="Xenova/all-MiniLM-L6-v2">Xenova/all-MiniLM-L6-v2 (Embedding Model, 384 dims)</option>
+                <option value="Xenova/bert-base-uncased">Xenova/bert-base-uncased (Encoder, 30k+ output dims)</option>
+                <option value="Xenova/all-MiniLM-L6-v2">Xenova/all-MiniLM-L6-v2 (Embedding Model, 384 dims) - Recommended</option>
                 <option value="Xenova/distilgpt2">Xenova/distilgpt2 (Decoder, 50k+ output dims)</option>
             </select>
         </div>
@@ -69,6 +68,10 @@
         env.allowLocalModels = false;
         env.useBrowserCache = true;
 
+        // Global variables to cache the pipeline
+        let currentExtractor = null;
+        let currentModelName = null;
+
         window.runPipeline = async function() {
             const statusDiv = document.getElementById('status');
             const runBtn = document.getElementById('run-btn');
@@ -77,14 +80,23 @@
             
             runBtn.disabled = true;
             statusDiv.className = ""; 
-            statusDiv.innerHTML = `Loading model <b>${modelId}</b>... (First run may take time)`;
+            statusDiv.innerHTML = `Checking model <b>${modelId}</b>...`;
 
             try {
                 // 1. Load Feature Extraction Pipeline
-                // We use feature-extraction because it is versatile for getting internal states.
-                const extractor = await pipeline('feature-extraction', modelId, {
-                    quantized: false // Use full precision if possible for better analysis
-                });
+                // Check if we can reuse the cached model
+                if (currentExtractor && currentModelName === modelId) {
+                     statusDiv.innerHTML = "Using cached model...";
+                } else {
+                     statusDiv.innerHTML = `Loading model <b>${modelId}</b>... (First run may take time)`;
+                     currentExtractor = null; // Clear old one to free memory if possible (JS GC handles it)
+                     currentExtractor = await pipeline('feature-extraction', modelId, {
+                        quantized: false // Use full precision if possible for better analysis
+                     });
+                     currentModelName = modelId;
+                }
+                
+                const extractor = currentExtractor;
                 const tokenizer = extractor.tokenizer;
                 
                 statusDiv.innerHTML = "Model loaded. Processing text...";
