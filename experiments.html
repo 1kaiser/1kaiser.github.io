@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Timeline</title>
+
+    <!-- Required CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/d3-milestones/build/d3-milestones.css">
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            margin: 0;
+            z-index: 1000;
+        }
+
+        #legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            margin: 0;
+            z-index: 1000;
+            background-color: rgba(255, 255, 255, 0.8); /* translucent background for readability */
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .download-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .download-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* Scrollable Container */
+        .timeline-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid #ddd; /* Visual boundary */
+            background-color: #fff;
+            padding: 20px 0;
+            /* Scrollbar styling for Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: #888 #f1f1f1;
+        }
+
+        /* Scrollbar styling for WebKit (Chrome, Safari, Edge) */
+        .timeline-wrapper::-webkit-scrollbar {
+            height: 12px;
+        }
+        .timeline-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .timeline-wrapper::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 6px;
+        }
+        .timeline-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* The Timeline Itself */
+        #timeline {
+            /* Fixed large width to accommodate many nodes without overlapping */
+            width: 3000px;
+            /* Fixed height is crucial for d3-milestones to calculate layout */
+            height: 400px;
+            position: relative;
+        }
+
+        /* Custom Styles for Labels */
+        .milestone-label text {
+            font-size: 12px !important;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>⛰️ Repository Timeline</h1>
+    <div id="legend" style="font-size: 14px;">
+        <span style="color: #FF2400; font-weight: bold;">● Source Repositories</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style="color: #008000; font-style: italic;">● Forked Repositories</span>
+    </div>
+
+    <div class="download-container">
+        <button id="download-svg-btn" class="download-btn">Download SVG</button>
+        <button id="download-png-btn" class="download-btn">Download PNG</button>
+    </div>
+
+    <div class="timeline-wrapper">
+        <div id="timeline"></div>
+    </div>
+
+    <!-- Dependencies -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const node = document.getElementById('timeline');
+
+            // Download SVG Handler
+            document.getElementById('download-svg-btn').addEventListener('click', () => {
+                domtoimage.toSvg(node)
+                    .then(function (dataUrl) {
+                        const link = document.createElement('a');
+                        link.download = 'timeline.svg';
+                        link.href = dataUrl;
+                        link.click();
+                    })
+                    .catch(function (error) {
+                        console.error('oops, something went wrong!', error);
+                    });
+            });
+
+            // Download PNG Handler
+            document.getElementById('download-png-btn').addEventListener('click', () => {
+                domtoimage.toPng(node)
+                    .then(function (dataUrl) {
+                        const link = document.createElement('a');
+                        link.download = 'timeline.png';
+                        link.href = dataUrl;
+                        link.click();
+                    })
+                    .catch(function (error) {
+                        console.error('oops, something went wrong!', error);
+                    });
+            });
+
+            // Tooltip
+            const tooltip = d3.select("body").append("div").attr("class", "tooltip");
+
+            // Initialize Timeline
+            const timeline = milestones('#timeline')
+                .mapping({
+                    'timestamp': 'timestamp',
+                    'text': 'text',
+                    'textStyle': 'customStyle'
+                })
+                .parseTime('%Y-%m-%dT%H:%M:%SZ')
+                .aggregateBy('day') // Aggregate by day to avoid stacking too much
+                .optimize(true)
+                .distribution('top-bottom');
+
+            // Tooltip events
+            timeline.onEventMouseOver((d) => {
+                const dateStr = d.timestamp ? d.timestamp.split('T')[0] : '';
+                tooltip.style("opacity", 1)
+                       .html(`<strong>${d.text}</strong><br>${dateStr}`)
+                       .style("left", (d3.event.pageX + 15) + "px")
+                       .style("top", (d3.event.pageY - 15) + "px");
+            });
+            timeline.onEventMouseLeave(() => tooltip.style("opacity", 0));
+
+            // Fetch Data
+            const username = '1kaiser';
+            const apiUrl = `https://api.github.com/users/${username}/repos?sort=created&direction=asc&per_page=100`;
+
+            console.log(`Fetching repos for ${username}...`);
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
+                    return response.json();
+                })
+                .then(repos => {
+                    if (!Array.isArray(repos)) throw new Error('Invalid response');
+
+                    const timelineData = repos.map(repo => ({
+                        timestamp: repo.created_at,
+                        text: repo.name,
+                        url: repo.html_url,
+                        customStyle: {
+                            'color': repo.fork ? '#FF2400' : '#008000', // Scarlet for forks, Green for sources
+                            'font-style': repo.fork ? 'italic' : 'normal',
+                            'font-weight': repo.fork ? 'normal' : 'bold'
+                        }
+                    }));
+
+                    console.log(`Fetched ${timelineData.length} repositories.`);
+
+                    if (timelineData.length === 0) {
+                        console.warn('No repositories found.');
+                        return;
+                    }
+
+                    timeline.render(timelineData);
+                    console.log('Timeline rendered with GitHub data.');
+                })
+                .catch(error => {
+                    console.error('Error fetching GitHub data:', error);
+                    // Fallback
+                    timeline.render([
+                        { timestamp: '2023-01-01T00:00:00Z', text: 'Error Fetching Data' }
+                    ]);
+                });
+        });
+    </script>
+</body>
+</html>

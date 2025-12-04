@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LayerFlow Style UMAP</title>
+    
+    <!-- Styles -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Noto+Sans|Castoro" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.106.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/scatter-gl@0.0.1/lib/scatter-gl.min.js"></script>
+
+    <style>
+        body { font-family: 'Roboto', sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        /* Helper class for full width container */
+        .is-fullwidth-container {
+            width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+
+        .visualization-container-3d {
+            width: 100%;
+            height: 70vh;
+            background: white;
+            position: relative;
+            border-top: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
+            margin: 0;
+        }
+        
+        .status-indicator {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .status-loading { background: #fff3cd; color: #856404; }
+        .status-success { background: #d1edff; color: #0c5460; }
+        .status-error { background: #f8d7da; color: #721c24; }
+        
+        #tooltip-bubble-3d {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            z-index: 1000;
+            pointer-events: none;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            text-align: center;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container">
+      <h1 class="title">LayerFlow Style: BERT & UMAP Analysis</h1>
+      <h2 class="subtitle">Interactive 3D exploration of document embeddings</h2>
+    </div>
+  </div>
+</section>
+
+<!-- Controls & Visualization -->
+<section class="section" style="background: #f8f9fa; padding-bottom: 10px;">
+  <div class="container">
+    
+    <!-- Controls -->
+    <div class="field is-grouped is-grouped-centered">
+      <div class="control">
+        <button id="load-default-data" class="button is-primary">Load Default Demo Data</button>
+      </div>
+      <div class="control">
+        <div class="file is-info">
+          <label class="file-label">
+            <input id="file-upload" class="file-input" type="file" accept=".txt">
+            <span class="file-cta">
+              <span class="file-label">📁 Upload Custom Text File</span>
+            </span>
+          </label>
+        </div>
+      </div>
+      <div class="control">
+        <button id="compute-embeddings" class="button is-info" disabled>Compute Embeddings</button>
+      </div>
+      <div class="control">
+        <button id="generate-umap" class="button is-success" disabled>Generate 3D UMAP</button>
+      </div>
+      <div class="control">
+        <button id="reset-view" class="button is-light" disabled>Reset View</button>
+      </div>
+      
+      <!-- Parameters (Moved inline) -->
+      <div class="control" style="display: flex; align-items: center; gap: 5px; margin-left: 10px; border-left: 1px solid #ddd; padding-left: 15px;">
+        <label class="label" style="margin: 0; font-size: 12px; font-weight: 500;">n_neighbors</label>
+        <input id="n-neighbors" class="input is-small" type="number" value="15" min="5" max="50" style="width: 60px; text-align: center;">
+      </div>
+      <div class="control" style="display: flex; align-items: center; gap: 5px;">
+        <label class="label" style="margin: 0; font-size: 12px; font-weight: 500;">min_dist</label>
+        <input id="min-dist" class="input is-small" type="number" value="0.1" min="0.01" max="1" step="0.01" style="width: 60px; text-align: center;">
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid-3d" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin: 1rem 0; border: 1px solid #e0e0e0;">
+      <div class="stat-card">
+        <div id="stat-docs" class="stat-number">0</div>
+        <div class="stat-label">Documents</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-dims" class="stat-number">0</div>
+        <div class="stat-label">Embedding Dims</div>
+      </div>
+      <div class="stat-card">
+        <div id="stat-points" class="stat-number">0</div>
+        <div class="stat-label">Points Rendered</div>
+      </div>
+      <div class="stat-card" style="border-right: none;">
+        <div id="stat-time" class="stat-number">0s</div>
+        <div class="stat-label">Last Op Time</div>
+      </div>
+    </div>
+    
+    <!-- Status -->
+    <div id="status-panel">
+        <div id="status" class="status-indicator status-loading">Initializing system...</div>
+    </div>
+    
+  </div>
+</section>
+
+<!-- Full Width Visualization Container -->
+<div class="visualization-container-3d">
+  <div id="scattergl-container" style="width: 100%; height: 100%;"></div>
+  <div id="tooltip-bubble-3d"></div>
+</div>
+
+<!-- Embedded Worker Script -->
+<script id="worker-script" type="text/js-worker">
+    // We use dynamic import to avoid "Refused to cross-origin redirects of the top-level worker script"
+    // which can occur with static imports in Blob URL workers if the CDN redirects.
+    
+    const MODEL_ID = "onnx-community/embeddinggemma-300m-ONNX";
+    let AutoModel, AutoTokenizer, env;
+    let model = null;
+    let tokenizer = null;
+
+    self.onmessage = async (event) => {
+        const { type, payload } = event.data;
+
+        if (type === 'load-model') {
+            try {
+                self.postMessage({ type: 'status', payload: 'Loading Model (approx 300MB)...' });
+                
+                // Dynamic import
+                const transformers = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.1/+esm');
+                AutoModel = transformers.AutoModel;
+                AutoTokenizer = transformers.AutoTokenizer;
+                env = transformers.env;
+
+                // Global configuration
+                env.allowLocalModels = false;
+                env.useBrowserCache = false;
+                env.backends.onnx.wasm.numThreads = 1;
+
+                tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID);
+                model = await AutoModel.from_pretrained(MODEL_ID, {
+                    device: 'wasm',
+                    dtype: 'q4',
+                    progress_callback: (progress) => {
+                        if (progress.status === 'progress') {
+                            // Forward progress updates
+                        }
+                    }
+                });
+
+                self.postMessage({ type: 'ready', payload: { device: 'wasm' } });
+            } catch (e) {
+                console.error(e);
+                self.postMessage({ type: 'error', payload: e.message });
+            }
+        } else if (type === 'embed') {
+            try {
+                if (!model || !tokenizer) throw new Error("Model not loaded");
+                
+                const { sentences } = payload;
+                const inputs = tokenizer(sentences, { padding: true, truncation: true, max_length: 256 });
+                const { sentence_embedding } = await model(inputs);
+                const embeddings = sentence_embedding.tolist();
+                
+                self.postMessage({ type: 'embeddings', payload: { embeddings } });
+            } catch (e) {
+                console.error(e);
+                self.postMessage({ type: 'error', payload: e.message });
+            }
+        }
+    };
+</script>
+
+<script type="module">
+    import { UMAP } from 'https://esm.sh/umap-js@1.4.0';
+
+    // Global Error Handler
+    window.onerror = function(message, source, lineno, colno, error) {
+        updateStatus(`❌ Global Error: ${message}`, 'error');
+        console.error('Global Error caught:', message, error);
+    };
+
+    const DEFAULT_SENTENCES = [
+        "The sun peeked through the clouds after a drizzly morning.",
+        "A gentle breeze rustled the leaves as we walked along the shoreline.",
+        "Heavy rains caused flooding in several low-lying neighborhoods.",
+        "It was so hot that even the birds sought shade under the palm trees.",
+        "By midnight, the temperature had dropped below freezing.",
+        "Thunderstorms lit up the sky with flashes of lightning.",
+        "A thick fog settled over the city streets at dawn.",
+        "The air smelled of ozone after the sudden hailstorm.",
+        "I watched the snowflakes drift silently onto the ground.",
+        "A double rainbow appeared after the rain shower.",
+        "The humidity soared to uncomfortable levels by midday.",
+        "Dust devils formed in the dry desert plains.",
+        "The barometer readings indicated an approaching front.",
+        "A sudden gust of wind knocked over the garden chairs.",
+        "Light drizzle turned into a torrential downpour within minutes.",
+        "The new smartphone features a foldable display and 5G connectivity.",
+        "In the world of AI, transformers have revolutionized natural language processing.",
+        "Quantum computing promises to solve problems beyond classical computers' reach.",
+        "Blockchain technology is being explored for secure voting systems.",
+        "Virtual reality headsets are becoming more affordable and accessible.",
+        "The rise of electric vehicles is reshaping the automotive industry.",
+        "Cloud computing allows businesses to scale resources dynamically.",
+        "Machine learning algorithms can now predict stock market trends with surprising accuracy.",
+        "Augmented reality applications are transforming retail experiences.",
+        "The Internet of Things connects everyday devices to the web for smarter living.",
+        "Cybersecurity threats are evolving, requiring constant vigilance.",
+        "3D printing is enabling rapid prototyping and custom manufacturing.",
+        "Edge computing reduces latency by processing data closer to the source.",
+        "Biometric authentication methods are enhancing security in devices.",
+        "Wearable technology is tracking health metrics in real-time.",
+        "Artificial intelligence is being used to create realistic deepfakes.",
+        "Preheat the oven to 375°F before you start mixing the batter.",
+        "She finely chopped the garlic and sautéed it in two tablespoons of olive oil.",
+        "A pinch of saffron adds a beautiful color and aroma to traditional paella.",
+        "If the soup is too salty, add a peeled potato to absorb excess sodium.",
+        "Let the bread dough rise for at least an hour in a warm, draft-free spot.",
+        "Marinate the chicken overnight in a blend of citrus and spices.",
+        "Use a cast-iron skillet to sear the steak on high heat.",
+        "Whisk the egg whites until they form stiff peaks.",
+        "Fold in the chocolate chips gently to keep the batter airy.",
+        "Brush the pastry with an egg wash for a golden finish.",
+        "Slow-roast the pork shoulder until it falls off the bone.",
+        "Garnish the salad with toasted nuts and fresh herbs.",
+        "Deglaze the pan with white wine for a rich sauce.",
+        "Simmer the curry paste until the aroma intensifies.",
+        "Let the risotto rest before serving to thicken slightly.",
+        "He dribbled past two defenders and sank a three-pointer at the buzzer.",
+        "The marathon runner kept a steady pace despite the sweltering heat.",
+        "Their home team clinched the championship with a last-minute goal.",
+        "NASCAR fans cheered as the cars roared around the oval track.",
+        "She landed a perfect triple axel at the figure skating championship.",
+        "The cyclist pedaled up the steep hill in record time.",
+        "He pitched a no-hitter during the high school baseball game.",
+        "The quarterback threw a touchdown pass under heavy pressure.",
+        "They scored a hat-trick in the hockey final.",
+        "The boxer delivered a swift uppercut in the final round.",
+        "Surfers caught massive waves at dawn on the Pacific coast.",
+        "Fans erupted when the underdog scored the winning goal.",
+        "The swimmer broke the national record in the 200m freestyle.",
+        "The gymnast executed a flawless routine on the balance beam.",
+        "The rugby team celebrated their victory with a traditional haka.",
+        "The stock market rallied after positive earnings reports.",
+        "Investors are closely watching interest rate changes by the Federal Reserve.",
+        "Cryptocurrency prices have been extremely volatile this year.",
+        "Diversification is key to managing investment risk effectively.",
+        "Inflation rates have reached a 40-year high, impacting consumer spending.",
+        "Many companies are adopting ESG criteria to attract socially conscious investors.",
+        "The bond market is reacting to geopolitical tensions and supply chain disruptions.",
+        "Venture capital funding for startups has surged in the tech sector.",
+        "Exchange-traded funds (ETFs) offer a way to invest in diversified portfolios.",
+        "The global economy is recovering from the pandemic, but challenges remain.",
+        "Central banks are exploring digital currencies to modernize payment systems.",
+        "Retail investors are increasingly participating in the stock market through apps.",
+        "Hedge funds are using complex algorithms to gain an edge in trading.",
+        "Real estate prices have skyrocketed in urban areas due to low inventory.",
+        "The startup raised $10 million in its Series A funding round.",
+        "The symphony orchestra played a hauntingly beautiful melody.",
+        "She strummed her guitar softly, filling the room with a warm sound.",
+        "The DJ mixed tracks seamlessly, keeping the crowd dancing all night.",
+        "His voice soared during the high notes of the ballad.",
+        "The band played an acoustic set in the intimate coffee shop.",
+        "Jazz musicians often improvise solos based on the chord changes.",
+        "The opera singer hit the high C with perfect pitch.",
+        "The choir harmonized beautifully, filling the church with sound.",
+        "He composed a symphony that was performed at the concert hall.",
+        "The singer-songwriter wrote heartfelt lyrics about love and loss.",
+        "The rock band headlined the festival, drawing a massive crowd.",
+        "Hip-hop artists use rhythm and rhyme to tell powerful stories.",
+        "The violinist played a virtuosic solo that left the audience in awe.",
+        "Folk music often reflects the culture and traditions of a community.",
+        "The gospel choir lifted spirits with their uplifting performance.",
+        "The fall of the Berlin Wall in 1989 marked the end of the Cold War.",
+        "Ancient Egypt's pyramids are a testament to their architectural prowess.",
+        "Europe's Renaissance period sparked a revival in art and science.",
+        "The signing of the Declaration of Independence in 1776 established the United States.",
+        "The Industrial Revolution transformed economies and societies worldwide.",
+        "Rome was the center of a vast empire that influenced law and governance.",
+        "The discovery of the New World by Christopher Columbus in 1492 changed global trade.",
+        "The French Revolution in 1789 led to significant political and social change.",
+        "World War II was a global conflict that reshaped international relations.",
+        "The fall of the Roman Empire in 476 AD marked the beginning of the Middle Ages.",
+        "The invention of the printing press revolutionized the spread of knowledge.",
+        "The Cold War was characterized by political tension between the U.S. and the Soviet Union.",
+        "The ancient Silk Road connected East and West through trade routes.",
+        "The signing of the Magna Carta in 1215 established principles of due process.",
+        "Exploration during the Age of Discovery expanded European empires across the globe."
+    ];
+
+    let worker = null;
+    let isWorkerReady = false;
+    let activeSentences = [];
+    let embeddings = [];
+    let scatterGL;
+
+    // --- UI Helper Functions ---
+    function updateStatus(message, type = 'loading') {
+        const statusPanel = document.getElementById('status');
+        const className = `status-indicator status-${type}`;
+        statusPanel.className = className;
+        statusPanel.textContent = message;
+        if (message.includes('Done')) {
+             statusPanel.innerHTML = 'Done!';
+        }
+    }
+
+    function updateStats(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    // --- Main Logic ---
+
+    async function initModel() {
+        if (worker) return;
+        
+        updateStatus('🔄 Initializing Worker...', 'loading');
+        
+        // Create worker from embedded script
+        const workerScript = document.getElementById('worker-script').textContent;
+        const blob = new Blob([workerScript], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(blob);
+        
+        worker = new Worker(workerUrl, { type: 'module' });
+        
+        worker.onmessage = (e) => {
+            const { type, payload } = e.data;
+            if (type === 'status') {
+                updateStatus(payload, 'loading');
+            } else if (type === 'ready') {
+                isWorkerReady = true;
+                updateStatus('✅ Model Loaded. Ready.', 'success');
+                updateComputeButtonState();
+            } else if (type === 'error') {
+                console.error("Worker error:", payload);
+                updateStatus(`❌ Worker Error: ${payload}`, 'error');
+            } else if (type === 'embeddings') {
+                // Should not happen here in current logic flow, handled in computeEmbeddings Promise
+            }
+        };
+
+        worker.postMessage({ type: 'load-model' });
+    }
+
+    function updateComputeButtonState() {
+        const hasData = activeSentences.length > 0;
+        const btn = document.getElementById('compute-embeddings');
+        
+        if (isWorkerReady && hasData) {
+            btn.disabled = false;
+        } else {
+            btn.disabled = true;
+        }
+    }
+
+    function loadDefaultData() {
+        activeSentences = DEFAULT_SENTENCES;
+        updateStats('stat-docs', activeSentences.length);
+        updateStatus(`✅ Loaded ${activeSentences.length} default sentences.`, 'success');
+        updateComputeButtonState();
+    }
+
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+        
+        if (lines.length < 3) {
+            alert("Please provide a file with at least 3 lines/sentences.");
+            return;
+        }
+
+        activeSentences = lines;
+        updateStats('stat-docs', activeSentences.length);
+        updateStatus(`✅ Loaded ${activeSentences.length} sentences from file.`, 'success');
+        updateComputeButtonState();
+    }
+
+    function runEmbeddingBatch(sentences) {
+        return new Promise((resolve, reject) => {
+            const handler = (e) => {
+                const { type, payload } = e.data;
+                if (type === 'embeddings') {
+                    worker.removeEventListener('message', handler);
+                    resolve(payload.embeddings);
+                } else if (type === 'error') {
+                    worker.removeEventListener('message', handler);
+                    reject(payload);
+                }
+            };
+            // We need a specific listener for the response to this request
+            worker.addEventListener('message', handler);
+            worker.postMessage({ type: 'embed', payload: { sentences } });
+        });
+    }
+
+    async function computeEmbeddings() {
+        if (!isWorkerReady) return;
+        if (activeSentences.length === 0) return;
+
+        const btn = document.getElementById('compute-embeddings');
+        btn.classList.add('is-loading');
+        btn.disabled = true;
+
+        try {
+            embeddings = [];
+            const startTime = performance.now();
+            const batch_size = 4;
+            
+            for (let i = 0; i < activeSentences.length; i += batch_size) {
+                const batch = activeSentences.slice(i, i + batch_size);
+                const progress = Math.round(((i + batch.length) / activeSentences.length) * 100);
+                updateStatus(`Generating embeddings... (${progress}%)`, 'loading');
+                
+                const batchEmbeddings = await runEmbeddingBatch(batch);
+                embeddings.push(...batchEmbeddings);
+            }
+
+            const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+            updateStats('stat-time', duration + 's');
+            updateStats('stat-dims', embeddings[0].length);
+            
+            updateStatus(`✅ Computed ${embeddings.length} embeddings.`, 'success');
+            document.getElementById('generate-umap').disabled = false;
+
+        } catch (e) {
+            console.error(e);
+            updateStatus(`❌ Embedding Failed: ${e.message}`, 'error');
+        } finally {
+            btn.classList.remove('is-loading');
+            btn.disabled = false;
+        }
+    }
+
+    async function generateUMAP() {
+        if (embeddings.length === 0) return;
+
+        const btn = document.getElementById('generate-umap');
+        btn.classList.add('is-loading');
+        btn.disabled = true;
+
+        try {
+            const nNeighbors = parseInt(document.getElementById('n-neighbors').value) || 15;
+            const minDist = parseFloat(document.getElementById('min-dist').value) || 0.1;
+
+            updateStatus(`Running UMAP...`, 'loading');
+            const startTime = performance.now();
+
+            const umap = new UMAP({ nComponents: 3, nNeighbors, minDist });
+            const projected = umap.fit(embeddings);
+
+            const duration = ((performance.now() - startTime) / 1000).toFixed(1);
+            updateStats('stat-time', duration + 's');
+
+            renderScatterGL(projected);
+            
+            updateStatus('Done!', 'success');
+            document.getElementById('reset-view').disabled = false;
+
+        } catch (e) {
+            console.error(e);
+            updateStatus(`❌ UMAP Failed: ${e.message}`, 'error');
+        } finally {
+            btn.classList.remove('is-loading');
+            btn.disabled = false;
+        }
+    }
+
+    function renderScatterGL(points) {
+        const container = document.getElementById('scattergl-container');
+        container.innerHTML = ''; // Clear previous
+
+        try {
+            if (!window.WebGLRenderingContext) {
+                 throw new Error("WebGL is not supported in this browser.");
+            }
+
+            const metadata = activeSentences.map((s, i) => ({ label: s }));
+            const dataset = new ScatterGL.Dataset(points, metadata);
+
+            const tooltip = document.getElementById('tooltip-bubble-3d');
+
+            scatterGL = new ScatterGL(container, {
+                renderMode: 'POINT',
+                selectEnabled: true,
+                rotateOnStart: true,
+                onHover: (point) => {
+                    if (point === null) {
+                        tooltip.style.display = 'none';
+                    } else {
+                        const text = metadata[point].label;
+                        tooltip.textContent = text;
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = '20px';
+                        tooltip.style.top = '20px';
+                    }
+                },
+                pointColorer: (i) => '#4285F4',
+                orbitControls: {
+                    zoomSpeed: 1.125
+                }
+            });
+
+            scatterGL.render(dataset);
+            updateStats('stat-points', points.length);
+        } catch (e) {
+            console.error(e);
+            updateStatus(`❌ ScatterGL Error: ${e.message}`, 'error');
+            container.innerHTML = `<div style="padding:20px; color:red;">Visualization failed: ${e.message}</div>`;
+        }
+    }
+
+    function resetView() {
+        if (scatterGL) {
+            scatterGL.resetZoom();
+            scatterGL.startOrbitAnimation();
+        }
+    }
+
+    // --- Initialization ---
+    
+    // Bind events
+    document.getElementById('load-default-data').addEventListener('click', loadDefaultData);
+    document.getElementById('file-upload').addEventListener('change', handleFileUpload);
+    document.getElementById('compute-embeddings').addEventListener('click', computeEmbeddings);
+    document.getElementById('generate-umap').addEventListener('click', generateUMAP);
+    document.getElementById('reset-view').addEventListener('click', resetView);
+
+    // Auto-init model on load
+    initModel();
+    loadDefaultData(); 
+
+</script>
+</body>
+</html>
