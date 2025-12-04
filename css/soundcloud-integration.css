@@ -1,0 +1,122 @@
+
+#soundcloud-section {
+    width: 100%;
+    background-color: #ffffff;
+    padding: 40px 0;
+    overflow: hidden; /* container handles scroll */
+    position: relative;
+    z-index: 10;
+}
+
+#soundcloud-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 40px;
+    padding: 20px 40px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sc-year-section {
+    flex: 0 0 auto;
+    width: 600px; /* Reduced width for horizontal scrolling but enough for bento grid */
+}
+
+.sc-year-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #333; /* Dark text on white background */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sc-year-title::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 24px;
+    background-color: #FF5500;
+    border-radius: 4px;
+}
+
+.sc-bento-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 150px);
+    gap: 12px;
+}
+
+.sc-track-card {
+    background-color: #1A1A1A;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.sc-track-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+.sc-track-card.hero { grid-column: span 2; grid-row: span 2; }
+.sc-track-card.wide { grid-column: span 2; }
+.sc-track-card.standard { grid-column: span 1; }
+
+.sc-track-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.5s ease;
+}
+
+.sc-track-card:hover .sc-track-bg { transform: scale(1.1); }
+
+.sc-track-overlay {
+    position: absolute;
+    bottom: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.sc-rank-badge {
+    position: absolute;
+    top: 12px; left: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sc-track-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #fff;
+}
+
+.sc-track-artist {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

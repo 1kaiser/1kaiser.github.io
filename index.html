@@ -59,6 +59,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
   <!-- External CSS -->
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/soundcloud-integration.css">
 </head>
 <body>
   <!-- Draggable Server Status Window -->
@@ -95,6 +96,16 @@
   </div>
   <div id="gallery-root">
     <!-- The React Gallery will be rendered here -->
+  </div>
+
+  <!-- SoundCloud Rewind Section -->
+  <div id="soundcloud-section">
+      <div class="title-container" style="position: static; transform: none; text-align: left; padding-left: 40px; margin-bottom: 20px;">
+          <h2 style="font-size: 2rem; margin: 0; color: #333;">Your Playback Rewind</h2>
+      </div>
+      <div id="soundcloud-container">
+          <!-- Populated by JS -->
+      </div>
   </div>
 
   <!-- Modal overlay for enlarged model view -->
@@ -160,6 +171,7 @@
   <script src="js/piping-utils.js"></script>
   <script src="js/qr-deploy.js"></script>
   <script src="js/app.js" defer></script>
+  <script src="js/soundcloud-integration.js"></script>
   <!-- Vue App -->
   <script src="js/gallery-vue.js"></script>
 </body>
