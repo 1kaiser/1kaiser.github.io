@@ -1,7 +1,9 @@
 
 #soundcloud-section {
-    width: 100%;
-    background-color: #ffffff;
+    width: calc(100% + 40px);
+    margin-left: -20px;
+    margin-right: -20px;
+    background-color: transparent;
     padding: 40px 0;
     overflow: hidden; /* container handles scroll */
     position: relative;
@@ -15,11 +17,13 @@
     padding: 20px 40px;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
 }
 
 .sc-year-section {
     flex: 0 0 auto;
     width: 600px; /* Reduced width for horizontal scrolling but enough for bento grid */
+    scroll-snap-align: center;
 }
 
 .sc-year-title {

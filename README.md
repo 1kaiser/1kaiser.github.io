@@ -123,3 +123,13 @@ The GIF was created using the following process:
 This GIF demonstrates the horizontal scrolling feature of the timeline on the `experiments.html` page.
 
 ![Timeline Scrolling GIF](timeline_scrolling.gif)
+
+## SoundCloud Integration
+
+This section showcases the SoundCloud Playback Rewind feature, integrated directly into the main page. It displays the top tracks in a horizontal, bento-style grid.
+
+![SoundCloud Integration](soundcloud_integration.png)
+
+### Interaction
+
+![SoundCloud Interaction](soundcloud_interaction.gif)
