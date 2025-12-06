@@ -206,35 +206,46 @@
         /* Calculation Breakdown Styles */
         .calculation-container {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 20%;
-            background: white;
-            border-top: 2px solid #ddd;
-            padding: 10px 20px;
+            top: 450px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            min-width: 800px;
+            max-width: 98vw;
+            height: auto;
+            min-height: 200px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px 30px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            gap: 15px;
+            justify-content: center;
             z-index: 900;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.05);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
         }
 
         .calculation-container.placeholder {
             justify-content: center;
             align-items: center;
-            color: #888;
-            font-size: 1.2em;
+            color: #6b7280;
+            font-size: 1.1em;
+            background: rgba(255, 255, 255, 0.9);
         }
 
         .calc-row {
             display: flex;
             align-items: center;
-            height: 45%;
+            justify-content: center;
+            flex-wrap: nowrap;
             width: 100%;
             overflow-x: auto;
+            padding: 5px 0;
         }
 
         .path-label {
@@ -263,16 +274,23 @@
         }
 
         .step-box {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 5px 10px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 12px;
             min-width: 120px;
             text-align: center;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .step-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
         .step-title {
@@ -303,9 +321,11 @@
         }
 
         .arrow {
-            color: #adb5bd;
-            font-weight: bold;
-            margin: 0 10px;
+            color: #cbd5e1;
+            font-weight: 300;
+            margin: 0 15px;
+            font-size: 1.5em;
+            user-select: none;
         }
 
         .interaction-info {
@@ -326,6 +346,9 @@
     </div>
 
     <script type="module">
+        // Import transformers from CDN as requested for "single file" structure
+        // Using latest alpha version from huggingface to ensure support for latest ONNX IR versions
+        import { AutoModel, AutoTokenizer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.1';
         const { createApp, ref, reactive, watch, onMounted } = Vue;
 
         // --- D3 Conventions ---
@@ -403,62 +426,109 @@
 
         applyD3Conventions();
 
-        // --- EmbeddingGemma Demo Logic (Simulated Semantic Embeddings) ---
+        // --- EmbeddingGemma (Real Implementation via @huggingface/transformers in Main Thread) ---
         class EmbeddingGemmaManager {
             constructor() {
-                this.instance = null;
+                this.model = null;
+                this.tokenizer = null;
                 this.isLoading = false;
                 this.isReady = false;
-                this.modelName = "onnx-community/embeddinggemma-300m-ONNX (Demo)";
-                this.embeddingDimension = 768;
+                this.modelName = "onnx-community/embeddinggemma-300m-ONNX"; 
             }
 
             async initialize() {
-                console.log('🚀 TextGraph: Auto-initializing EmbeddingGemma Demo...');
-                this.isReady = true;
-                this.instance = { demo: true };
+                if (this.model) return;
+                console.log('🚀 TextGraph: Initializing EmbeddingGemma (Main Thread)...');
+                
+                this.isLoading = true;
+                window.dispatchEvent(new CustomEvent('embedding-progress', {
+                    detail: { progress: 0, status: "Checking device...", isLoading: true }
+                }));
+                // Yield to UI to allow render
+                await new Promise(r => setTimeout(r, 50));
+
+                let isWebGPUAvailable = false;
+                if (navigator.gpu) {
+                    try {
+                        isWebGPUAvailable = !!(await navigator.gpu.requestAdapter());
+                    } catch (e) {
+                        console.warn("WebGPU not available:", e);
+                    }
+                }
+                const device = isWebGPUAvailable ? "webgpu" : "wasm";
+                console.log(`Using device: ${device}`);
+
+                try {
+                    window.dispatchEvent(new CustomEvent('embedding-progress', {
+                        detail: { progress: 10, status: `Device: ${device}. Loading tokenizer...`, isLoading: true }
+                    }));
+
+                    this.tokenizer = await AutoTokenizer.from_pretrained(this.modelName);
+                    
+                    // Verify tokenizer works
+                    const testToken = this.tokenizer(['test'], { padding: true, truncation: true });
+                    console.log('✅ Tokenizer loaded and tested.', testToken);
+
+                    window.dispatchEvent(new CustomEvent('embedding-progress', {
+                        detail: { progress: 30, status: `Device: ${device}. Loading model...`, isLoading: true }
+                    }));
+
+                    this.model = await AutoModel.from_pretrained(this.modelName, {
+                        device,
+                        dtype: "q4",
+                        model_file_name: isWebGPUAvailable ? "model_no_gather" : "model",
+                        progress_callback: (progress) => {
+                            if (progress.status === 'progress') {
+                                const p = Math.round(progress.loaded / progress.total * 100);
+                                const status = `Loading: ${p}% (${progress.file})`;
+                                console.log(status);
+                                window.dispatchEvent(new CustomEvent('embedding-progress', {
+                                    detail: { progress: p, status: status, isLoading: true }
+                                }));
+                            } else {
+                                console.log(`Model loading status: ${progress.status}`);
+                                window.dispatchEvent(new CustomEvent('embedding-progress', {
+                                    detail: { progress: 0, status: progress.status, isLoading: true }
+                                }));
+                            }
+                        }
+                    });
+                    
+                    this.isReady = true;
+                    this.isLoading = false;
+                    window.dispatchEvent(new CustomEvent('embedding-progress', {
+                        detail: { progress: 100, status: "Ready", isLoading: false }
+                    }));
+                    console.log('✅ TextGraph: Model loaded.');
+                } catch (e) {
+                    console.error("Model load failed", e);
+                    this.isLoading = false;
+                    window.dispatchEvent(new CustomEvent('embedding-progress', {
+                        detail: { progress: 0, status: "Error loading model", isLoading: false }
+                    }));
+                    throw e;
+                }
             }
 
             async generateEmbeddings(texts, taskType = 'document') {
-                console.log(`🔄 TextGraph: Generating ${taskType} embeddings for ${texts.length} texts (Demo)...`);
-                return texts.map(text => this.generateSemanticEmbedding(text, taskType));
-            }
+                if (!this.model) await this.initialize();
+                
+                console.log(`🔄 Generating embeddings for ${texts.length} texts...`);
+                window.dispatchEvent(new CustomEvent('embedding-progress', {
+                    detail: { progress: 50, status: `Generating embeddings for ${texts.length} tokens...`, isLoading: true }
+                }));
+                // Yield to UI
+                await new Promise(r => setTimeout(r, 20));
 
-            generateSemanticEmbedding(text, taskType) {
-                const cleanText = text.toLowerCase().replace(/[^a-zA-Z\s]/g, '');
-                const embedding = new Array(768).fill(0);
-
-                let semanticSeed = 0;
-                for (let i = 0; i < cleanText.length; i++) {
-                    semanticSeed += cleanText.charCodeAt(i) * (i + 1);
-                }
-
-                const vowelCount = (cleanText.match(/[aeiou]/g) || []).length;
-                const vowelDensity = vowelCount / Math.max(1, cleanText.length);
-                const wordHash = this.hashText(cleanText);
-                const taskBias = taskType === 'query' ? 0.15 : -0.15;
-
-                for (let d = 0; d < 768; d++) {
-                    let value = 0;
-                    value += Math.sin(semanticSeed * 0.001 * (d + 1)) * 0.3;
-                    value += Math.cos(semanticSeed * 0.002 * (d + 1)) * 0.2;
-                    value += Math.sin(cleanText.length * 0.1 * (d + 1)) * 0.1;
-                    value += Math.sin(vowelDensity * Math.PI * (d + 1)) * 0.1;
-                    value += taskBias * Math.cos((d + 1) * 0.01);
-                    value += Math.sin(wordHash * 0.0001 * (d + 1)) * 0.15;
-                    embedding[d] = Math.tanh(value);
-                }
-                return embedding;
-            }
-
-            hashText(text) {
-                let hash = 0;
-                for (let i = 0; i < text.length; i++) {
-                    const char = text.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash;
-                }
-                return Math.abs(hash);
+                // Run inference
+                // inputs: dict of tensors
+                const inputs = await this.tokenizer(texts, { padding: true, truncation: true });
+                const { sentence_embedding } = await this.model(inputs);
+                
+                window.dispatchEvent(new CustomEvent('embedding-progress', {
+                    detail: { progress: 100, status: "Ready", isLoading: false }
+                }));
+                return sentence_embedding.tolist();
             }
 
             calculateCosineSimilarity(embeddingA, embeddingB) {
@@ -477,8 +547,8 @@
             }
 
             async createEmbeddingAttentionMatrix(tokens, context = 'document') {
-                const taskType = context === 'query' ? 'query' : 'document';
-                const embeddings = await this.generateEmbeddings(tokens, taskType);
+                // Generate embeddings for all tokens
+                const embeddings = await this.generateEmbeddings(tokens, context);
 
                 const attentionMatrix = [];
                 let minAttention = 1.0;
@@ -488,10 +558,10 @@
                     const row = [];
                     for (let j = 0; j < tokens.length; j++) {
                         if (i === j) {
-                            row.push(0); // Self-attention placeholder (handled later by educational logic)
+                            row.push(0); 
                         } else {
                             const similarity = this.calculateCosineSimilarity(embeddings[i], embeddings[j]);
-                            const attention = (similarity + 1) / 2; // Normalize [-1, 1] to [0, 1]
+                            const attention = (similarity + 1) / 2;
                             row.push(attention);
                             if (attention > maxAttention) maxAttention = attention;
                             if (attention < minAttention && attention > 0) minAttention = attention;
@@ -508,14 +578,13 @@
                     maxAttention: maxAttention,
                     computationDetails: {
                         model: this.modelName,
-                        method: 'EmbeddingGemma Cosine Similarity (Demo)'
+                        method: 'Transformers.js (AutoModel)'
                     }
                 };
             }
         }
 
         const embeddingGemmaManager = new EmbeddingGemmaManager();
-        embeddingGemmaManager.initialize();
         window.EmbeddingGemmaManager = embeddingGemmaManager;
 
         // --- GAT Logic ---
@@ -1130,10 +1199,11 @@
                 this.render();
             }
 
-            render() {
+            render(embeddings = null) {
                 this.rectSel.selectAll('*').remove();
                 this.wordSel.selectAll('*').remove();
                 this.arrowSel.selectAll('*').remove();
+                this.sel.selectAll('canvas.embedding-viz').remove();
 
                 const words = this.inputNode.value.split(' ').map((word, i) => ({ word, i }));
                 const wordDimensions = this.precomputeTextDimensions(words.map(w => w.word));
@@ -1197,7 +1267,18 @@
                         .attr('font-size', fontSize)
                         .attr('pointer-events', 'none')
                         .text(d.word);
+
+                    if (embeddings && embeddings[i]) {
+                        // Render embedding visualization below the node
+                        const vizWidth = d.width + pad * 2;
+                        const vizHeight = 10;
+                    }
                 });
+                
+                // Post-process for embeddings if available
+                if (embeddings) {
+                    this.renderNodeEmbeddings(embeddings, wordPositions);
+                }
 
                 const blue = d3.color('steelblue').darker(-.5);
                 wordPositions.forEach((d, i) => {
@@ -1306,6 +1387,65 @@
                     height: fontSize * 1.2
                 }));
             }
+
+            renderNodeEmbeddings(embeddings, wordPositions) {
+                // Calculate offset same as render()
+                const screenWidth = window.innerWidth;
+                const pad = 5;
+                const maxLineWidth = Math.max(...Array.from(new Set(wordPositions.map(w => w.line)))
+                    .map(lineNum => {
+                        const lineWords = wordPositions.filter(w => w.line === lineNum);
+                        const lastWord = lineWords[lineWords.length - 1];
+                        return lastWord.x + lastWord.width + pad * 2;
+                    }));
+                const centerOffset = (screenWidth - maxLineWidth) / 2;
+
+                wordPositions.forEach((d, i) => {
+                    if (!embeddings[i]) return;
+                    
+                    const width = d.width + pad * 2;
+                    const height = 10;
+                    // Absolute positioning calculation
+                    // rects are at: transform(centerOffset, 0) -> x: d.x - pad + padding
+                    const absX = centerOffset + (d.x - pad + padding);
+                    const absY = d.y + (100 / 4) + (100 / 2) + 25; // Below the node
+
+                    const canvas = this.sel.append('canvas')
+                        .attr('class', 'embedding-viz')
+                        .attr('width', width)
+                        .attr('height', height)
+                        .style('position', 'absolute')
+                        .style('left', absX + 'px')
+                        .style('top', absY + 'px')
+                        .style('border', '1px solid #ccc')
+                        .style('border-radius', '2px')
+                        .style('image-rendering', 'pixelated')
+                        .node();
+
+                    const ctx = canvas.getContext('2d');
+                    const vector = embeddings[i];
+                    const cols = vector.length;
+                    
+                    // Normalize
+                    let min = Infinity, max = -Infinity;
+                    vector.forEach(v => {
+                        if (v < min) min = v;
+                        if (v > max) max = v;
+                    });
+                    const range = max - min || 1;
+
+                    // Draw stretched barcodes
+                    const barWidth = width / cols;
+                    
+                    for(let k=0; k<cols; k++) {
+                        const val = vector[k];
+                        const norm = (val - min) / range;
+                        const intensity = Math.floor(norm * 255);
+                        ctx.fillStyle = `rgb(0, ${intensity}, 255)`; // Blue heatmap style
+                        ctx.fillRect(k * barWidth, 0, barWidth + 1, height); // +1 to avoid gaps
+                    }
+                });
+            }
         }
 
         // --- Vue Components ---
@@ -1334,13 +1474,22 @@
                         <div class="radio-label">
                             <span>🧠 Using EmbeddingGemma Tokenizer & Embeddings</span>
                         </div>
+                        <div v-if="isLoading" class="loading-indicator" style="margin-top: 6px;">
+                            <div style="color: #2563eb; font-weight: 500; font-size: 11px; margin-bottom: 2px; display: flex; justify-content: space-between;">
+                                <span>{{ loadingStatus }}</span>
+                                <span v-if="loadingProgress > 0">{{ loadingProgress }}%</span>
+                            </div>
+                            <div class="progress-bar-bg" style="width: 100%; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
+                                <div class="progress-bar-fill" :style="{ width: loadingProgress + '%', height: '100%', background: '#2563eb', transition: 'width 0.3s ease' }"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="button-container">
                         <button id="update-graph" class="update-btn" @click.stop="emitUpdate" @mousedown.stop>🔄 Compute GAT</button>
                     </div>
                 </div>
             `,
-            props: ['query', 'paragraph', 'isLoading'],
+            props: ['query', 'paragraph', 'isLoading', 'loadingProgress', 'loadingStatus'],
             emits: ['update:query', 'update:paragraph', 'update'],
             setup(props, { emit }) {
                 const localQuery = ref(props.query);
@@ -1392,12 +1541,6 @@
 
                 onMounted(() => {
                     // setTimeout(() => { isRealEmbeddingLoading.value = false; }, 1000);
-
-                    window.addEventListener('gat-data-calculated', (e) => {
-                        if (e.detail && e.detail.educationalGAT) {
-                            storedEducationalData = e.detail.educationalGAT;
-                        }
-                    });
                 });
 
                 return {
@@ -1447,13 +1590,28 @@
                     if (visualizationInput) {
                         visualizationInput.value = queryText;
                         visualizationInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        setTimeout(() => {
-                            applyDualAttentionColoring(educationalGAT, originalGAT, queryText);
-                            // Dispatch data for App to store
-                            window.dispatchEvent(new CustomEvent('gat-data-calculated', {
-                                detail: { educationalGAT, originalGAT }
-                            }));
-                        }, 100);
+                        
+                        // Return promise that resolves when visualization updates
+                        return new Promise(resolve => {
+                            setTimeout(() => {
+                                applyDualAttentionColoring(educationalGAT, originalGAT, queryText);
+                                
+                                // Render embedding visualizations on nodes
+                                if (textAsGraphInstance.value && educationalGAT.embeddings) {
+                                    textAsGraphInstance.value.renderNodeEmbeddings(educationalGAT.embeddings, textAsGraphInstance.value.latestWordPositions || []);
+                                    // Note: renderNodeEmbeddings requires word positions. TextAsGraph keeps track of them internally? 
+                                    // TextAsGraph.render calculates them locally. We should probably just trigger a re-render.
+                                    // Modified TextAsGraph.render to accept embeddings.
+                                    textAsGraphInstance.value.render(educationalGAT.embeddings);
+                                }
+
+                                // Dispatch data for App to store
+                                window.dispatchEvent(new CustomEvent('gat-data-calculated', {
+                                    detail: { educationalGAT, originalGAT }
+                                }));
+                                resolve();
+                            }, 100);
+                        });
                     }
                 };
 
@@ -1514,11 +1672,11 @@
                             </div>
                             <div class="viz-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 5px;">
                                 <div style="font-size: 9px; color: #666; margin-bottom: 2px;">Source (i) & Target (j)</div>
-                                <canvas ref="canvasEduEmbSource" width="64" height="8" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 8px; margin-bottom: 2px;"></canvas>
-                                <canvas ref="canvasEduEmbTarget" width="64" height="8" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 8px;"></canvas>
+                                <canvas ref="canvasEduEmbSource" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px; margin-bottom: 2px;"></canvas>
+                                <canvas ref="canvasEduEmbTarget" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px;"></canvas>
                             </div>
                         </div>
-                        <div class="arrow">>></div>
+                        <div class="arrow">&rarr;</div>
                         <div class="step-box">
                             <div class="step-title">Dot Product Attention</div>
                             <div class="math-formula">
@@ -1528,7 +1686,7 @@
                                 Raw: {{ details.eduDotProduct.toFixed(4) }}
                             </div>
                         </div>
-                        <div class="arrow">>></div>
+                        <div class="arrow">&rarr;</div>
                         <div class="step-box">
                             <div class="step-title">Raw Attention Score</div>
                             <div class="step-value highlight">
@@ -1557,7 +1715,7 @@
                                 [{{ details.origWhi.slice(0,3).map(n => n.toFixed(2)).join(', ') }}, ...]
                             </div>
                         </div>
-                        <div class="arrow">>></div>
+                        <div class="arrow">&rarr;</div>
                         <div class="step-box">
                             <div class="step-title">Concatenation</div>
                             <div class="math-formula">
@@ -1565,13 +1723,13 @@
                             </div>
                             <div class="viz-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 5px;">
                                 <div style="font-size: 9px; color: #666; margin-bottom: 2px;">Concat (64D)</div>
-                                <canvas ref="canvasConcat" width="64" height="8" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 8px;"></canvas>
+                                <canvas ref="canvasConcat" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px;"></canvas>
                             </div>
                             <div class="step-value" v-if="details.origConcat && details.origConcat.length" style="font-size: 0.7em; color: #555;">
                                 Size: {{ details.origConcat.length }}D
                             </div>
                         </div>
-                        <div class="arrow">>></div>
+                        <div class="arrow">&rarr;</div>
                         <div class="step-box">
                             <div class="step-title">Attention Vector</div>
                             <div class="math-formula">
@@ -1579,13 +1737,13 @@
                             </div>
                             <div class="viz-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 5px;">
                                 <div style="font-size: 9px; color: #666; margin-bottom: 2px;">Vector a (64D)</div>
-                                <canvas ref="canvasA" width="64" height="8" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 8px;"></canvas>
+                                <canvas ref="canvasA" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px;"></canvas>
                             </div>
                             <div class="step-value" v-if="details.origRawPreLeaky !== undefined" style="font-size: 0.8em; color: #555;">
                                 = {{ details.origRawPreLeaky.toFixed(4) }}
                             </div>
                         </div>
-                        <div class="arrow">>></div>
+                        <div class="arrow">&rarr;</div>
                         <div class="step-box">
                             <div class="step-title">Raw Attention Score</div>
                             <div class="step-value highlight" v-if="details.origScore !== undefined">
@@ -1626,16 +1784,24 @@
 
                     const range = maxVal - minVal || 1;
 
-                    for (let i = 0; i < flatData.length; i++) {
-                        const val = flatData[i];
-                        const norm = (val - minVal) / range;
-                        // Blue colormap: lighter is higher
-                        const intensity = Math.floor(norm * 255);
+                    for (let y = 0; y < rows; y++) {
+                        for (let x = 0; x < cols; x++) {
+                            // If vector, reuse the same data for all rows (stretch vertical)
+                            // If matrix, flatten normally row-major
+                            const val = isVector ? flatData[x] : flatData[y * cols + x];
 
-                        imgData.data[i * 4 + 0] = 0;   // R
-                        imgData.data[i * 4 + 1] = intensity; // G
-                        imgData.data[i * 4 + 2] = 255; // B
-                        imgData.data[i * 4 + 3] = 255; // Alpha
+                            // Handle potential bounds issues if data is smaller than cols
+                            if (val === undefined) continue;
+
+                            const norm = (val - minVal) / range;
+                            const intensity = Math.floor(norm * 255);
+
+                            const i = (y * cols + x) * 4;
+                            imgData.data[i + 0] = 0;   // R
+                            imgData.data[i + 1] = intensity; // G
+                            imgData.data[i + 2] = 255; // B
+                            imgData.data[i + 3] = 255; // Alpha
+                        }
                     }
                     ctx.putImageData(imgData, 0, 0);
                 };
@@ -1645,10 +1811,10 @@
                         // Wait for DOM update
                         setTimeout(() => {
                             if (newVal.W) drawMatrix(canvasW.value, newVal.W, 32, 64); // W is 32x64
-                            if (newVal.origConcat) drawMatrix(canvasConcat.value, newVal.origConcat, 1, 64, true);
-                            if (newVal.a) drawMatrix(canvasA.value, newVal.a, 1, 64, true);
-                            if (newVal.eduEmbSource && newVal.eduEmbSource.length) drawMatrix(canvasEduEmbSource.value, newVal.eduEmbSource, 1, Math.min(64, newVal.eduEmbSource.length), true);
-                            if (newVal.eduEmbTarget && newVal.eduEmbTarget.length) drawMatrix(canvasEduEmbTarget.value, newVal.eduEmbTarget, 1, Math.min(64, newVal.eduEmbTarget.length), true);
+                            if (newVal.origConcat) drawMatrix(canvasConcat.value, newVal.origConcat, 32, 64, true);
+                            if (newVal.a) drawMatrix(canvasA.value, newVal.a, 32, 64, true);
+                            if (newVal.eduEmbSource && newVal.eduEmbSource.length) drawMatrix(canvasEduEmbSource.value, newVal.eduEmbSource, 32, Math.min(64, newVal.eduEmbSource.length), true);
+                            if (newVal.eduEmbTarget && newVal.eduEmbTarget.length) drawMatrix(canvasEduEmbTarget.value, newVal.eduEmbTarget, 32, Math.min(64, newVal.eduEmbTarget.length), true);
                         }, 50);
                     }
                 }, { deep: true });
@@ -1669,6 +1835,8 @@
                         v-model:query="queryText"
                         v-model:paragraph="paragraphText"
                         :is-loading="isLoading"
+                        :loading-progress="loadingProgress"
+                        :loading-status="loadingStatus"
                         @update="handleUpdate"
                     />
                     <GraphVisualizer
@@ -1684,6 +1852,8 @@
                 const queryText = ref('Graph attention mechanisms capture relationships');
                 const paragraphText = ref('Neural networks are powerful machine learning models. Graph attention mechanisms capture complex relationships between words. These models can transform how we process natural language understanding.');
                 const isLoading = ref(false);
+                const loadingProgress = ref(0);
+                const loadingStatus = ref('Initializing...');
                 const graphVisualizer = ref(null);
 
                 const interactionDetails = reactive({
@@ -1704,15 +1874,41 @@
                     a: null
                 });
 
-                let storedEducationalData = null;
+                // Use a ref to ensure it's available across the component scope
+                const storedEducationalData = ref(null);
 
-                const handleUpdate = () => {
+                const handleUpdate = async () => {
                     if (graphVisualizer.value) {
-                        graphVisualizer.value.updateGraph();
+                        isLoading.value = true;
+                        try {
+                            await graphVisualizer.value.updateGraph();
+                        } finally {
+                            isLoading.value = false;
+                        }
                     }
                 };
 
                 onMounted(() => {
+                    // Listen for global data events to update stored data
+                    window.addEventListener('gat-data-calculated', (e) => {
+                        console.log("App received gat-data-calculated", e.detail);
+                        storedEducationalData.value = e.detail.educationalGAT;
+                        // Also update currentOriginalGATParams if they were regenerated
+                    });
+
+                    // Listen for embedding progress
+                    window.addEventListener('embedding-progress', (e) => {
+                        if (e.detail.progress !== undefined) {
+                            loadingProgress.value = e.detail.progress;
+                        }
+                        if (e.detail.isLoading !== undefined) {
+                            isLoading.value = e.detail.isLoading;
+                        }
+                        if (e.detail.status !== undefined) {
+                            loadingStatus.value = e.detail.status;
+                        }
+                    });
+
                     window.addEventListener('gat-interaction', (e) => {
                         const { sourceIndex, targetIndex, sourceWord, targetWord, active } = e.detail;
                         interactionDetails.active = active;
@@ -1744,10 +1940,15 @@
                                 let embI = [];
                                 let embJ = [];
 
-                                if (storedEducationalData && storedEducationalData.embeddings) {
+                                // Check if we have valid stored data that matches current query length
+                                const hasValidStoredData = storedEducationalData.value && 
+                                                         storedEducationalData.value.embeddings && 
+                                                         storedEducationalData.value.embeddings.length === qTokens.length;
+
+                                if (hasValidStoredData) {
                                     // Use real stored embeddings
-                                    embI = storedEducationalData.embeddings[sourceIndex];
-                                    embJ = storedEducationalData.embeddings[targetIndex];
+                                    embI = storedEducationalData.value.embeddings[sourceIndex];
+                                    embJ = storedEducationalData.value.embeddings[targetIndex];
 
                                     // Recalculate dot product using these embeddings to be sure
                                     for (let d = 0; d < embI.length; d++) {
@@ -1755,6 +1956,7 @@
                                     }
                                 } else {
                                     // Fallback to recalculating synthetic if missing
+                                    // console.warn("Missing or invalid stored educational data, using synthetic fallback");
                                     const embeddings = createEmbeddingMatrix(pTokens, qTokens);
                                     embI = embeddings[sourceIndex];
                                     embJ = embeddings[targetIndex];
@@ -1775,28 +1977,15 @@
                                 // Compute Original Score
                                 // We use the stored params W and a
                                 if (currentOriginalGATParams.W && currentOriginalGATParams.a) {
+                                    // console.log("Updating Original GAT calculation for", sourceIndex, targetIndex);
                                     const nodeFeatures = createOriginalNodeFeatures(pTokens, qTokens);
                                     const W = currentOriginalGATParams.W;
                                     const a = currentOriginalGATParams.a;
 
-                                    const h_i = matrixVectorMultiply([nodeFeatures[sourceIndex]], W)[0]; // matrixVectorMultiply expects matrix, so wrap in array
-                                    // Wait, matrixVectorMultiply(matrix, vector) -> result vector.
-                                    // W is [32][64]. nodeFeature is [64]. Result is [32].
-
-                                    const transformFeature = (feat) => {
-                                        const res = [];
-                                        for(let r=0; r<W.length; r++) {
-                                            let sum = 0;
-                                            for(let c=0; c<W[r].length; c++) {
-                                                sum += W[r][c] * feat[c];
-                                            }
-                                            res.push(sum);
-                                        }
-                                        return res;
-                                    };
-
-                                    const Wh_i = transformFeature(nodeFeatures[sourceIndex]);
-                                    const Wh_j = transformFeature(nodeFeatures[targetIndex]);
+                                    // Correct usage: matrixVectorMultiply(matrix, vector)
+                                    // W is the matrix (32x64), nodeFeatures is the vector (64)
+                                    const Wh_i = matrixVectorMultiply(W, nodeFeatures[sourceIndex]);
+                                    const Wh_j = matrixVectorMultiply(W, nodeFeatures[targetIndex]);
 
                                     const concat = [...Wh_i, ...Wh_j];
                                     let e_ij = 0;
@@ -1817,7 +2006,7 @@
                 });
 
                 return {
-                    queryText, paragraphText, isLoading, graphVisualizer, handleUpdate, interactionDetails
+                    queryText, paragraphText, isLoading, loadingProgress, loadingStatus, graphVisualizer, handleUpdate, interactionDetails
                 };
             }
         };
