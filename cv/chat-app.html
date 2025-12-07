@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🪩 Gemma 3 270M - Universal Browser AI 🪩</title>
+    <title>Universal Browser AI - Gemma & Granite</title>
     <style>
         * {
             margin: 0;
@@ -28,7 +28,7 @@
             border: 1px solid rgba(0, 0, 0, 0.05);
             width: 100%;
             max-width: 800px;
-            height: 600px;
+            height: 700px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -48,24 +48,26 @@
             font-size: 24px;
             margin-bottom: 8px;
         }
+
+        .model-selector-container {
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
         
         .status {
             font-size: 14px;
             color: #6b7280;
             min-height: 20px;
             margin-bottom: 8px;
-        }
-        
-        .source-link {
-            font-size: 12px;
-            color: #3b82f6;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-        
-        .source-link:hover {
-            color: #1d4ed8;
-            text-decoration: underline;
         }
         
         .resource-monitor {
@@ -347,7 +349,7 @@
 <body>
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-card">
-            <h2 class="loading-title">🪩 Gemma 3 270M 🪩</h2>
+            <h2 class="loading-title" id="loadingTitle">Loading Model...</h2>
             <p class="loading-subtitle" id="loadingStatus">Initializing device capabilities...</p>
             
             <div class="progress-ring">
@@ -375,15 +377,11 @@
                 </div>
                 <div class="feature-item">
                     <span class="feature-icon">⚡</span>
-                    <span>170M embedding + 100M transformer parameters with 256k token vocabulary</span>
+                    <span>Optimized for low-latency inference</span>
                 </div>
                 <div class="feature-item">
                     <span class="feature-icon">🗄️</span>
-                    <span>Smart caching - 5-15s loads after first download</span>
-                </div>
-                <div class="feature-item">
-                    <span class="feature-icon">🌐</span>
-                    <span>No internet required after initial load</span>
+                    <span>Smart caching enabled</span>
                 </div>
             </div>
         </div>
@@ -391,21 +389,20 @@
 
     <div class="container">
         <div class="header">
-            <h1>🪩 <a href="https://huggingface.co/onnx-community/gemma-3-270m-it-ONNX" target="_blank" style="color: inherit; text-decoration: none;">Gemma 3 270M</a> 🪩</h1>
-            <div class="status" id="status">Universal Browser Support + Transformers.js + Web Workers</div>
+            <h1 id="headerTitle">Universal Browser AI</h1>
+            <div class="model-selector-container">
+                <label for="modelSelector" style="font-size: 14px; font-weight: 600; margin-right: 8px;">Model:</label>
+                <select id="modelSelector">
+                    <option value="onnx-community/gemma-3-270m-it-ONNX">Gemma 3 270M Instruct</option>
+                    <option value="onnx-community/granite-4.0-350m-ONNX-web">Granite 4.0 350M Instruct</option>
+                </select>
+            </div>
+            <div class="status" id="status">Ready</div>
             <button id="shutdownButton" style="position: absolute; top: 15px; right: 15px; background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
                 🔌 Shutdown
             </button>
             
             <div class="resource-monitor" id="resourceMonitor" style="display: none;">
-                <div class="resource-item">
-                    <span>Memory:</span>
-                    <span class="resource-value" id="memoryUsage">-</span>
-                </div>
-                <div class="resource-item">
-                    <span>CPU:</span>
-                    <span class="resource-value" id="cpuUsage">-</span>
-                </div>
                 <div class="resource-item">
                     <span>Model:</span>
                     <span class="resource-value" id="modelStatus">Loading</span>
@@ -423,7 +420,7 @@
         
         <div id="chatMessages">
             <div class="message ai-message">
-                👋 Hello! I'm Gemma 3 270M, running entirely in your browser with automatic WebGPU/WASM fallback. Ask me anything!
+                👋 Hello! Select a model to start chatting. I run entirely in your browser!
             </div>
         </div>
         
@@ -440,7 +437,244 @@
         </div>
     </div>
     
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module">
+        import { pipeline, TextStreamer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
+
+        // Configuration
+        // env.allowLocalModels = false;
+        // env.useBrowserCache = true;
+        
+        // State
+        const loadedPipelines = {}; // Cache for loaded pipelines
+        let currentPipeline = null;
+        let currentModelId = null;
+        let abortController = null;
+        let messages = [
+            { role: "system", content: "You are a helpful assistant." }
+        ];
+
+        // UI Elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingTitle = document.getElementById('loadingTitle');
+        const loadingStatus = document.getElementById('loadingStatus');
+        const progressPercentage = document.getElementById('progressPercentage');
+        const progressRingFill = document.getElementById('progressRingFill');
+        const chatInput = document.getElementById('chatInput');
+        const sendButton = document.getElementById('sendButton');
+        const stopButton = document.getElementById('stopButton');
+        const chatMessages = document.getElementById('chatMessages');
+        const modelStatus = document.getElementById('modelStatus');
+        const runtimeType = document.getElementById('runtimeType');
+        const messageCount = document.getElementById('messageCount');
+        const resourceMonitor = document.getElementById('resourceMonitor');
+        const modelSelector = document.getElementById('modelSelector');
+        const headerTitle = document.getElementById('headerTitle');
+
+        // Progress Ring Helper
+        const setProgress = (percent) => {
+            const circumference = 314; 
+            const offset = circumference - (percent / 100) * circumference;
+            progressRingFill.style.strokeDashoffset = offset;
+            progressPercentage.textContent = `${Math.round(percent)}%`;
+        };
+
+        // Load Model Function
+        async function loadModel(modelId) {
+            if (currentModelId === modelId && currentPipeline) {
+                console.log("Model already loaded and active.");
+                return;
+            }
+
+            // Check cache
+            if (loadedPipelines[modelId]) {
+                console.log(`Restoring ${modelId} from cache.`);
+                currentPipeline = loadedPipelines[modelId];
+                currentModelId = modelId;
+                updateUIForActiveModel(modelId);
+                return;
+            }
+
+            // Start Loading
+            loadingOverlay.classList.remove('hidden');
+            loadingTitle.textContent = `Loading ${modelId.split('/').pop()}...`;
+            loadingStatus.textContent = "Initializing...";
+            setProgress(0);
+            
+            try {
+                // Check WebGPU
+                let device = "wasm";
+                if (navigator.gpu) {
+                    try {
+                        const adapter = await navigator.gpu.requestAdapter();
+                        if (adapter) device = "webgpu";
+                    } catch (e) {
+                        console.warn("WebGPU not available:", e);
+                    }
+                }
+                
+                loadingStatus.textContent = `Initializing ${device} backend...`;
+                runtimeType.textContent = device;
+
+                // Load Pipeline
+                const generator = await pipeline('text-generation', modelId, {
+                    device,
+                    dtype: "q4", 
+                    progress_callback: (progress) => {
+                         if (progress.status === "progress") {
+                            const percent = (progress.loaded / progress.total) * 100;
+                            if (progress.file.includes("onnx")) {
+                                setProgress(percent);
+                                loadingStatus.textContent = `Downloading model... ${Math.round(percent)}%`;
+                            } else {
+                                loadingStatus.textContent = `Downloading ${progress.file}...`;
+                            }
+                        } else if (progress.status === "ready") {
+                            loadingStatus.textContent = "Compiling shaders (if WebGPU)...";
+                        } else if (progress.status === "initiate") {
+                             loadingStatus.textContent = `Starting download of ${progress.file}...`;
+                        }
+                    }
+                });
+
+                // Cache it
+                loadedPipelines[modelId] = generator;
+                currentPipeline = generator;
+                currentModelId = modelId;
+                
+                updateUIForActiveModel(modelId);
+
+            } catch (error) {
+                console.error(error);
+                loadingStatus.textContent = `Error: ${error.message}`;
+                loadingStatus.style.color = "red";
+                document.querySelector('.loading-card').innerHTML += `<div class="error-message">${error.message}</div>`;
+            }
+        }
+
+        function updateUIForActiveModel(modelId) {
+            loadingOverlay.classList.add('hidden');
+            resourceMonitor.style.display = 'block';
+            modelStatus.textContent = modelId.split('/').pop();
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            chatInput.focus();
+            
+            const shortName = modelId.includes("gemma") ? "Gemma 3 270M" : "Granite 4.0 350M";
+            headerTitle.textContent = `${shortName}`;
+            
+            // Add system message about switch
+            appendMessage('ai', `Switched to ${shortName}. Ready to chat!`);
+        }
+
+        // Chat Logic
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text || !currentPipeline) return;
+
+            // User Message
+            appendMessage('user', text);
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+            stopButton.style.display = 'inline-block';
+            
+            messages.push({ role: "user", content: text });
+            updateStats();
+
+            // AI Message Placeholder
+            const responseDiv = appendMessage('ai', '');
+            modelStatus.textContent = "Generating...";
+            
+            abortController = new AbortController();
+
+            try {
+                // Streamer
+                const streamer = new TextStreamer(currentPipeline.tokenizer, {
+                    skip_prompt: true,
+                    skip_special_tokens: true,
+                    callback_function: (token) => {
+                        responseDiv.textContent += token;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                });
+
+                const output = await currentPipeline(messages, {
+                    max_new_tokens: 256,
+                    temperature: 0.7,
+                    do_sample: true,
+                    streamer: streamer,
+                });
+                
+                const fullText = output[0].generated_text;
+                const newResponse = fullText[fullText.length - 1].content;
+                
+                // Ensure content is finalized
+                responseDiv.textContent = newResponse;
+                messages.push({ role: "assistant", content: newResponse });
+
+            } catch (err) {
+                if (err.message !== "Aborted") {
+                    responseDiv.textContent += "\n[Error generating response]";
+                    console.error(err);
+                }
+            } finally {
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                stopButton.style.display = 'none';
+                modelStatus.textContent = "Idle";
+                chatInput.focus();
+                updateStats();
+                abortController = null;
+            }
+        }
+
+        function appendMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `message ${role === 'user' ? 'user-message' : 'ai-message'}`;
+            div.textContent = text;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return div;
+        }
+
+        function updateStats() {
+            messageCount.textContent = messages.length;
+        }
+
+        // Event Listeners
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        stopButton.addEventListener('click', () => {
+           if (abortController) {
+               abortController.abort();
+               abortController = null;
+           }
+        });
+
+        document.getElementById('saveButton').addEventListener('click', () => {
+            const content = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chat_history.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+        
+        modelSelector.addEventListener('change', (e) => {
+            loadModel(e.target.value);
+        });
+
+        // Initialize with default selected model
+        loadModel(modelSelector.value);
+    </script>
     <script>
         document.getElementById('shutdownButton').addEventListener('click', async () => {
             if (confirm('Are you sure you want to shutdown the server?')) {
