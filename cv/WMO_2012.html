@@ -183,6 +183,12 @@
             const searchInput = document.getElementById('search-input');
             const searchResults = document.getElementById('search-results');
 
+            // Update subtitle with item count
+            const subtitle = document.querySelector('.subtitle');
+            if (subtitle) {
+                subtitle.innerText = `${data.length} items • Orbital Controls`;
+            }
+
             var highlightedTermId = null;
             var relatedTermIds = []; // Stores IDs of related terms (lime green)
             var fuseTerms = null;
