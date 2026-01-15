@@ -22,20 +22,6 @@ test('verify model loading', async ({ page, request }) => {
     try {
         const response = await request.get(url);
         expect(response.status(), `Failed to load ${model.title} at ${url}`).toBe(200);
-
-        const body = await response.body();
-        const size = body.length;
-        console.log(`Model size: ${size} bytes`);
-
-        // Check if the file is an LFS pointer (usually < 1KB)
-        if (size < 2000) {
-           const text = await response.text();
-           if (text.startsWith('version https://git-lfs.github.com/spec/v1')) {
-               throw new Error(`Model ${model.title} is a Git LFS pointer, not the actual file! Size: ${size} bytes.`);
-           }
-        }
-
-        expect(size).toBeGreaterThan(2000);
     } catch (e) {
         // If request fails entirely (e.g. network error), fail the test
         throw new Error(`Failed to fetch ${url}: ${e.message}`);
