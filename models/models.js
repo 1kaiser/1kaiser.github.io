@@ -74,7 +74,7 @@ window.modelsConfig = [
     alt: "paneer sabji"
   },
   {
-    url: "./models/kaiser03032023.glb",
+    url: "./models/untitled-transformed.glb",
     poster: "./models/untitled-transformed.webp",
     title: "Kaiser Roy",
     description: "Kaiser_Roy",
