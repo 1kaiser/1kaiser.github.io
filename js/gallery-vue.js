@@ -5,8 +5,6 @@ const GalleryApp = {
       activeIndex: null,
       cardZIndices: [],
       zCounter: 0,
-      loadingMode: 'single', // 'single' | 'parallel'
-      loadingIndex: 0,
     };
   },
   methods: {
@@ -27,29 +25,10 @@ const GalleryApp = {
       return model.poster.startsWith('./') ? model.poster.substring(2) : model.poster;
     },
     getModelUrl(model) {
-       // Helper to resolve URL
-       if (model.url.startsWith('http')) return model.url;
-       return model.url.startsWith('./') ? model.url.substring(2) : model.url;
-    },
-    onModelLoad(index) {
-        console.log(`Model ${index} loaded`);
-        if (this.loadingMode === 'single' && index === this.loadingIndex) {
-            this.loadingIndex++;
-        }
-    },
-    onModelError(index, event) {
-        console.warn(`Model ${index} failed to load`, event);
-        if (this.loadingMode === 'single' && index === this.loadingIndex) {
-            this.loadingIndex++;
-        }
-    },
-    toggleLoadingMode() {
-        this.loadingMode = this.loadingMode === 'single' ? 'parallel' : 'single';
-        if (this.loadingMode === 'parallel') {
-            this.loadingIndex = this.models.length;
-        } else {
-            this.loadingIndex = 0;
-        }
+      if (model.url.startsWith('http')) {
+        return model.url;
+      }
+      return model.url.startsWith('./') ? model.url.substring(2) : model.url;
     }
   },
   computed: {
@@ -65,17 +44,6 @@ const GalleryApp = {
         if (isHovered) {
           transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(1.1)`;
         }
-
-        // Calculate src based on loading state
-        // Resolving URL logic here
-        let url = model.url.startsWith('http') ? model.url : (model.url.startsWith('./') ? model.url.substring(2) : model.url);
-        let src = '';
-        if (this.loadingMode === 'parallel') {
-            src = url;
-        } else if (i <= this.loadingIndex) {
-            src = url;
-        }
-
         return {
           style: {
             transform: transform,
@@ -84,7 +52,6 @@ const GalleryApp = {
           },
           model: model,
           isHovered: isHovered,
-          src: src
         };
       });
     },
@@ -98,17 +65,6 @@ const GalleryApp = {
   },
   template: `
     <div class="gallery-container">
-      <div style="position: absolute; top: 80px; left: 20px; z-index: 1000; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px;">
-        <button @click="toggleLoadingMode" style="padding: 5px 10px; cursor: pointer; font-size: 14px;">
-            Switch to {{ loadingMode === 'single' ? 'Parallel' : 'Single' }} Mode
-        </button>
-        <div style="margin-top: 5px; font-size: 12px;">
-            Loading: {{ Math.min(loadingIndex + 1, models.length) }} / {{ models.length }}
-            <span v-if="loadingMode === 'single'">(Sequential)</span>
-            <span v-else>(Parallel)</span>
-        </div>
-      </div>
-
       <div
         v-for="(card, i) in cards"
         :key="i"
@@ -118,14 +74,12 @@ const GalleryApp = {
         @mouseleave="handleMouseLeave"
       >
         <model-viewer
-          :src="card.src"
+          :src="getModelUrl(card.model)"
           :poster="getPosterUrl(card.model)"
           :alt="card.model.alt"
           shadow-intensity="1"
           camera-controls
           auto-rotate
-          @load="onModelLoad(i)"
-          @error="onModelError(i, $event)"
         ></model-viewer>
         <div class="model-info-overlay">
           <h2>{{ card.model.title }}</h2>
@@ -133,7 +87,7 @@ const GalleryApp = {
         </div>
         <a
           v-if="card.isHovered"
-          :href="card.src"
+          :href="getModelUrl(card.model)"
           download
           class="download-button"
         >
@@ -148,5 +102,4 @@ const GalleryApp = {
 };
 
 const app = Vue.createApp(GalleryApp);
-app.config.compilerOptions.isCustomElement = tag => tag === 'model-viewer';
 app.mount('#gallery-root');
