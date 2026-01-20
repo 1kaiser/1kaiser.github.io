@@ -25,14 +25,14 @@ window.modelsConfig = [
     alt: "Original 3D model"
   },
   {
-    url: "./models/20230204temple-transformed.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/20230204temple-transformed.glb",
     poster: "./models/20230204temple-transformed.webp",
     title: "Temple",
     description: "Example 3D model",
     alt: "Temple"
   },
   {
-    url: "./models/hibiscus.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/hibiscus.glb",
     poster: "./models/hibiscus.webp",
     title: "Hibiscus",
     description: "Example 3D model",
