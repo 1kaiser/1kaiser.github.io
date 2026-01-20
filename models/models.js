@@ -46,7 +46,7 @@ window.modelsConfig = [
     alt: "momos"
   },
   {
-    url: "https://cdn.glitch.me/4c662056-04bf-42dd-b4d5-784347afb99c/saraswati_flower.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/saraswati_flower.glb",
     poster: "./models/saraswati_flower.webp",
     title: "Idol",
     description: "Saraswati 3D model",
