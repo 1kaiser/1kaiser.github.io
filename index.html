@@ -7,27 +7,10 @@
   <!-- Security meta tags -->
   <meta name="referrer" content="no-referrer">
   <!-- Replace the existing CSP meta tag with this more permissive one -->
-  <meta http-equiv="Content-Security-Policy" content="
+   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:;
-    connect-src 'self' 
-      https://ppng.io 
-      https://piping.onrender.com 
-      https://piping-server.herokuapp.com 
-      https://pipes.sh 
-      https://piping.glitch.me 
-      https://*.piping.glitch.me 
-      https://api.allorigins.win 
-      https://cors-anywhere.herokuapp.com 
-      https://cdn.glitch.me 
-      https://cdn.glitch.global 
-      https://*.github.io 
-      https://*.githubusercontent.com 
-      https://huggingface.co 
-      https://*.hf.co 
-      data: blob:;
-    
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' 
-      https://unpkg.com 
+    script-src 'self' 'unsafe-inline' 'unsafe-eval'
+      https://unpkg.com
       https://cdn.jsdelivr.net
       https://cdnjs.cloudflare.com;
     connect-src 'self'
@@ -43,6 +26,8 @@
       https://cdn.glitch.global
       https://*.github.io
       https://*.githubusercontent.com
+      https://huggingface.co
+      https://*.hf.co
       https://unpkg.com
       data: blob:;
     style-src 'self' 'unsafe-inline';
