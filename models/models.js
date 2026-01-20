@@ -25,7 +25,7 @@ window.modelsConfig = [
     alt: "Original 3D model"
   },
   {
-    url: "https://huggingface.co/datasets/1kaiser/models/raw/main/20230204temple-transformed.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/resolve/main/20230204temple-transformed.glb",
     poster: "./models/20230204temple-transformed.webp",
     title: "Temple",
     description: "Example 3D model",
