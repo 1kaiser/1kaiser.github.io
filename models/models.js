@@ -60,21 +60,21 @@ window.modelsConfig = [
     alt: "Bicycle"
   },
   {
-    url: "https://cdn.glitch.global/e71dfee6-422f-4ea9-a2a1-7c360807106f/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
     poster: "./models/bhatura_VegBiryani_EggNoodles_ChickenStrips.webp",
     title: "bhatura VegBiryani EggNoodles ChickenStrips",
     description: "bhatura_VegBiryani_EggNoodles_ChickenStrips",
     alt: "bhatura VegBiryani EggNoodles ChickenStrips"
   },
   {
-    url: "https://cdn.glitch.me/9d76da57-eb76-4c61-91f6-1b93ba1db597/paneer_sabji.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/paneer%20sabji.glb",
     poster: "./models/paneer_sabji.webp",
     title: "paneer sabji",
     description: "paneer_sabji",
     alt: "paneer sabji"
   },
   {
-    url: "https://cdn.glitch.global/90420b71-7768-417c-ac4f-4e017ad907f4/untitled-transformed.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/kaiser03032023.glb",
     poster: "./models/untitled-transformed.webp",
     title: "Kaiser Roy",
     description: "Kaiser_Roy",
