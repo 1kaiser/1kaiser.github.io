@@ -25,14 +25,14 @@ window.modelsConfig = [
     alt: "Original 3D model"
   },
   {
-    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/20230204temple-transformed.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/raw/main/20230204temple-transformed.glb",
     poster: "./models/20230204temple-transformed.webp",
     title: "Temple",
     description: "Example 3D model",
     alt: "Temple"
   },
   {
-    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/hibiscus.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/raw/main/hibiscus.glb",
     poster: "./models/hibiscus.webp",
     title: "Hibiscus",
     description: "Example 3D model",
@@ -46,7 +46,7 @@ window.modelsConfig = [
     alt: "momos"
   },
   {
-    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/saraswati_flower.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/raw/main/saraswati_flower.glb",
     poster: "./models/saraswati_flower.webp",
     title: "Idol",
     description: "Saraswati 3D model",
@@ -60,21 +60,21 @@ window.modelsConfig = [
     alt: "Bicycle"
   },
   {
-    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/raw/main/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
     poster: "./models/bhatura_VegBiryani_EggNoodles_ChickenStrips.webp",
     title: "bhatura VegBiryani EggNoodles ChickenStrips",
     description: "bhatura_VegBiryani_EggNoodles_ChickenStrips",
     alt: "bhatura VegBiryani EggNoodles ChickenStrips"
   },
   {
-    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/paneer%20sabji.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/raw/main/paneer%20sabji.glb",
     poster: "./models/paneer_sabji.webp",
     title: "paneer sabji",
     description: "paneer_sabji",
     alt: "paneer sabji"
   },
   {
-    url: "https://huggingface.co/datasets/1kaiser/models/blob/main/kaiser03032023.glb",
+    url: "https://huggingface.co/datasets/1kaiser/models/raw/main/kaiser03032023.glb",
     poster: "./models/untitled-transformed.webp",
     title: "Kaiser Roy",
     description: "Kaiser_Roy",
