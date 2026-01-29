@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Photos Clone</title>
+    <style>
+        /* Reset and Base Styles */
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #fff;
+            color: #3c4043;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Header Styles */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background-color: #fff;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            height: 64px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Subtle shadow like Google apps often have, or flat */
+        }
+
+        /* Left Section */
+        .header-left {
+            display: flex;
+            align-items: center;
+            width: 280px; /* Fixed width to match sidebar if we had one */
+        }
+
+        .menu-btn {
+            margin-right: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            color: #4285f4; /* Google Blue */
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .logo-icon {
+            font-size: 32px !important;
+            margin-right: 8px;
+            color: #fbbc05; /* Just using a color for the icon resembling Photos icon colors roughly */
+        }
+        /* Let's make the logo icon multi-colored or just simple for now */
+        .logo-icon {
+            background: -webkit-linear-gradient(45deg, #4285f4, #ea4335, #fbbc05, #34a853);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 400;
+            color: #5f6368;
+            letter-spacing: -0.5px;
+        }
+
+        /* Center Section (Search) */
+        .header-center {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            max-width: 720px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background-color: #f1f3f4;
+            border-radius: 8px;
+            padding: 0 16px;
+            width: 100%;
+            height: 48px;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-bar:focus-within {
+            background-color: #fff;
+            box-shadow: 0 1px 1px 0 rgba(65,69,73,0.3), 0 1px 3px 1px rgba(65,69,73,0.15);
+        }
+
+        .search-icon {
+            color: #5f6368;
+            margin-right: 12px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            width: 100%;
+            color: #3c4043;
+            outline: none;
+        }
+
+        /* Right Section */
+        .header-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 280px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            margin: 0 4px;
+            border-radius: 50%;
+            color: #5f6368;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background-color: rgba(60, 64, 67, 0.08);
+        }
+
+        .profile-icon {
+            width: 32px;
+            height: 32px;
+            background-color: #a142f4; /* Random avatar color */
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 12px;
+            cursor: pointer;
+        }
+
+        /* Main Content Adjustment */
+        main {
+            margin-top: 64px; /* Height of header */
+            padding: 24px;
+        }
+
+        /* Photo Grid Styles */
+        .photo-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .date-group {
+            margin-bottom: 32px;
+        }
+
+        .date-header {
+            font-size: 14px;
+            font-weight: 500;
+            color: #5f6368;
+            margin-bottom: 16px;
+            margin-left: 4px;
+        }
+
+        .photos-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -4px; /* Compensate for gap */
+        }
+
+        .photo-item {
+            height: 200px; /* Base height */
+            flex-grow: 1;
+            margin: 4px;
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            background-color: #f1f3f4;
+            border-radius: 2px;
+        }
+
+        .photo-item img {
+            height: 100%;
+            width: 100%;
+            object-fit: cover;
+            transition: transform 0.2s;
+        }
+
+        /* Hover effect */
+        .photo-item:hover img {
+            filter: brightness(0.9);
+        }
+
+        /* Prevent last row from growing too huge if few items */
+        .photos-container::after {
+            content: '';
+            flex-grow: 999999999;
+        }
+
+        /* Lightbox Styles */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+
+        .lightbox.hidden {
+            display: none;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .lightbox-btn {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            color: white;
+            z-index: 2001;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .lightbox-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-left">
+            <button class="icon-btn menu-btn">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <div class="logo">
+                <span class="material-symbols-outlined logo-icon">photo_library</span>
+                <span class="logo-text">Photos</span>
+            </div>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-bar">
+                <span class="material-symbols-outlined search-icon">search</span>
+                <input type="text" placeholder="Search your photos">
+            </div>
+        </div>
+
+        <div class="header-right">
+            <button id="upload-btn" class="icon-btn" title="Upload Folder">
+                <span class="material-symbols-outlined">drive_folder_upload</span>
+            </button>
+            <button class="icon-btn" title="Help">
+                <span class="material-symbols-outlined">help</span>
+            </button>
+            <button class="icon-btn" title="Settings">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+            <div class="profile-icon">J</div>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <!-- Photo Grid will be injected here -->
+        <div id="photo-grid" class="photo-grid"></div>
+    </main>
+
+    <!-- Hidden Input for Folder Selection -->
+    <input type="file" id="folder-input" webkitdirectory directory multiple style="display:none">
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox" class="lightbox hidden">
+        <button id="lightbox-close" class="icon-btn lightbox-btn">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </button>
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="Full size photo">
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+        });
+
+        function initApp() {
+            // Initialize with mock photos by default
+            const photos = generateMockPhotos(50);
+            const groupedPhotos = groupPhotosByDate(photos);
+            renderPhotoGrid(groupedPhotos);
+
+            setupUploadHandler();
+        }
+
+        function setupUploadHandler() {
+            const uploadBtn = document.getElementById('upload-btn');
+            const folderInput = document.getElementById('folder-input');
+
+            if (uploadBtn && folderInput) {
+                uploadBtn.addEventListener('click', () => {
+                    folderInput.click();
+                });
+
+                folderInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        handleFiles(e.target.files);
+                    }
+                });
+            }
+        }
+
+        async function handleFiles(fileList) {
+            const photos = [];
+            const files = Array.from(fileList).filter(file => file.type.startsWith('image/'));
+
+            if (files.length === 0) {
+                alert('No image files found in the selected folder.');
+                return;
+            }
+
+            // Show loading state if needed, or just clear grid
+            document.getElementById('photo-grid').innerHTML = '<div style="text-align:center; padding: 20px;">Loading photos...</div>';
+
+            try {
+                const photoPromises = files.map((file, index) => processImageFile(file, index));
+                const processedPhotos = await Promise.all(photoPromises);
+                
+                // Filter out any failed loads (nulls)
+                const validPhotos = processedPhotos.filter(p => p !== null);
+                
+                // Sort by date (newest first)
+                validPhotos.sort((a, b) => b.timestamp - a.timestamp);
+
+                const groupedPhotos = groupPhotosByDate(validPhotos);
+                renderPhotoGrid(groupedPhotos);
+            } catch (error) {
+                console.error('Error loading photos:', error);
+                alert('An error occurred while loading photos.');
+            }
+        }
+
+        function processImageFile(file, index) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                
+                img.onload = () => {
+                    resolve({
+                        id: index,
+                        url: url,
+                        width: img.naturalWidth,
+                        height: img.naturalHeight,
+                        date: formatDate(file.lastModified),
+                        timestamp: file.lastModified,
+                        name: file.name
+                    });
+                };
+
+                img.onerror = () => {
+                    console.warn(`Failed to load image: ${file.name}`);
+                    resolve(null);
+                };
+
+                img.src = url;
+            });
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            if (isSameDay(date, today)) {
+                return 'Today';
+            } else if (isSameDay(date, yesterday)) {
+                return 'Yesterday';
+            } else {
+                return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            }
+        }
+
+        function isSameDay(d1, d2) {
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        }
+
+        function generateMockPhotos(count) {
+            const photos = [];
+            const dates = ['Today', 'Yesterday', 'Mon, Aug 12', 'Sun, Aug 11', 'Sat, Aug 10'];
+            
+            for (let i = 0; i < count; i++) {
+                // Random dimensions for aspect ratio variety
+                const width = Math.floor(Math.random() * (600 - 300 + 1) + 300);
+                const height = Math.floor(Math.random() * (500 - 300 + 1) + 300);
+                const dateIndex = Math.floor(i / 10) % dates.length; // Group roughly by chunks
+                
+                photos.push({
+                    id: i,
+                    url: `https://picsum.photos/${width}/${height}?random=${i}`,
+                    width: width,
+                    height: height,
+                    date: dates[dateIndex]
+                });
+            }
+            return photos;
+        }
+
+        function groupPhotosByDate(photos) {
+            const groups = {};
+            photos.forEach(photo => {
+                if (!groups[photo.date]) {
+                    groups[photo.date] = [];
+                }
+                groups[photo.date].push(photo);
+            });
+            return groups;
+        }
+
+        function renderPhotoGrid(groupedPhotos) {
+            const gridContainer = document.getElementById('photo-grid');
+            gridContainer.innerHTML = '';
+
+            Object.keys(groupedPhotos).forEach(date => {
+                // Create Date Group Container
+                const groupEl = document.createElement('div');
+                groupEl.className = 'date-group';
+
+                // Date Header
+                const headerEl = document.createElement('div');
+                headerEl.className = 'date-header';
+                headerEl.textContent = date;
+                groupEl.appendChild(headerEl);
+
+                // Photos Container
+                const photosContainer = document.createElement('div');
+                photosContainer.className = 'photos-container';
+
+                groupedPhotos[date].forEach(photo => {
+                    const photoItem = document.createElement('div');
+                    photoItem.className = 'photo-item';
+                    // Set flex-grow proportional to aspect ratio for better justified layout
+                    // Aspect ratio = width / height
+                    // We want fixed height row, so width varies. 
+                    // Flex-grow roughly handles relative width sharing.
+                    const aspectRatio = photo.width / photo.height;
+                    photoItem.style.flexGrow = aspectRatio;
+                    photoItem.style.width = `${aspectRatio * 200}px`; // Base width calculation based on base height 200px
+
+                    const img = document.createElement('img');
+                    img.src = photo.url;
+                    img.alt = `Photo ${photo.id}`;
+                    img.loading = 'lazy'; // Performance
+
+                    // Add click event for lightbox (will be implemented in next step, but adding hook now)
+                    photoItem.onclick = () => openLightbox(photo);
+
+                    photoItem.appendChild(img);
+                    photosContainer.appendChild(photoItem);
+                });
+
+                groupEl.appendChild(photosContainer);
+                gridContainer.appendChild(groupEl);
+            });
+        }
+
+        function openLightbox(photo) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const closeBtn = document.getElementById('lightbox-close');
+
+            lightboxImg.src = photo.url;
+            lightbox.classList.remove('hidden');
+
+            const closeLightbox = () => {
+                lightbox.classList.add('hidden');
+                lightboxImg.src = '';
+            };
+
+            closeBtn.onclick = closeLightbox;
+            
+            // Close on background click
+            lightbox.onclick = (e) => {
+                if (e.target === lightbox) {
+                    closeLightbox();
+                }
+            };
+
+            // Close on Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
+                    closeLightbox();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
