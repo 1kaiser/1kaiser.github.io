@@ -315,12 +315,91 @@
         });
 
         function initApp() {
-            // Initialize with mock photos by default
-            const photos = generateMockPhotos(50);
-            const groupedPhotos = groupPhotosByDate(photos);
-            renderPhotoGrid(groupedPhotos);
-
+            // Load photos from images.json
+            loadImagesFromJson();
             setupUploadHandler();
+        }
+
+        async function loadImagesFromJson() {
+            const gridContainer = document.getElementById('photo-grid');
+            gridContainer.innerHTML = '<div style="text-align:center; padding: 20px;">Loading photos list...</div>';
+
+            try {
+                const response = await fetch('images.json');
+                if (!response.ok) {
+                    throw new Error('Failed to load images.json');
+                }
+                const imageFiles = await response.json();
+                
+                gridContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Processing ${imageFiles.length} photos...</div>`;
+
+                // Process these files
+                const photos = await processImageFiles(imageFiles);
+                
+                const groupedPhotos = groupPhotosByDate(photos);
+                renderPhotoGrid(groupedPhotos);
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                gridContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: red;">Failed to load photos. Ensure images.json and input_frames are served.</div>';
+            }
+        }
+
+        async function processImageFiles(imageFiles) {
+            // Process in chunks to avoid blocking too much? 
+            // For now, let's try parallel with a limit or just Promise.all
+            // Since we need dimensions, we must load them.
+            
+            const processedPhotos = [];
+            const concurrencyLimit = 50; // Limit concurrent image loads
+            
+            for (let i = 0; i < imageFiles.length; i += concurrencyLimit) {
+                const chunk = imageFiles.slice(i, i + concurrencyLimit);
+                const chunkPromises = chunk.map((filename, index) => {
+                    return new Promise((resolve) => {
+                        const url = `input_frames/${filename}`;
+                        const img = new Image();
+                        img.onload = () => {
+                            // Assign date based on index to group them nicely
+                            const globalIndex = i + index;
+                            const date = getDateForIndex(globalIndex);
+                            
+                            resolve({
+                                id: globalIndex,
+                                url: url,
+                                width: img.naturalWidth,
+                                height: img.naturalHeight,
+                                date: date,
+                                timestamp: Date.now() - globalIndex * 100000, // Fake timestamp
+                                name: filename
+                            });
+                        };
+                        img.onerror = () => {
+                            console.warn(`Failed to load image: ${filename}`);
+                            resolve(null);
+                        };
+                        img.src = url;
+                    });
+                });
+                
+                const results = await Promise.all(chunkPromises);
+                results.forEach(p => {
+                    if (p) processedPhotos.push(p);
+                });
+                
+                // Update progress
+                const gridContainer = document.getElementById('photo-grid');
+                if (gridContainer) {
+                    gridContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Loaded ${processedPhotos.length} / ${imageFiles.length} photos...</div>`;
+                }
+            }
+            
+            return processedPhotos;
+        }
+
+        function getDateForIndex(index) {
+            const dates = ['Today', 'Yesterday', 'Mon, Aug 12', 'Sun, Aug 11', 'Sat, Aug 10', 'Fri, Aug 9', 'Thu, Aug 8'];
+            const dateIndex = Math.floor(index / 20) % dates.length; 
+            return dates[dateIndex];
         }
 
         function setupUploadHandler() {
@@ -415,27 +494,6 @@
             return d1.getFullYear() === d2.getFullYear() &&
                    d1.getMonth() === d2.getMonth() &&
                    d1.getDate() === d2.getDate();
-        }
-
-        function generateMockPhotos(count) {
-            const photos = [];
-            const dates = ['Today', 'Yesterday', 'Mon, Aug 12', 'Sun, Aug 11', 'Sat, Aug 10'];
-            
-            for (let i = 0; i < count; i++) {
-                // Random dimensions for aspect ratio variety
-                const width = Math.floor(Math.random() * (600 - 300 + 1) + 300);
-                const height = Math.floor(Math.random() * (500 - 300 + 1) + 300);
-                const dateIndex = Math.floor(i / 10) % dates.length; // Group roughly by chunks
-                
-                photos.push({
-                    id: i,
-                    url: `https://picsum.photos/${width}/${height}?random=${i}`,
-                    width: width,
-                    height: height,
-                    date: dates[dateIndex]
-                });
-            }
-            return photos;
         }
 
         function groupPhotosByDate(photos) {
