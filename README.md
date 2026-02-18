@@ -1,6 +1,6 @@
 # 1kaiser.github.io
 
-This repository hosts a 3D Model Gallery web application.
+This repository hosts a personal portfolio showcasing a 3D Model Gallery, SoundCloud playback history visualizations, and various AI/ML experiments.
 
 ## Acknowledgements
 
@@ -10,126 +10,105 @@ This project leverages several key technologies and AI assistance:
     **AI Development Assistance**: Initial development, refactoring, feature implementation, and debugging significantly aided by Jules (a large language model from Google).
 
 *   <a href="https://modelviewer.dev/" target="_blank" rel="noopener noreferrer"><img src="https://modelviewer.dev/assets/ic_modelviewer.svg" alt="Model Viewer Icon" title="Google <model-viewer>" width="40"></a>
-    **[Google `<model-viewer>`](https://modelviewer.dev/)**: For rendering 3D models interactively on the web and enabling AR experiences. *(Note: SVG logo, display size may still vary slightly even with width attribute in some viewers.)*
+    **[Google `<model-viewer>`](https://modelviewer.dev/)**: For rendering 3D models interactively on the web and enabling AR experiences.
 
 *   <a href="https://threejs.org/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/mrdoob/three.js/dev/editor/images/icon.png" alt="Three.js Icon" title="Three.js" width="40"></a>
-    **[Three.js](https://threejs.org/)**: The powerful WebGL library that `<model-viewer>` is built upon for 3D graphics rendering.
+    **[Three.js](https://threejs.org/)**: The powerful WebGL library used for the 3D Desktop environment and as the foundation for `<model-viewer>`.
 
 *   <a href="https://google.github.io/draco/" target="_blank" rel="noopener noreferrer"><img src="https://google.github.io/draco/artwork/draco3d-vert-360x274.png" alt="Draco 3D Logo" title="Google Draco" width="40"></a>
     **[Google Draco](https://google.github.io/draco/)**: For 3D graphics compression, helping reduce the size of the 3D models.
 
-*   **[Piping Server](https://github.com/nwtgck/piping-server)**: Used to facilitate the real-time transfer of model data for the 'Deploy to Mobile' QR code feature. (Textual acknowledgement as no distinct project logo).
-
 *   <a href="https://vuejs.org/" target="_blank" rel="noopener noreferrer"><img src="https://vuejs.org/images/logo.png" alt="Vue.js Logo" title="Vue.js" width="40"></a>
-    **[Vue.js](https://vuejs.org/)**: The Progressive JavaScript Framework used for building the user interface of the gallery.
+    **[Vue.js](https://vuejs.org/)**: The Progressive JavaScript Framework used for building the user interface of the gallery (Vue 3).
 
-*   <a href="https://cdnjs.com/" target="_blank" rel="noopener noreferrer"><img src="https://raw.githubusercontent.com/cdnjs/brand/master/logo/standard/dark-1024.png" alt="cdnjs Logo" title="cdnjs" width="40"></a>
-    **[cdnjs](https://cdnjs.com/)**: A free and open-source CDN used for hosting some of the project's dependencies.
+*   <a href="https://bulma.io/" target="_blank" rel="noopener noreferrer"><img src="https://bulma.io/images/bulma-logo.png" alt="Bulma Logo" title="Bulma" width="40"></a>
+    **[Bulma](https://bulma.io/)**: A modern CSS framework based on Flexbox, used for the DEM to GLB converter interface.
 
-*   **[unpkg](https://unpkg.com/)**: A fast, global content delivery network for everything on npm, used for hosting some of the project's dependencies.
+*   <a href="https://d3js.org/" target="_blank" rel="noopener noreferrer"><img src="https://d3js.org/logo.svg" alt="D3.js Logo" title="D3.js" width="40"></a>
+    **[D3.js](https://d3js.org/)**: Used for repository timeline and various data visualizations.
+
+*   **[Piping Server](https://github.com/nwtgck/piping-server)**: Used to facilitate the real-time transfer of model data for the 'Deploy to Mobile' QR code feature.
 
 ## Key Features
 
-*   **3D Model Display**: View various 3D models (GLB format).
-*   **Interactive Gallery**:
-    *   **Horizontal Scrolling Strip**: Browse models in a horizontally scrolling list.
-    *   **Click-to-Load Models**: 3D models are loaded on demand when clicked, optimizing initial page load performance.
-*   **Modal View**: Click on a model to see an enlarged view in a modal window.
-*   **Download Models**: Download the source `.glb` file for each model.
-*   **Deploy to Mobile (QR Code)**: Generate a QR code to easily view models on a mobile device, often enabling AR views.
-    *   Uses piping servers for data transfer without permanent server-side storage.
-    *   Supports AR mode selection (Scene Viewer default).
-*   **Responsive Design**: Adapts to different screen sizes (though the horizontal gallery is the primary layout now).
-*   **CV Page**: A dedicated page to showcase a curriculum vitae.
-*   **AI/ML Experiments Page**: A page listing various browser-based AI/ML experiments and visualizations.
+*   **3D Model Gallery**:
+    *   Interactive display using Google `<model-viewer>`.
+    *   **Bento-style layout**: Models are presented in a modern, responsive grid.
+    *   **Interactive Loading**: Models load on interaction to optimize performance.
+    *   **Modal View**: Detailed view with AR support and download options.
+*   **SoundCloud Playback Rewind**:
+    *   Visualizes top tracks from SoundCloud in a bento-style grid.
+    *   Includes track artwork, titles, and artists with direct links to SoundCloud.
+*   **DEM to GLB Converter**:
+    *   A tool that converts Digital Elevation Models (TIF/TIFF) into 3D GLB models.
+    *   Supports auto-fetching satellite imagery from Google Maps to texture the mesh.
+    *   Runs entirely in the browser using `loam` (GDAL in WebAssembly).
+*   **3D Desktop Environment**:
+    *   An immersive 3D "desktop" experience built with Three.js.
+*   **Deploy to Mobile (QR Code)**:
+    *   Easily view 3D models on mobile devices in AR.
+    *   Uses piping servers for peer-to-peer data transfer.
+*   **Repository Timeline**:
+    *   A scrollable timeline of GitHub repository history.
 
-## 🚀 AI/ML Experiments
+## 🚀 Featured Experiments
 
-This repository also includes a page dedicated to various AI/ML experiments, which can be found at [`experiments.html`](experiments.html). These experiments showcase browser-based AI applications and visualizations.
-
-### 🌟 Featured Experiments
 *   **Wordy**: [Live Demo](https://1kaiser.github.io/wordy/) | [GitHub](https://github.com/1kaiser/wordy)
 *   **TextGraph**: [Live Demo](https://1kaiser.github.io/TextGraph/) | [GitHub](https://github.com/1kaiser/TextGraph)
 *   **Gemma Chat App**: [Live Demo](https://1kaiser.github.io/gemma-chat-app/) | [GitHub](https://github.com/1kaiser/gemma-chat-app)
 *   **LLM Consistency Vis**: [Live Demo](https://1kaiser.github.io/llm-consistency-vis/) | [GitHub](https://github.com/1kaiser/llm-consistency-vis)
-
-### 📚 Other Experiments
-*   **LLM WordGraph Exact**: [Live Demo](https://1kaiser.github.io/llm-wordgraph-exact/) | [GitHub](https://github.com/1kaiser/llm-wordgraph-exact)
+*   **Graph Queen**: [Live Demo](https://1kaiser.github.io/graph-queen/) | [GitHub](https://github.com/1kaiser/graph-queen)
 
 ## Current Folder Structure
 
 ```ascii
 .
-├── cv/
-│   ├── cv.css
-│   ├── cv.html
-│   └── cv.js
 ├── css/
-│   └── styles.css
+│   ├── styles.css
+│   └── soundcloud-integration.css
+├── cv/
+│   ├── cv.html
+│   ├── dem-to-glb.html
+│   └── ... (other pages)
+├── desktop/
+│   ├── desktop.html
+│   └── desktop.js
 ├── js/
 │   ├── app.js
 │   ├── gallery-vue.js
 │   ├── piping-utils.js
-│   └── qr-deploy.js
+│   ├── qr-deploy.js
+│   └── soundcloud-integration.js
 ├── models/
-│   ├── 20230204temple-transformed.glb
-│   ├── 31_10_2024.glb
-│   ├── Chicken_Biryani.glb
-│   ├── bycycle.glb
-│   ├── hibiscus.glb
 │   ├── models.js
-│   └── momos.glb
-├── view/
+│   └── ... (model files)
+├── soundcloud/
+│   ├── index.html
+│   └── playback_data.json
+├── view/ (Mobile View)
 │   ├── index.html
 │   ├── mobile-view.css
 │   └── mobile_view.js
+├── experiments.html
 ├── index.html
-├── LICENSE
 └── README.md
 ```
 
 ## TODO
 
--   **Refactor Mobile View Page (`view/index.html`)**:
-    -   [X] Replace the embedded JavaScript in `view/index.html` with a script tag linking to the external `view/mobile_view.js`. *(Done)*
-    -   [X] Move inline CSS from `view/index.html` to a dedicated external CSS file (`view/mobile-view.css`). *(Done)*
--   **Consolidate Piping Server Utilities**:
-    -   [X] Create a shared JavaScript module (`js/piping-utils.js`).
-    -   [X] Move common piping server constants and utility functions into this shared module.
-    -   [X] Update `js/qr-deploy.js` and `view/mobile_view.js` to use this shared module.
--   **CSS Review**:
-    -   [ ] Conduct a thorough review of all CSS (`css/styles.css` and `view/mobile-view.css`) to identify and remove any remaining redundancies or style overlaps.
--   **Testing**:
-    -   [ ] Perform comprehensive cross-browser and cross-device testing of all application features.
--   **Documentation**:
-    -   [ ] Add more detailed comments within the JavaScript files explaining complex sections.
-    -   [ ] Expand `README.md` with setup instructions, explanation of features, and contribution guidelines if applicable.
+- [X] Upgrade gallery to Vue 3.
+- [X] Implement SoundCloud bento-style integration.
+- [X] Add DEM to GLB converter.
+- [X] Add 3D Desktop environment.
+- [ ] Refine mobile responsiveness across all sub-pages.
+- [ ] Add more 3D models to the gallery.
+- [ ] Implement search functionality for models and experiments.
 
-## Interaction GIF
+## Visuals
 
-This GIF demonstrates the key interactions of the 3D Model Gallery, such as scrolling, selecting a model, and viewing it in the modal window.
-
-![Interaction GIF](interaction.gif)
-
-### Creating the GIF
-
-The GIF was created using the following process:
-
-1.  **Record Interaction**: A screen recording of the website's interaction was captured using Playwright and Node.js.
-2.  **Convert to GIF**: The video was then converted into a GIF, with optimizations for file size and quality.
-
-## Timeline Scrolling GIF
-
-This GIF demonstrates the horizontal scrolling feature of the timeline on the `experiments.html` page.
-
-![Timeline Scrolling GIF](timeline_scrolling.gif)
-
-## SoundCloud Integration
-
-This section showcases the SoundCloud Playback Rewind feature, integrated directly into the main page. It displays the top tracks in a horizontal, bento-style grid.
-
+### SoundCloud Integration
 ![SoundCloud Integration](soundcloud_integration.png)
-
-### Interaction
-
 ![SoundCloud Interaction](soundcloud_interaction.gif)
+
+### DEM to GLB Converter
+![DEM to GLB Demo](cv/dem-to-glb-demo.gif)
