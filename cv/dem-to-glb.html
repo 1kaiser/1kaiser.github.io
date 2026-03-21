@@ -97,6 +97,10 @@
                   <input type="checkbox" id="removeNoData" checked>
                   Remove NoData
                 </label>
+                 <label class="checkbox" style="display:block;">
+                  <input type="checkbox" id="normalizeElevation">
+                  Relative Elevation (Zero-based)
+                </label>
                </div>
             </div>
         </div>
@@ -243,6 +247,7 @@ IIT Jodhpur 3D Pipeline (Verified)
     const showTextureCheck = document.getElementById('showTextureCheck');
     const widthInput = document.getElementById('widthInput');
     const removeNoData = document.getElementById('removeNoData');
+    const normalizeElevation = document.getElementById('normalizeElevation');
     const convertBtn = document.getElementById('convertBtn');
     const downloadBtn = document.getElementById('downloadBtn');
     const progress = document.getElementById('progress');
@@ -663,6 +668,20 @@ IIT Jodhpur 3D Pipeline (Verified)
         removed = 0;
       const nodataSet = new Set();
 
+      let minElev = Infinity;
+      if (normalizeElevation.checked) {
+        for (let i = 0; i < elevData.length; i++) {
+          const elev = elevData[i];
+          if (elev !== nd && elev !== metaNoData && elev > -1000 && elev < 300000) {
+            if (elev < minElev) minElev = elev;
+          }
+        }
+        if (minElev === Infinity) minElev = 0;
+        console.log(`Normalizing elevation (min: ${minElev.toFixed(2)}m)`);
+      } else {
+        minElev = 0;
+      }
+
       for (let i = 0; i < Math.min(elevData.length, verts.length / 3); i++) {
         const elev = elevData[i];
         if (elev === nd || elev === metaNoData || elev <= -1000 || elev >= 300000) { 
@@ -670,7 +689,7 @@ IIT Jodhpur 3D Pipeline (Verified)
           verts[i * 3 + 2] = 0;
           removed++;
         } else {
-          verts[i * 3 + 2] = elev * 1.0; 
+          verts[i * 3 + 2] = (elev - minElev) * 1.0; 
           valid++;
         }
       }
