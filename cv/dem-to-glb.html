@@ -138,23 +138,23 @@
     <div class="box content">
       <h3>System Architecture & Pipeline</h3>
       <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto; font-size: 10px; line-height: 1.2;">
-IIT Jodhpur 3D Pipeline (Verified)
+Universal DEM-to-3D Pipeline
 ├── Data Layer (Source)
-│   ├── IIT_Jodhpur_DEM.tiff [1.3GB] ──▶ Elevation (UTM 43N)
-│   └── IIT_JODHPUR_ORI.Tiff [5.5GB] ──▶ Texture (RGBA Ortho)
+│   ├── Source GeoTIFF (.tif) ────────▶ Elevation (UTM or Geographic)
+│   └── Orthophoto / Satellite ───────▶ Texture Source (RGBA/RGB)
 ├── Coordinate Engine (Proj4js)
-│   ├── UTM Zone Detection ────────────▶ Auto-identify EPSG:32643
-│   └── WGS84 Reprojection ────────────▶ High-precision Lat/Lon Translation
+│   ├── CRS Detection ────────────────▶ Auto-identify UTM/Projected Systems
+│   └── WGS84 Reprojection ───────────▶ High-precision Geographic Mapping
 ├── Processing Engine (Loam / GDAL-WASM)
-│   ├── Metadata Extraction ───────────▶ Transform, NoData (Geotiff.js)
-│   ├── Geographic Clipping ───────────▶ -projwin (Align ORI/Satellite)
-│   └── Resampling ────────────────────▶ -outsize (Manage Vertex Buffer)
+│   ├── Metadata Extraction ──────────▶ Transform, NoData (Geotiff.js)
+│   ├── Geographic Clipping ──────────▶ -projwin (Crop Texture to DEM)
+│   └── Resampling ───────────────────▶ -outsize (Manage Vertex Density)
 ├── 3D Reconstruction (Three.js)
-│   ├── Vertex Mapping ────────────────▶ Z = Elevation (1:1 Metric)
-│   └── Topology Filtering ────────────▶ NoData Face Removal
+│   ├── Vertex Mapping ───────────────▶ Z = Elevation (Absolute or Relative)
+│   └── Topology Filtering ───────────▶ Face Removal (Drop NoData Pixels)
 └── Export & Verification
-    ├── GLTFExporter ──────────────────▶ Binary GLB (61MB)
-    └── Puppeteer Audit ───────────────▶ Headless Validation & Log Capture
+    ├── GLTFExporter ─────────────────▶ Binary GLB Production
+    └── Structural Audit ─────────────▶ Mesh Integrity & Elevation Check
       </pre>
 
       <h3>Processing Logic Path</h3>
@@ -196,8 +196,8 @@ IIT Jodhpur 3D Pipeline (Verified)
            ┌───────────────┴───────────────┐
            ▼                               ▼
 ┌──────────────────────┐      ┌──────────────────────────┐
-│  SCALING: 1:1 METRIC │      │   ARTIFACT FILTERING     │
-│  (No Normalization)  │      │   (Drop NoData Faces)    │
+│ SCALING: ABS/RELATIVE│      │   ARTIFACT FILTERING     │
+│ (User Toggle)        │      │   (Drop NoData Faces)    │
 └──────────┬───────────┘      └────────────┬─────────────┘
            │                               │
            └───────────────┬───────────────┘
