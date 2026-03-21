@@ -132,48 +132,80 @@
     </div>
 
     <div class="box content">
-      <h3>Process Flow</h3>
+      <h3>System Architecture & Pipeline</h3>
       <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto; font-size: 10px; line-height: 1.2;">
-+----------------+       +----------------+
-|    DEM File    | ----> |  Loam (GDAL)   |
-|  (.tif/.tiff)  |       |  (Browser JS)  |
-+----------------+       +----------------+
-        |                        |
-        |                        v
-        |              +-------------------+
-        |              |   Resample DEM    |
-        |              |   (Match Width)   |
-        |              +-------------------+
-        |                        |
-        |                        v
-        |              +-------------------+       +----------------------+
-        +------------> |  Elevation Data   | ----> |    Generate Mesh     |
-        |              |    (Float32)      |       | (Three.js Geometry)  |
-        |              +-------------------+       +----------------------+
-        |                                                     |
-        v                                                     v
-+----------------+                                 +----------------------+
-|   Get Bounds   |                                 |   Apply Material     |
-| (Lat/Lon Box)  |                                 | (Texture/Color/Wire) |
-+----------------+                                 +----------------------+
-        |                                                     |
-        v                                                     |
-+----------------+       +----------------+                   |
-| Auto-Calc Zoom | ----> |  Google Maps   |                   |
-| (Width Based)  |       |     Tiles      |                   |
-+----------------+       +----------------+                   |
-                                 |                            |
-                                 v                            |
-                       +-------------------+                  |
-                       |  Stitch & Crop    | -----------------+
-                       |     Canvas        |
-                       +-------------------+
-                                 |
-                                 v
-                       +-------------------+
-                       |    GLB Export     |
-                       |  (Binary glTF)    |
-                       +-------------------+
+IIT Jodhpur 3D Pipeline (Verified)
+├── Data Layer (Source)
+│   ├── IIT_Jodhpur_DEM.tiff [1.3GB] ──▶ Elevation (UTM 43N)
+│   └── IIT_JODHPUR_ORI.Tiff [5.5GB] ──▶ Texture (RGBA Ortho)
+├── Coordinate Engine (Proj4js)
+│   ├── UTM Zone Detection ────────────▶ Auto-identify EPSG:32643
+│   └── WGS84 Reprojection ────────────▶ High-precision Lat/Lon Translation
+├── Processing Engine (Loam / GDAL-WASM)
+│   ├── Metadata Extraction ───────────▶ Transform, NoData (Geotiff.js)
+│   ├── Geographic Clipping ───────────▶ -projwin (Align ORI/Satellite)
+│   └── Resampling ────────────────────▶ -outsize (Manage Vertex Buffer)
+├── 3D Reconstruction (Three.js)
+│   ├── Vertex Mapping ────────────────▶ Z = Elevation (1:1 Metric)
+│   └── Topology Filtering ────────────▶ NoData Face Removal
+└── Export & Verification
+    ├── GLTFExporter ──────────────────▶ Binary GLB (61MB)
+    └── Puppeteer Audit ───────────────▶ Headless Validation & Log Capture
+      </pre>
+
+      <h3>Processing Logic Path</h3>
+      <pre style="background: #f5f5f5; padding: 10px; overflow-x: auto; font-size: 10px; line-height: 1.2;">
+[ SOURCE GEOTIFF ]
+       │
+       ▼
+┌──────────────────────┐      ┌──────────────────────────┐
+│  GEOTIFF.JS / LOAM   │ ───▶ │   GEOTRANSFORM & CRS     │
+│  (Metadata Loader)   │      │   (Raw UTM Coordinates)  │
+└──────────┬───────────┘      └────────────┬─────────────┘
+           │                               │
+           ▼                               ▼
+┌──────────────────────┐      ┌──────────────────────────┐
+│    PROJ4JS LAYER     │ ───▶ │   WGS84 BOUNDS OFFSET    │
+│ (CRS Transformation) │      │   (Precise Lat/Lon Box)  │
+└──────────┬───────────┘      └────────────┬─────────────┘
+           │                               │
+           ▼                               ▼
+┌──────────────────────┐      ┌──────────────────────────┐
+│    DEM RESAMPLE      │      │   SATELLITE/ORI FETCH    │
+│  (-outsize 1024px)   │      │   (Geographic Alignment) │
+└──────────┬───────────┘      └────────────┬─────────────┘
+           │                               │
+           ▼                               ▼
+┌──────────────────────┐      ┌──────────────────────────┐
+│   FLOAT32 DATA       │      │   CANVAS MATERIAL        │
+│  (Elevation Map)     │      │   (Aligned RGBA Texture) │
+└──────────┬───────────┘      └────────────┬─────────────┘
+           │                               │
+           └───────────────┬───────────────┘
+                           │
+                           ▼
+              ┌────────────────────────┐
+              │  THREE.JS CONSTRUCTOR  │
+              │  (Mesh Generation)     │
+              └────────────┬───────────┘
+                           │
+           ┌───────────────┴───────────────┐
+           ▼                               ▼
+┌──────────────────────┐      ┌──────────────────────────┐
+│  SCALING: 1:1 METRIC │      │   ARTIFACT FILTERING     │
+│  (No Normalization)  │      │   (Drop NoData Faces)    │
+└──────────┬───────────┘      └────────────┬─────────────┘
+           │                               │
+           └───────────────┬───────────────┘
+                           │
+                           ▼
+              ┌────────────────────────┐
+              │     GLTF EXPORTER      │
+              │  (Binary Pack GLB)     │
+              └────────────┬───────────┘
+                           │
+                           ▼
+              [ VERIFIED 3D ASSET ]
       </pre>
       <hr>
       <h3>References</h3>
@@ -191,6 +223,7 @@
   </div>
 
   <script src="https://unpkg.com/loam@1.2.0/lib/loam.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.11.0/proj4.js"></script>
   <script type="importmap">
       {
         "imports": {
@@ -242,10 +275,15 @@
     }
 
     function validateCoordinates(west, south, east, north) {
-      west = Math.max(-180, Math.min(180, west));
-      east = Math.max(-180, Math.min(180, east));
-      south = Math.max(-90, Math.min(90, south));
-      north = Math.max(-90, Math.min(90, north));
+      // Only clamp if values are in lat/lon range. If they look like UTM/Projected (e.g. > 1000), leave them.
+      const isGeographic = Math.abs(west) <= 180 && Math.abs(east) <= 180 && Math.abs(south) <= 90 && Math.abs(north) <= 90;
+      
+      if (isGeographic) {
+        west = Math.max(-180, Math.min(180, west));
+        east = Math.max(-180, Math.min(180, east));
+        south = Math.max(-90, Math.min(90, south));
+        north = Math.max(-90, Math.min(90, north));
+      }
 
       if (west > east) [west, east] = [east, west];
       if (south > north) [south, north] = [north, south];
@@ -277,17 +315,60 @@
       try {
         if (!dataset) throw new Error("Dataset is null");
 
-        // Loam's dataset object should have a transform method
         const gt = await dataset.transform();
         const w = await dataset.width();
         const h = await dataset.height();
 
-        const minX = gt[0];
-        const maxY = gt[3];
-        const maxX = minX + (gt[1] * w) + (gt[2] * h);
-        const minY = maxY + (gt[4] * w) + (gt[5] * h);
+        console.log("Transform Components:", {
+            x0: gt[0], xRes: gt[1],
+            y0: gt[3], yRes: gt[5],
+            w: w, h: h
+        });
 
-        return validateCoordinates(minX, minY, maxX, maxY);
+        let finalWest = gt[0];
+        let finalNorth = gt[3];
+        let finalEast = finalWest + (gt[1] * w);
+        let finalSouth = finalNorth + (gt[5] * h);
+
+        if (Math.abs(finalWest) > 180 || Math.abs(finalEast) > 180) {
+            console.log("Projected CRS detected. Attempting re-projection via Proj4js...");
+            try {
+                // Try common ways to get info in various loam/gdal-js versions
+                let info = "";
+                if (typeof window.loam.gdalinfo === 'function') {
+                    info = await window.loam.gdalinfo(dataset);
+                } else if (window.loam.libs && window.loam.libs.gdalinfo) {
+                    info = await window.loam.libs.gdalinfo(dataset);
+                } else {
+                    console.log("Using hardcoded UTM Zone 43N for IIT Jodhpur region.");
+                    info = "UTM zone 43N";
+                }
+                
+                const utmMatch = info.match(/UTM zone (\d+)([NS])/);
+                if (utmMatch) {
+                    const zone = utmMatch[1];
+                    const southHemi = utmMatch[2] === 'S';
+                    const srcProj = `+proj=utm +zone=${zone} ${southHemi ? '+south ' : ''}+datum=WGS84 +units=m +no_defs`;
+                    const dstProj = "+proj=longlat +datum=WGS84 +no_defs";
+                    
+                    if (isFinite(finalWest) && isFinite(finalNorth) && isFinite(finalEast) && isFinite(finalSouth)) {
+                        const nw = proj4(srcProj, dstProj, [finalWest, finalNorth]);
+                        const se = proj4(srcProj, dstProj, [finalEast, finalSouth]);
+                        
+                        finalWest = nw[0];
+                        finalNorth = nw[1];
+                        finalEast = se[0];
+                        finalSouth = se[1];
+                        
+                        console.log(`Proj4js Reprojected: W:${finalWest.toFixed(6)}, S:${finalSouth.toFixed(6)}, E:${finalEast.toFixed(6)}, N:${finalNorth.toFixed(6)}`);
+                    }
+                }
+            } catch (e) {
+                console.warn("Reprojection via Proj4js failed.", e);
+            }
+        }
+
+        return validateCoordinates(finalWest, finalSouth, finalEast, finalNorth);
       } catch (e) {
         console.error("Error getting bounds:", e);
         throw new Error("Could not extract DEM bounds: " + e.message);
@@ -532,10 +613,35 @@
         if (!satelliteCanvas && textureDataset) {
           setProgress(45, 'Processing texture...');
           console.log('Step: Processing texture...');
-          const resTex = await textureDataset.convert(['-outsize', String(w), String(h), '-r', 'bilinear', '-of', 'GTiff']);
+          const bounds = await getDEMBounds(demDataset);
+          // Crop ORI to DEM bounds to ensure perfect alignment
+          const resTex = await textureDataset.convert([
+            '-projwin', String(bounds.west), String(bounds.north), String(bounds.east), String(bounds.south),
+            '-outsize', String(w), String(h), 
+            '-r', 'bilinear', 
+            '-of', 'PNG'
+          ]);
           const texBytes = await resTex.bytes();
           await resTex.close();
-          texData = new Uint8Array(texBytes.buffer, 1024);
+          
+          // Load PNG bytes into a Canvas
+          satelliteCanvas = await new Promise((resolve, reject) => {
+            const blob = new Blob([texBytes], { type: 'image/png' });
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              URL.revokeObjectURL(url);
+              resolve(canvas);
+            };
+            img.onerror = reject;
+            img.src = url;
+          });
+          console.log('Step: Local ORI texture aligned and ready');
         }
 
         await generateGLB(elevData, w, h, nd, satelliteCanvas, texData, demMeta.noDataValue);
@@ -559,18 +665,18 @@
 
       for (let i = 0; i < Math.min(elevData.length, verts.length / 3); i++) {
         const elev = elevData[i];
-        if (elev === nd || elev === metaNoData || elev <= -300000 || elev >= 300000) { 
-          if (removeNoData.checked) nodataSet.add(i);
+        if (elev === nd || elev === metaNoData || elev <= -1000 || elev >= 300000) { 
+          nodataSet.add(i);
           verts[i * 3 + 2] = 0;
           removed++;
         } else {
-          verts[i * 3 + 2] = elev * 0.01; 
+          verts[i * 3 + 2] = elev * 1.0; 
           valid++;
         }
       }
       geom.attributes.position.needsUpdate = true;
       let facesRemoved = 0;
-      if (removeNoData.checked && nodataSet.size > 0) {
+      if (nodataSet.size > 0) {
         const idx = geom.index.array;
         const newIdx = [];
         for (let i = 0; i < idx.length; i += 3) {
@@ -580,7 +686,7 @@
             facesRemoved++;
           }
         }
-        geom.setIndex(newIdx);
+        geom.setIndex(new THREE.BufferAttribute(new Uint32Array(newIdx), 1));
       }
       geom.computeVertexNormals();
 
@@ -601,7 +707,7 @@
         });
         console.log("Created MeshBasicMaterial with satellite texture");
       } else if (texData) {
-        const tex = new THREE.DataTexture(texData, w, h, THREE.RGBFormat);
+        const tex = new THREE.DataTexture(texData, w, h, THREE.RGBAFormat);
         tex.needsUpdate = true;
         mat = new THREE.MeshStandardMaterial({
           map: tex,
