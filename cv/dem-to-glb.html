@@ -335,7 +335,12 @@ Universal DEM-to-3D Pipeline
         let finalEast = finalWest + (gt[1] * w);
         let finalSouth = finalNorth + (gt[5] * h);
 
+        const rawBounds = { west: finalWest, south: finalSouth, east: finalEast, north: finalNorth };
+        let geoBounds = { ...rawBounds };
+        let isProjected = false;
+
         if (Math.abs(finalWest) > 180 || Math.abs(finalEast) > 180) {
+            isProjected = true;
             console.log("Projected CRS detected. Attempting re-projection via Proj4js...");
             try {
                 // Try common ways to get info in various loam/gdal-js versions
@@ -360,12 +365,12 @@ Universal DEM-to-3D Pipeline
                         const nw = proj4(srcProj, dstProj, [finalWest, finalNorth]);
                         const se = proj4(srcProj, dstProj, [finalEast, finalSouth]);
                         
-                        finalWest = nw[0];
-                        finalNorth = nw[1];
-                        finalEast = se[0];
-                        finalSouth = se[1];
+                        geoBounds.west = nw[0];
+                        geoBounds.north = nw[1];
+                        geoBounds.east = se[0];
+                        geoBounds.south = se[1];
                         
-                        console.log(`Proj4js Reprojected: W:${finalWest.toFixed(6)}, S:${finalSouth.toFixed(6)}, E:${finalEast.toFixed(6)}, N:${finalNorth.toFixed(6)}`);
+                        console.log(`Proj4js Reprojected: W:${geoBounds.west.toFixed(6)}, S:${geoBounds.south.toFixed(6)}, E:${geoBounds.east.toFixed(6)}, N:${geoBounds.north.toFixed(6)}`);
                     }
                 }
             } catch (e) {
@@ -373,7 +378,11 @@ Universal DEM-to-3D Pipeline
             }
         }
 
-        return validateCoordinates(finalWest, finalSouth, finalEast, finalNorth);
+        return {
+            geo: validateCoordinates(geoBounds.west, geoBounds.south, geoBounds.east, geoBounds.north),
+            raw: rawBounds,
+            isProjected
+        };
       } catch (e) {
         console.error("Error getting bounds:", e);
         throw new Error("Could not extract DEM bounds: " + e.message);
@@ -555,6 +564,8 @@ Universal DEM-to-3D Pipeline
       const file = e.target.files[0];
       if (file) {
         document.getElementById('textureFileName').textContent = file.name;
+        // Automatically disable satellite download if a local texture is provided
+        downloadSatellite.checked = false;
         try {
           textureDataset = await window.loam.open(file);
           console.log('Texture loaded');
@@ -592,7 +603,8 @@ Universal DEM-to-3D Pipeline
           try {
             setProgress(40, 'Fetching satellite imagery...');
             console.log('Step: Fetching satellite imagery...');
-            const bounds = await getDEMBounds(demDataset);
+            const boundsInfo = await getDEMBounds(demDataset);
+            const bounds = boundsInfo.geo;
             
             // Auto-calculate zoom based on the TARGET width
             let zoomLevel = calculateOptimalZoom(bounds, targetWidth);
@@ -618,7 +630,9 @@ Universal DEM-to-3D Pipeline
         if (!satelliteCanvas && textureDataset) {
           setProgress(45, 'Processing texture...');
           console.log('Step: Processing texture...');
-          const bounds = await getDEMBounds(demDataset);
+          const boundsInfo = await getDEMBounds(demDataset);
+          const bounds = boundsInfo.raw; // Use raw bounds for local texture crop
+          
           // Crop ORI to DEM bounds to ensure perfect alignment
           const resTex = await textureDataset.convert([
             '-projwin', String(bounds.west), String(bounds.north), String(bounds.east), String(bounds.south),
