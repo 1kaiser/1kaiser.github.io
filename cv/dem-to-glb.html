@@ -121,6 +121,9 @@
                 <div class="control">
                   <button class="button is-link" id="downloadBtn" style="display:none;">Download GLB</button>
                 </div>
+                <div class="control">
+                  <button class="button is-info" id="fullscreenBtn" style="display:none;">Full Screen</button>
+                </div>
             </div>
         </div>
       </div>
@@ -258,6 +261,7 @@ Universal DEM-to-3D Pipeline
     const normalizeElevation = document.getElementById('normalizeElevation');
     const convertBtn = document.getElementById('convertBtn');
     const downloadBtn = document.getElementById('downloadBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
     const progress = document.getElementById('progress');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
@@ -640,6 +644,7 @@ Universal DEM-to-3D Pipeline
         convertBtn.disabled = true;
         viewer.style.display = 'none';
         downloadBtn.style.display = 'none';
+        fullscreenBtn.style.display = 'none';
 
         for (let i = 0; i < tiles.length; i++) {
             const tile = tiles[i];
@@ -700,6 +705,7 @@ Universal DEM-to-3D Pipeline
                 viewer.src = url;
                 viewer.style.display = 'block';
                 downloadBtn.style.display = 'inline-block';
+                fullscreenBtn.style.display = 'inline-block';
             }
 
             // Cleanup local tile resources
@@ -810,6 +816,16 @@ Universal DEM-to-3D Pipeline
       });
     }
     
+    fullscreenBtn.addEventListener('click', () => {
+      if (viewer.requestFullscreen) {
+        viewer.requestFullscreen();
+      } else if (viewer.webkitRequestFullscreen) {
+        viewer.webkitRequestFullscreen();
+      } else if (viewer.msRequestFullscreen) {
+        viewer.msRequestFullscreen();
+      }
+    });
+
     downloadBtn.addEventListener('click', () => {
       if (!glbBlob) return;
       const url = URL.createObjectURL(glbBlob);
