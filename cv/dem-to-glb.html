@@ -62,8 +62,12 @@
             <div class="field">
               <label class="label">Width (px)</label>
               <div class="control">
-                <input class="input" type="number" id="widthInput" value="500" min="100" max="8000">
+                <input class="input" type="number" id="widthInput" value="500" min="100" max="10000">
               </div>
+              <label class="checkbox mt-1">
+                <input type="checkbox" id="useNativeRes">
+                Native Resolution (1:1)
+              </label>
               <p class="help">Mesh width (height auto-calculated)</p>
             </div>
         </div>
@@ -575,15 +579,29 @@ Universal DEM-to-3D Pipeline
       }
     });
     
+    const useNativeRes = document.getElementById('useNativeRes');
+
     convertBtn.addEventListener('click', async () => {
       if (!demDataset) return;
       try {
+        let targetWidth = parseInt(widthInput.value);
+        let targetHeight = Math.floor(targetWidth * (demMeta.height / demMeta.width));
+
+        if (useNativeRes.checked) {
+            targetWidth = demMeta.width;
+            targetHeight = demMeta.height;
+            const totalPixels = targetWidth * targetHeight;
+            if (totalPixels > 8000000) { // ~2800x2800
+                if (!confirm(`Warning: You are attempting to export ${targetWidth}x${targetHeight} (${(totalPixels/1e6).toFixed(1)} million vertices). This will likely crash your browser or the viewer. Continue anyway?`)) {
+                    return;
+                }
+            }
+        }
+
         convertBtn.disabled = true;
         viewer.style.display = 'none';
         downloadBtn.style.display = 'none';
-        const targetWidth = parseInt(widthInput.value);
-        const aspectRatio = demMeta.height / demMeta.width;
-        const targetHeight = Math.floor(targetWidth * aspectRatio);
+        
         setProgress(10, 'Resampling DEM...');
         console.log('Step: Resampling DEM...');
         const resampledDEM = await demDataset.convert(['-outsize', String(targetWidth), String(targetHeight), '-r', 'bilinear', '-of', 'GTiff']);
@@ -663,7 +681,12 @@ Universal DEM-to-3D Pipeline
           console.log('Step: Local ORI texture aligned and ready');
         }
 
-        await generateGLB(elevData, w, h, nd, satelliteCanvas, texData, demMeta.noDataValue);
+        // Get Pixel Size for 1:1 Meter Scaling
+        const gt = await resampledDEM.transform();
+        const pixelSizeX = Math.abs(gt[1]);
+        const pixelSizeY = Math.abs(gt[5]);
+
+        await generateGLB(elevData, w, h, nd, satelliteCanvas, texData, demMeta.noDataValue, pixelSizeX, pixelSizeY);
 
       } catch (err) {
         hideProgress();
@@ -673,10 +696,10 @@ Universal DEM-to-3D Pipeline
       }
     });
 
-    async function generateGLB(elevData, w, h, nd, satelliteCanvas, texData, metaNoData) {
+    async function generateGLB(elevData, w, h, nd, satelliteCanvas, texData, metaNoData, pxX = 1, pxY = 1) {
       setProgress(60, 'Building mesh...');
-      console.log('Step: Building mesh...', { w, h });
-      const geom = new THREE.PlaneGeometry(w, h, w - 1, h - 1);
+      console.log('Step: Building mesh...', { w, h, pxX, pxY });
+      const geom = new THREE.PlaneGeometry(w * pxX, h * pxY, w - 1, h - 1);
       const verts = geom.attributes.position.array;
       let valid = 0,
         removed = 0;
