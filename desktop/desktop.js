@@ -140,7 +140,10 @@ function openTool(tool) {
         try {
             const loc = toolFrame.contentWindow.location.href;
             if (!loc || loc === 'about:blank') toolBlocked.classList.remove('hidden');
-        } catch { toolBlocked.classList.remove('hidden'); }
+        } catch {
+            // Cross-origin frame loaded successfully — SecurityError is expected, not a block
+            toolBlocked.classList.add('hidden');
+        }
     };
 }
 
