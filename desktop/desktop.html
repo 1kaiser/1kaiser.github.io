@@ -3,13 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Desktop</title>
-    <style>
-        body { margin: 0; }
-        canvas { display: block; }
-    </style>
+    <title>3D Desktop — Kaiser Roy</title>
+    <link rel="stylesheet" href="desktop.css">
 </head>
 <body>
+
+    <!-- Top navbar -->
+    <div id="navbar">
+        <button id="btn-sidebar-toggle" title="Toggle sidebar">☰</button>
+        <span id="navbar-title">⬡ 3D Desktop</span>
+        <button id="btn-models" title="Open model gallery">Models</button>
+    </div>
+
+    <!-- Three.js canvas goes here (appended by JS) -->
+
+    <!-- Left sidebar -->
+    <div id="sidebar">
+        <div id="sidebar-header">
+            <span>Tools</span>
+            <input id="sidebar-search" type="text" placeholder="Search tools…" autocomplete="off">
+        </div>
+        <div id="sidebar-cats"></div>
+    </div>
+
+    <!-- Full-screen tool overlay -->
+    <div id="tool-overlay" class="hidden">
+        <div id="tool-overlay-bar">
+            <span id="tool-overlay-title"></span>
+            <div id="tool-overlay-actions">
+                <button id="btn-newtab" title="Open in new tab">⬡ New Tab</button>
+                <button id="btn-overlay-close">×</button>
+            </div>
+        </div>
+        <div id="tool-overlay-body">
+            <iframe id="tool-frame"
+                src="about:blank"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                allow="accelerometer; camera; fullscreen; geolocation; gyroscope; microphone; xr-spatial-tracking">
+            </iframe>
+            <div id="tool-blocked" class="hidden">
+                <div id="tool-blocked-inner">
+                    <div id="tool-blocked-icon">🚫</div>
+                    <h2>Blocked by browser</h2>
+                    <p>This page cannot be embedded (X-Frame-Options). Open it in a new tab instead.</p>
+                    <button id="btn-blocked-newtab">Open in New Tab</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="importmap">
         {
             "imports": {
@@ -18,9 +60,7 @@
             }
         }
     </script>
-    <!-- The import map above configures modules for the 3D desktop experience. -->
-    <!-- It uses Three.js, a 3D graphics library, sourced from unpkg. -->
     <script src="../models/models.js"></script>
-    <script type="module" src="desktop.js"></script>
+    <script type="module" src="desktop.js?v=5"></script>
 </body>
 </html>
