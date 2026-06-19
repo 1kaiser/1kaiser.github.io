@@ -21,11 +21,17 @@ This project leverages several key technologies and AI assistance:
 *   <a href="https://vuejs.org/" target="_blank" rel="noopener noreferrer"><img src="https://vuejs.org/images/logo.png" alt="Vue.js Logo" title="Vue.js" width="40"></a>
     **[Vue.js](https://vuejs.org/)**: The Progressive JavaScript Framework used for building the user interface of the gallery (Vue 3).
 
+*   <a href="https://huggingface.co/docs/transformers.js/" target="_blank" rel="noopener noreferrer"><img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="Transformers.js Logo" title="Transformers.js" width="40"></a>
+    **[Transformers.js](https://huggingface.co/docs/transformers.js/)**: Used for client-side LLM interaction and inference within browser.
+
+*   <a href="https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API" target="_blank" rel="noopener noreferrer"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/WebGPU_Logo.svg" alt="WebGPU Logo" title="WebGPU" width="40"></a>
+    **[WebGPU](https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API)** / **[WASM](https://webassembly.org/)**: For hardware-accelerated processing and efficient execution within the browser.
+
 *   <a href="https://bulma.io/" target="_blank" rel="noopener noreferrer"><img src="https://bulma.io/images/bulma-logo.png" alt="Bulma Logo" title="Bulma" width="40"></a>
     **[Bulma](https://bulma.io/)**: A modern CSS framework based on Flexbox, used for the DEM to GLB converter interface.
 
 *   <a href="https://d3js.org/" target="_blank" rel="noopener noreferrer"><img src="https://d3js.org/logo.svg" alt="D3.js Logo" title="D3.js" width="40"></a>
-    **[D3.js](https://d3js.org/)**: Used for repository timeline and various data visualizations.
+    **[D3.js (v7)](https://d3js.org/)**: Used for repository timeline and various data visualizations.
 
 *   **[Piping Server](https://github.com/nwtgck/piping-server)**: Used to facilitate the real-time transfer of model data for the 'Deploy to Mobile' QR code feature.
 
@@ -53,11 +59,24 @@ This project leverages several key technologies and AI assistance:
 
 ## 🚀 Featured Experiments
 
-*   **Wordy**: [Live Demo](https://1kaiser.github.io/wordy/) | [GitHub](https://github.com/1kaiser/wordy)
-*   **TextGraph**: [Live Demo](https://1kaiser.github.io/TextGraph/) | [GitHub](https://github.com/1kaiser/TextGraph)
+### Internal (Hosted in this repo)
+*   **CV**: [Live Demo](https://1kaiser.github.io/cv/cv.html) (`cv/cv.html`)
+*   **GPhotosUI**: [Live Demo](https://1kaiser.github.io/cv/googlephotos.html) (`cv/googlephotos.html`)
+*   **DEM to GLB Converter**: [Live Demo](https://1kaiser.github.io/cv/dem-to-glb.html) (`cv/dem-to-glb.html`)
+*   **Hydrology WMO Glossary (Semantic Space)**: [Live Demo](https://1kaiser.github.io/cv/WMO_2012.html) (`cv/WMO_2012.html`)
+*   **LayerFlow Style UMAP (BERT)**: [Live Demo](https://1kaiser.github.io/cv/layerflow-BERT.html) (`cv/layerflow-BERT.html`)
+*   **Ecco Client-Side Analysis (Neuron Factors)**: [Live Demo](https://1kaiser.github.io/cv/Neuron_Factors.html) (`cv/Neuron_Factors.html`)
+*   **Desktop**: [Live Demo](https://1kaiser.github.io/desktop/desktop.html) (`desktop/desktop.html`)
+*   **Soundcloud**: [Live Demo](https://1kaiser.github.io/soundcloud/index.html) (`soundcloud/index.html`)
+*   **Experiments**: [Live Demo](https://1kaiser.github.io/experiments.html) (`experiments.html`)
+
+### External Projects
 *   **Gemma Chat App**: [Live Demo](https://1kaiser.github.io/gemma-chat-app/) | [GitHub](https://github.com/1kaiser/gemma-chat-app)
-*   **LLM Consistency Vis**: [Live Demo](https://1kaiser.github.io/llm-consistency-vis/) | [GitHub](https://github.com/1kaiser/llm-consistency-vis)
 *   **Graph Queen**: [Live Demo](https://1kaiser.github.io/graph-queen/) | [GitHub](https://github.com/1kaiser/graph-queen)
+*   **LLM Consistency Vis**: [Live Demo](https://1kaiser.github.io/llm-consistency-vis/) | [GitHub](https://github.com/1kaiser/llm-consistency-vis)
+*   **LLM Wordgraph**: [Live Demo](https://1kaiser.github.io/llm-wordgraph-exact/) | [GitHub](https://github.com/1kaiser/llm-wordgraph-exact)
+*   **TextGraph**: [Live Demo](https://1kaiser.github.io/TextGraph/) | [GitHub](https://github.com/1kaiser/TextGraph)
+*   **Wordy**: [Live Demo](https://1kaiser.github.io/wordy/) | [GitHub](https://github.com/1kaiser/wordy)
 
 ## Current Folder Structure
 
@@ -67,9 +86,14 @@ This project leverages several key technologies and AI assistance:
 │   ├── styles.css
 │   └── soundcloud-integration.css
 ├── cv/
+│   ├── chat-app.html
 │   ├── cv.html
 │   ├── dem-to-glb.html
-│   └── ... (other pages)
+│   ├── googlephotos.html
+│   ├── layerflow-BERT.html
+│   ├── Neuron_Factors.html
+│   ├── TextGraph.html
+│   └── WMO_2012.html
 ├── desktop/
 │   ├── desktop.html
 │   └── desktop.js
@@ -105,6 +129,9 @@ This project leverages several key technologies and AI assistance:
 - [ ] Implement search functionality for models and experiments.
 
 ## Visuals
+
+### Main Links Preview
+![Main Links Preview](links_preview.png)
 
 ### SoundCloud Integration
 ![SoundCloud Integration](soundcloud_integration.png)
