@@ -11,6 +11,8 @@ const GalleryApp = {
       // ModelCache resolving, not model-viewer's own `progress` event,
       // since model-viewer no longer does its own fetch at all now).
       loadBlur: (window.modelsConfig || []).map(() => 16),
+      loaded: (window.modelsConfig || []).map(() => false),
+      loading: (window.modelsConfig || []).map(() => false),
       cardRefs: [],
     };
   },
@@ -18,20 +20,22 @@ const GalleryApp = {
     setCardRef(el, i) {
       if (el) this.cardRefs[i] = el;
     },
-    // Loads are queued through window.ModelCache (js/model-cache.js)
-    // instead of each model-viewer firing its own :src-bound fetch --
-    // with ~20 model-viewers on this page (10 cards + 10 background
-    // scans) doing that simultaneously, real GLB fetches split
-    // available bandwidth so many ways that most never finished loading
-    // at all. ModelCache also caches via the Cache API, so a repeat
-    // visit is instant instead of re-fetching.
-    loadCards() {
-      this.cards.forEach((card, i) => {
-        const mv = this.cardRefs[i];
-        if (!mv || !window.ModelCache) return;
-        window.ModelCache.loadInto(mv, this.getModelUrl(card.model)).then(() => {
-          this.loadBlur[i] = 0;
-        });
+    // Loading is user-triggered per tile (click anywhere on the card)
+    // instead of every card firing its GLB fetch on page mount -- the
+    // queued window.ModelCache loader (js/model-cache.js) already fixed
+    // the worst of the ~20-simultaneous-fetch bandwidth contention, but
+    // still meant every visitor downloaded all 10 models whether they
+    // looked at them or not. Idempotent: a second click on an
+    // already-loaded/loading card is a no-op.
+    loadCard(i) {
+      if (this.loaded[i] || this.loading[i]) return;
+      const mv = this.cardRefs[i];
+      if (!mv || !window.ModelCache) return;
+      this.loading[i] = true;
+      window.ModelCache.loadInto(mv, this.getModelUrl(this.cards[i].model)).then(() => {
+        this.loadBlur[i] = 0;
+        this.loaded[i] = true;
+        this.loading[i] = false;
       });
     },
     handleMouseEnter(i) {
@@ -110,7 +114,7 @@ const GalleryApp = {
       this.cardZIndices = initialZIndices;
       this.zCounter = this.models.length;
     }
-    this.$nextTick(() => this.loadCards());
+    // No auto-load here -- see loadCard(i), triggered by clicking a tile.
   },
   template: `
     <div class="gallery-container">
@@ -121,6 +125,7 @@ const GalleryApp = {
         :style="card.style"
         @mouseenter="handleMouseEnter(i)"
         @mouseleave="handleMouseLeave"
+        @click="loadCard(i)"
       >
         <model-viewer
           :ref="el => setCardRef(el, i)"
@@ -130,6 +135,9 @@ const GalleryApp = {
           shadow-intensity="1"
           camera-controls
         ></model-viewer>
+        <div v-if="!loaded[i]" class="model-card-tap-hint" :class="{ 'is-loading': loading[i] }">
+          {{ loading[i] ? 'Loading…' : 'Tap to load' }}
+        </div>
         <button
           type="button"
           class="model-card-expand"
@@ -147,6 +155,7 @@ const GalleryApp = {
           :href="getModelUrl(card.model)"
           download
           class="download-button"
+          @click.stop
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="24px" height="24px">
             <path d="M0 0h24v24H0z" fill="none"/>
