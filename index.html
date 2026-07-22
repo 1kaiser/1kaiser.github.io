@@ -124,6 +124,11 @@
         <button id="modalDeployBtn" class="modal-deploy-btn">
           <span>Deploy to Mobile</span>
         </button>
+        <!-- js/measure.js: click two points on the model to measure the
+             distance between them (model units unless calibrated). -->
+        <button id="modalMeasureBtn" class="modal-measure-btn" type="button">
+          <span>Measure</span>
+        </button>
         <div id="statusMessage"></div>
         <div class="connection-status" id="connectionStatus" style="display: none;">
           <div class="status-indicator"></div>
@@ -171,6 +176,9 @@
   <script src="js/piping-utils.js"></script>
   <script src="js/qr-deploy.js"></script>
   <script src="js/app.js" defer></script>
+  <!-- Click-to-measure distance tool for the modal's model-viewer, built on
+       its public positionAndNormalFromPoint()/hotspot API. -->
+  <script src="js/measure.js" defer></script>
   <script src="js/soundcloud-integration.js"></script>
   <!-- Queued, Cache-API-backed GLB loading shared by the gallery cards
        and the background scan carousel -- must load before both. -->

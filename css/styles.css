@@ -247,6 +247,57 @@ body {
   background-color: #0b7dda;
 }
 
+.modal-measure-btn {
+  background-color: #757575;
+}
+
+.modal-measure-btn:hover {
+  background-color: #616161;
+}
+
+.modal-measure-btn.is-active {
+  background-color: #ff5252;
+}
+
+/* js/measure.js: click-to-measure hotspots + connecting line, positioned
+   by model-viewer itself (hotspot markers) and by measure.js reading their
+   projected screen rects each camera-change (the SVG line -- model-viewer
+   has no public API to add raw 3D line geometry into its own scene). */
+.measure-hotspot {
+  pointer-events: none;
+}
+
+.measure-point {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff5252;
+  border: 2px solid white;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  transform: translate(-50%, -50%);
+}
+
+.measure-label {
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-size: 12px;
+  font-family: monospace;
+  padding: 3px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.measure-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1005;
+}
+
 /* QR Code container */
 .qr-overlay {
   display: none;

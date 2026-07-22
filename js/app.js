@@ -224,6 +224,26 @@ if (closeButton) {
     if (modalViewer) {
       modalViewer.src = ''; // Clear the source
     }
+    if (modalViewer && window.ModelMeasure) {
+      window.ModelMeasure.detach(modalViewer);
+    }
+    const measureBtn = document.getElementById('modalMeasureBtn');
+    if (measureBtn) measureBtn.classList.remove('is-active');
+  });
+}
+
+// Measure toggle: click two points on the model in the modal to see the
+// distance between them (see js/measure.js -- readings are in the GLB's
+// own arbitrary units unless the model has been calibrated).
+const modalMeasureBtn = document.getElementById('modalMeasureBtn');
+if (modalMeasureBtn && modalViewer) {
+  modalMeasureBtn.addEventListener('click', () => {
+    if (!window.ModelMeasure) {
+      console.warn('ModelMeasure not loaded yet.');
+      return;
+    }
+    const active = window.ModelMeasure.toggle(modalViewer);
+    modalMeasureBtn.classList.toggle('is-active', active);
   });
 }
 
