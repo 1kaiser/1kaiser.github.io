@@ -12,12 +12,13 @@
 
   var HF_BASE = "https://huggingface.co/datasets/1kaiser/models/resolve/main/";
 
+  // VID20230408091040 and VID20230408100354 removed (the latter was the
+  // degenerate near-empty reconstruction, only 2,926 points -- flagged
+  // earlier this session) -- also removed from the Hugging Face dataset.
   var scans = [
-    { file: "VID20230408091040", pts: 51636 },
     { file: "VID20230408092322", pts: 566905 },
     { file: "VID20230408092500", pts: 906245 },
     { file: "VID20230408095210", pts: 140899 },
-    { file: "VID20230408100354", pts: 2926 },
     { file: "VID20230408100423", pts: 117726 },
     { file: "VID20230408111201", pts: 77622 },
     { file: "VID20230408113045", pts: 28408 },
@@ -38,9 +39,14 @@
 
     var mv = document.createElement("model-viewer");
     mv.className = "bg-scan";
-    mv.setAttribute("src", HF_BASE + s.file + "_pi3x.glb");
+    // No src set here -- loaded via window.ModelCache below (queued,
+    // Cache-API-backed) instead of letting each of these 10 elements
+    // fire its own immediate fetch. With the 10 foreground gallery cards
+    // doing the same thing at the same time, ~20 simultaneous multi-MB
+    // GLB fetches split available bandwidth so many ways that most never
+    // finished loading at all (confirmed by isolating one: it loaded in
+    // ~14s alone vs. still stuck after 15s+ with everything competing).
     mv.setAttribute("poster", "models/bg_scans/" + s.file + ".png");
-    mv.setAttribute("loading", i === 0 ? "eager" : "lazy");
     mv.setAttribute("reveal", "auto");
     mv.setAttribute("disable-zoom", "");
     // Default auto-framing leaves a lot of margin around a compact point
@@ -63,6 +69,10 @@
     label.textContent = s.file + "_pi3x.glb · " + s.pts.toLocaleString("en-US") + " pts";
     root.appendChild(label);
     labels.push(label);
+
+    if (window.ModelCache) {
+      window.ModelCache.loadInto(mv, HF_BASE + s.file + "_pi3x.glb", i === 0);
+    }
   });
 
   document.body.insertBefore(root, document.body.firstChild);

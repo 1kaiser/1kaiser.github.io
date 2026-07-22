@@ -25,6 +25,14 @@ body {
   inset: 0;
   perspective: 1200px;
   transform-origin: 50% 50%;
+  /* This spans the full viewport (needed so top:66.666%-style
+     percentages on .model-card resolve against the screen, not some
+     smaller box) but is otherwise empty/transparent -- without this, its
+     own box still captures clicks across that whole area regardless of
+     transparency, which silently ate the second row of top-right nav
+     links (confirmed via elementFromPoint: it was resolving as the hit
+     target at their coordinates). .model-card opts back in below. */
+  pointer-events: none;
 }
 
 /* .gallery-container being position:fixed takes it out of document flow,
@@ -71,6 +79,7 @@ body {
   left: 50%;
   /* transform/zIndex/transition are set by inline styles from
      gallery-vue.js; it does not touch box-shadow or background */
+  pointer-events: auto; /* opts back in -- see .gallery-container */
 }
 
 .model-card model-viewer {

@@ -1,12 +1,18 @@
 // Content from js/main.js
 // Draco Decoder Support
-// Configure Draco decoder before model-viewer loads
-// Sourced from unpkg, which hosts Google's Draco library.
+// Configure Draco decoder before model-viewer loads.
+//
+// The unpkg.com/three@0.152.0/examples/js/libs/draco/ path this used to
+// point at genuinely 404s (three.js restructured its examples directory
+// in a later version; confirmed with a direct HEAD request outside the
+// browser, not a CORS/CSP artifact) -- every Draco-compressed model on
+// the site (most of the mesh-based gallery items; the Pi3X point clouds
+// aren't affected, Draco only compresses indexed meshes) silently never
+// finished loading as a result. Switched to Google's own canonical Draco
+// CDN, which model-viewer's docs recommend directly; also needs
+// https://www.gstatic.com added to the CSP's connect-src (see index.html).
 window.ModelViewerElement = window.ModelViewerElement || {};
-window.ModelViewerElement.dracoDecoderLocation = 'https://unpkg.com/three@0.152.0/examples/js/libs/draco/';
-
-// Alternative: Use Google's CDN for Draco
-// window.ModelViewerElement.dracoDecoderLocation = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
+window.ModelViewerElement.dracoDecoderLocation = 'https://www.gstatic.com/draco/versioned/decoders/1.5.6/';
 
 // Enhanced error handling for model-viewer (from main.js)
 // Note:DOMContentLoaded listener for Draco errors

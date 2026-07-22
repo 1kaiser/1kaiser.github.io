@@ -6,19 +6,33 @@ const GalleryApp = {
       cardZIndices: [],
       zCounter: 0,
       // Loading state per card, replacing model-viewer's default progress
-      // bar: each model renders blurred and sharpens into focus as its
-      // GLB streams in, driven by model-viewer's own `progress` event
-      // (detail.totalProgress, 0-1) rather than a separate bar UI.
+      // bar: each model renders blurred and sharpens into focus once its
+      // GLB is actually ready (see loadCards() below -- driven by
+      // ModelCache resolving, not model-viewer's own `progress` event,
+      // since model-viewer no longer does its own fetch at all now).
       loadBlur: (window.modelsConfig || []).map(() => 16),
+      cardRefs: [],
     };
   },
   methods: {
-    onModelProgress(e, i) {
-      const p = e.detail && typeof e.detail.totalProgress === 'number' ? e.detail.totalProgress : 1;
-      this.loadBlur[i] = (1 - p) * 16;
+    setCardRef(el, i) {
+      if (el) this.cardRefs[i] = el;
     },
-    onModelLoad(i) {
-      this.loadBlur[i] = 0;
+    // Loads are queued through window.ModelCache (js/model-cache.js)
+    // instead of each model-viewer firing its own :src-bound fetch --
+    // with ~20 model-viewers on this page (10 cards + 10 background
+    // scans) doing that simultaneously, real GLB fetches split
+    // available bandwidth so many ways that most never finished loading
+    // at all. ModelCache also caches via the Cache API, so a repeat
+    // visit is instant instead of re-fetching.
+    loadCards() {
+      this.cards.forEach((card, i) => {
+        const mv = this.cardRefs[i];
+        if (!mv || !window.ModelCache) return;
+        window.ModelCache.loadInto(mv, this.getModelUrl(card.model)).then(() => {
+          this.loadBlur[i] = 0;
+        });
+      });
     },
     handleMouseEnter(i) {
       this.activeIndex = i;
@@ -96,6 +110,7 @@ const GalleryApp = {
       this.cardZIndices = initialZIndices;
       this.zCounter = this.models.length;
     }
+    this.$nextTick(() => this.loadCards());
   },
   template: `
     <div class="gallery-container">
@@ -108,14 +123,12 @@ const GalleryApp = {
         @mouseleave="handleMouseLeave"
       >
         <model-viewer
-          :src="getModelUrl(card.model)"
+          :ref="el => setCardRef(el, i)"
           :poster="getPosterUrl(card.model)"
           :alt="card.model.alt"
           :style="{ filter: 'blur(' + loadBlur[i] + 'px)', transition: 'filter 250ms ease' }"
           shadow-intensity="1"
           camera-controls
-          @progress="onModelProgress($event, i)"
-          @load="onModelLoad(i)"
         ></model-viewer>
         <button
           type="button"

@@ -29,6 +29,7 @@
       https://huggingface.co
       https://*.hf.co
       https://unpkg.com
+      https://www.gstatic.com
       data: blob:;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     font-src 'self' https://fonts.gstatic.com;
@@ -171,6 +172,9 @@
   <script src="js/qr-deploy.js"></script>
   <script src="js/app.js" defer></script>
   <script src="js/soundcloud-integration.js"></script>
+  <!-- Queued, Cache-API-backed GLB loading shared by the gallery cards
+       and the background scan carousel -- must load before both. -->
+  <script src="js/model-cache.js"></script>
   <!-- Vue App -->
   <script src="js/gallery-vue.js"></script>
   <!-- Keeps the card fan within a 20px margin of the viewport edges -->
