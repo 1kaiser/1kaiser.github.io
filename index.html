@@ -30,14 +30,23 @@
       https://*.hf.co
       https://unpkg.com
       data: blob:;
-    style-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
     img-src 'self' data: blob: https:;
     media-src 'self' data: blob: https:;
     worker-src 'self' data: blob:;
   ">
   <title>3D Model Gallery</title>
   <!-- Add this to your index.html head section, before the model-viewer script -->
-  
+
+  <!-- Google Fonts: body/heading font-family was already declared as
+       'Inter' in css/styles.css but never actually loaded from anywhere,
+       silently falling back to the browser's default sans-serif this
+       whole time -- this makes that real. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- Model Viewer with Draco support -->
   <script type="module" src="https://unpkg.com/@google/model-viewer@3.3.0/dist/model-viewer.min.js"></script>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -48,6 +57,7 @@
   <!-- External CSS -->
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/soundcloud-integration.css">
+  <link rel="stylesheet" href="css/bg-carousel.css">
 </head>
 <body>
   <!-- Draggable Server Status Window -->
@@ -163,5 +173,13 @@
   <script src="js/soundcloud-integration.js"></script>
   <!-- Vue App -->
   <script src="js/gallery-vue.js"></script>
+  <!-- Keeps the card fan within a 20px margin of the viewport edges -->
+  <script src="js/gallery-fit.js" defer></script>
+  <!-- Real sun-position math (shared logic with desktop/desktop.js's
+       Sun-Path tool), drives the background carousel's exposure/tint -->
+  <script src="js/sun-lighting.js" defer></script>
+  <!-- Background scan carousel (Pi3X reconstructions, behind the gallery),
+       live-rendered via model-viewer and lit by js/sun-lighting.js -->
+  <script src="js/bg-carousel.js" defer></script>
 </body>
 </html>

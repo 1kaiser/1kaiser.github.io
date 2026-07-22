@@ -1,0 +1,191 @@
+/* Background carousel: cycles the Pi3X reconstruction scans behind the
+   existing page content. Purely additive -- does not modify any existing
+   selector or the gallery/card styling. */
+
+#bg-carousel {
+  position: fixed;
+  inset: 0;
+  /* Negative, not 0: several existing elements (the bare <h1>, the
+     draggable status window) are non-positioned, and non-positioned
+     siblings always paint *below* any positioned sibling with z-index
+     0 or higher, regardless of DOM order -- z-index 0 here silently
+     washed them out. Negative pins this behind literally everything.
+     (This also means an enlarged scan has to be reparented out of here
+     entirely to render on top -- see #bg-scan-overlay-root below.) */
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#bg-carousel .bg-scan-wrap {
+  position: absolute;
+  /* inset alone doesn't stretch a replaced element (<img>, and by
+     extension the model-viewer canvas inside this) without explicit
+     width/height -- it falls back to intrinsic size. Set both
+     explicitly so the gaps (left/right 10px, top 20%) actually take
+     effect. Height keeps the bottom edge pinned at 2/3 screen height
+     (66.667vh) regardless of the top offset: 66.667vh - 20vh = 46.667vh. */
+  top: 20%;
+  right: 10px;
+  left: 10px;
+  width: calc(100% - 20px);
+  height: 46.667vh;
+  --sun-filter: none;
+  opacity: 0;
+  /* blur (crossfade) composes with the sun-tint custom property here,
+     rather than each fighting over the filter property separately */
+  filter: var(--sun-filter) blur(16px);
+  transition: opacity 1100ms ease, filter 1100ms ease, top 500ms ease, left 500ms ease, right 500ms ease,
+    bottom 500ms ease, width 500ms ease, height 500ms ease, border-radius 400ms ease;
+  will-change: opacity, filter;
+}
+
+#bg-carousel .bg-scan-wrap.is-current {
+  opacity: 0.5;
+  filter: var(--sun-filter) blur(0);
+}
+
+/* Not scoped to #bg-carousel: when enlarged, .bg-scan-wrap (and this
+   model-viewer inside it) gets reparented into #bg-scan-overlay-root
+   (see the big comment there), and a selector scoped to #bg-carousel
+   would simply stop matching at that point -- confirmed via
+   getBoundingClientRect() during testing: the model-viewer silently
+   collapsed to its default intrinsic 300x150 size the moment it moved,
+   which is why the model rendered tiny in one corner of the big modal
+   instead of filling it. */
+.bg-scan-wrap .bg-scan {
+  width: 100%;
+  height: 100%;
+  display: block;
+  --poster-color: transparent;
+  background-color: transparent;
+}
+
+#bg-carousel::after {
+  /* keep page text/nav legible over the busiest parts of the image */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 38%, rgba(240, 242, 245, 0.25) 0%, rgba(240, 242, 245, 0.72) 68%, rgba(240, 242, 245, 0.92) 100%);
+}
+
+#bg-carousel .bg-label {
+  /* anchored under the top-left branding rather than the viewport
+     bottom -- "bottom" tracked the current viewport, which on shorter
+     windows landed on top of the timeline section below the fold */
+  position: absolute;
+  left: 18px;
+  top: 130px;
+  font-family: ui-monospace, "SF Mono", "Roboto Mono", Consolas, monospace;
+  font-size: 11px;
+  color: #4a5560;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 7px;
+  padding: 6px 10px;
+  opacity: 0;
+  transition: opacity 1100ms ease;
+}
+
+#bg-carousel .bg-label.is-current { opacity: 1; }
+
+/* ---- overlay root: the only place an enlarged scan (or a button that
+   needs to be reliably clickable) can actually render above the rest of
+   the page. #bg-carousel sits at z-index:-1 (needed so it paints behind
+   the bare non-positioned <h1>/status-window -- see above), which per
+   the CSS stacking spec puts its *entire subtree* in the layer BELOW
+   normal static content, not just visually but for hit-testing too --
+   a button nested in there is not reliably clickable no matter its own
+   z-index, because non-positioned siblings elsewhere on the page (like
+   that bare <h1>, whose invisible full-width box extends well past its
+   visible text) sit in a higher hit-test layer and silently swallow the
+   click first. Confirmed via elementFromPoint() during testing: the h1
+   was resolving as the hit target at the button's own coordinates. Both
+   the trigger button and the enlarged modal live here instead, outside
+   #bg-carousel's subtree entirely, in a normal positive-z-index layer. ---- */
+
+#bg-scan-overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none; /* only children that opt back in receive clicks */
+}
+
+#bg-scan-trigger {
+  position: fixed;
+  top: 85px; /* clear of the site's own top-right nav (~70px tall) */
+  right: 18px;
+  z-index: 3;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+#bg-scan-trigger:hover { background: #fff; transform: scale(1.06); }
+#bg-scan-trigger:focus-visible { outline: 2px solid #2554d1; outline-offset: 2px; }
+
+#bg-scan-overlay-root .bg-scan-wrap.is-enlarged {
+  position: fixed;
+  top: 6vh;
+  left: 6vw;
+  right: 6vw;
+  bottom: 6vh;
+  width: auto;
+  height: auto;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  box-shadow: 0 40px 100px rgba(15, 20, 25, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+#bg-scan-overlay-root .bg-scan-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+#bg-scan-overlay-root .bg-scan-close:hover { background: #fff; }
+#bg-scan-overlay-root .bg-scan-close:focus-visible { outline: 2px solid #2554d1; outline-offset: 2px; }
+
+#bg-scan-overlay-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 13, 18, 0.35);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+
+#bg-scan-overlay-root:has(.bg-scan-wrap.is-enlarged)::before {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #bg-carousel .bg-scan-wrap,
+  #bg-carousel .bg-label { transition: none; }
+}

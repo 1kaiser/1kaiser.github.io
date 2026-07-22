@@ -5,9 +5,21 @@ const GalleryApp = {
       activeIndex: null,
       cardZIndices: [],
       zCounter: 0,
+      // Loading state per card, replacing model-viewer's default progress
+      // bar: each model renders blurred and sharpens into focus as its
+      // GLB streams in, driven by model-viewer's own `progress` event
+      // (detail.totalProgress, 0-1) rather than a separate bar UI.
+      loadBlur: (window.modelsConfig || []).map(() => 16),
     };
   },
   methods: {
+    onModelProgress(e, i) {
+      const p = e.detail && typeof e.detail.totalProgress === 'number' ? e.detail.totalProgress : 1;
+      this.loadBlur[i] = (1 - p) * 16;
+    },
+    onModelLoad(i) {
+      this.loadBlur[i] = 0;
+    },
     handleMouseEnter(i) {
       this.activeIndex = i;
       const newZIndices = [...this.cardZIndices];
@@ -38,11 +50,21 @@ const GalleryApp = {
         const isHovered = this.activeIndex === i;
         const random_rotate_z = (model.initialRotation = model.initialRotation || (Math.random() * 16) - 8);
         const spread = 147; // 30% overlap
-        const offset = (i - (numCards - 1) / 2) * spread;
-        const translateY = Math.abs(i - (numCards - 1) / 2) * -35 + 35; // Less pronounced arc
-        let transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg)`;
+        const centerIndex = (numCards - 1) / 2;
+        const offset = (i - centerIndex) * spread;
+        const translateY = Math.abs(i - centerIndex) * -35 + 35; // Less pronounced arc
+
+        // Parallax scale: edge cards larger, center cards smaller.
+        const distFromCenter = Math.abs(i - centerIndex);
+        const normDist = centerIndex > 0 ? distFromCenter / centerIndex : 0;
+        const MIN_SCALE = 0.76; // center-most card
+        const MAX_SCALE = 1.2;  // outermost cards
+        const baseScale = MIN_SCALE + (MAX_SCALE - MIN_SCALE) * normDist;
+
+        let transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg) scale(${baseScale.toFixed(3)})`;
         if (isHovered) {
-          transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(1.1)`;
+          const hoverScale = (baseScale * 1.15).toFixed(3);
+          transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY - 20}px) rotateZ(0deg) scale(${hoverScale})`;
         }
         return {
           style: {
@@ -77,9 +99,12 @@ const GalleryApp = {
           :src="getModelUrl(card.model)"
           :poster="getPosterUrl(card.model)"
           :alt="card.model.alt"
+          :style="{ filter: 'blur(' + loadBlur[i] + 'px)', transition: 'filter 250ms ease' }"
           shadow-intensity="1"
           camera-controls
           auto-rotate
+          @progress="onModelProgress($event, i)"
+          @load="onModelLoad(i)"
         ></model-viewer>
         <div class="model-info-overlay">
           <h2>{{ card.model.title }}</h2>

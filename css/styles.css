@@ -8,6 +8,33 @@ body {
 }
 
 /* New Gallery Styles */
+
+/* Fan of .model-card children is absolutely positioned (top:66.66%,
+   left:50%, see .model-card below) against this container, so the
+   container itself needs to span the full viewport for those percentages
+   to mean "2/3 down the screen" rather than "2/3 down some shorter box".
+   position:fixed; inset:0 does that. transform-origin backs the scale
+   applied by js/gallery-fit.js, which keeps a 20px margin from the
+   left/right viewport edges at any width. (This replaces an earlier
+   position:relative/height:80vh/flex rule further down that silently
+   won the cascade over this one and made the container track only its
+   own document-flow box, not the viewport -- consolidated into one rule
+   here instead of leaving two conflicting declarations in the file.) */
+.gallery-container {
+  position: fixed;
+  inset: 0;
+  perspective: 1200px;
+  transform-origin: 50% 50%;
+}
+
+/* .gallery-container being position:fixed takes it out of document flow,
+   which collapsed its parent #gallery-root to 0 height -- that pulled the
+   SoundCloud section up to directly overlap the fan. Reserve real space
+   here so normal-flow layout still pushes later sections down properly. */
+#gallery-root {
+  height: 100vh;
+}
+
 .title-container {
     position: fixed;
     top: 10%;
@@ -27,38 +54,33 @@ body {
     color: #222;
 }
 
-.gallery-container {
-    position: relative;
-    width: 100%;
-    height: 80vh; /* Use viewport height */
-    perspective: 1200px; /* Enhanced perspective */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 
 .model-card {
-  background-color: #ffffff;
+  background-color: transparent; /* fully transparent fill; the glass edge is border/highlight + backdrop-filter blur alone */
+  backdrop-filter: blur(9px) saturate(175%);
+  -webkit-backdrop-filter: blur(9px) saturate(175%);
   border-radius: 20px; /* More rounded corners */
   overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   cursor: pointer;
   /* transition is now set by React inline styles */
   width: 210px;
   height: 315px;
   position: absolute;
-  top: 50%;
+  top: 83.333%; /* 2.5/3 of screen height */
   left: 50%;
-  /* box-shadow and transform are set by React inline styles */
+  /* transform/zIndex/transition are set by inline styles from
+     gallery-vue.js; it does not touch box-shadow or background */
 }
 
 .model-card model-viewer {
   width: 100%;
   height: 100%;
-  --progress-bar-height: 4px;
-  --progress-bar-color: #333;
-  --progress-mask: #eee;
+  /* Loading is now shown as the model unblurring into focus (see
+     gallery-vue.js's loadBlur, driven by the `progress` event) instead
+     of the default bar -- collapse it to nothing rather than show both. */
+  --progress-bar-height: 0px;
 }
 
 .card-buttons {
