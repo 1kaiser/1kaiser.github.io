@@ -245,7 +245,7 @@ body {
   z-index: 1010;
 }
 
-.modal-download-btn, .modal-deploy-btn {
+.modal-download-btn, .modal-deploy-btn, .modal-measure-btn {
   background-color: #4CAF50;
   color: white;
   border: none;
