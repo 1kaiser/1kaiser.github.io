@@ -30,6 +30,17 @@ const GalleryApp = {
     handleMouseLeave() {
       this.activeIndex = null;
     },
+    // Tiles are static by default (no auto-rotate); the expand button
+    // opens the site's existing modal (#modelOverlay in index.html --
+    // camera-controls, AR, download, blob caching, all already built)
+    // with auto-rotate turned on for that one enlarged view. That modal
+    // was previously only reachable via a now-inert legacy click handler
+    // (see js/app.js) -- exposed as window.openModelModal for this.
+    expand(model) {
+      if (window.openModelModal) {
+        window.openModelModal(this.getModelUrl(model), model.title, true);
+      }
+    },
     getPosterUrl(model) {
       if (model.poster.startsWith('http')) {
         return model.poster;
@@ -57,8 +68,9 @@ const GalleryApp = {
         // Parallax scale: edge cards larger, center cards smaller.
         const distFromCenter = Math.abs(i - centerIndex);
         const normDist = centerIndex > 0 ? distFromCenter / centerIndex : 0;
-        const MIN_SCALE = 0.76; // center-most card
-        const MAX_SCALE = 1.2;  // outermost cards
+        const SCALE_FACTOR = 0.75; // overall tile size, applied on top of the parallax range
+        const MIN_SCALE = 0.76 * SCALE_FACTOR; // center-most card
+        const MAX_SCALE = 1.2 * SCALE_FACTOR;  // outermost cards
         const baseScale = MIN_SCALE + (MAX_SCALE - MIN_SCALE) * normDist;
 
         let transform = `translate(-50%, -50%) translateX(${offset}px) translateY(${translateY}px) rotateZ(${random_rotate_z}deg) scale(${baseScale.toFixed(3)})`;
@@ -102,10 +114,17 @@ const GalleryApp = {
           :style="{ filter: 'blur(' + loadBlur[i] + 'px)', transition: 'filter 250ms ease' }"
           shadow-intensity="1"
           camera-controls
-          auto-rotate
           @progress="onModelProgress($event, i)"
           @load="onModelLoad(i)"
         ></model-viewer>
+        <button
+          type="button"
+          class="model-card-expand"
+          :aria-label="'Expand ' + card.model.title"
+          @click.stop="expand(card.model)"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"></polyline><polyline points="15 3 21 3 21 9"></polyline><polyline points="3 15 3 21 9 21"></polyline><polyline points="21 15 21 21 15 21"></polyline></svg>
+        </button>
         <div class="model-info-overlay">
           <h2>{{ card.model.title }}</h2>
           <p>{{ card.model.description }}</p>

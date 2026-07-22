@@ -8,11 +8,12 @@
   var MARGIN = 20; // px, each side
   var CARD_WIDTH = 210;
   var SPREAD = 147;
-  // gallery-vue.js now scales edge cards up to 1.2x (parallax: edges
+  // gallery-vue.js scales edge cards up to MAX_SCALE (parallax: edges
   // larger, center smaller) -- the outermost cards are what actually
   // determine the fan's true left/right extent, so use their scaled
-  // width here, not the base 210px.
-  var EDGE_SCALE = 1.2;
+  // width here, not the base 210px. Must match MAX_SCALE there
+  // (0.75 overall SCALE_FACTOR * 1.2 parallax max = 0.9).
+  var EDGE_SCALE = 0.9;
   var EDGE_CARD_WIDTH = CARD_WIDTH * EDGE_SCALE;
 
   function apply() {

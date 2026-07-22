@@ -123,8 +123,11 @@ window.currentModelTitle = '';
 // AR mode selector integration was moved into the DOMContentLoaded listener from main.js
 // to consolidate DOMContentLoaded logic.
 
-// Event delegation for dynamically generated model cards
-// Ensure galleryDisplay is not null before adding event listener
+// Event delegation for dynamically generated model cards (legacy path --
+// the gallery has been Vue-driven for a while now and no longer creates a
+// #modelGallery element or .expand-btn buttons, so this branch is inert on
+// the current markup; left in place in case something upstream still
+// targets it, rather than deleting behavior that isn't actually broken).
 if (galleryDisplay) {
   // Handles clicks on the expand button to open the modal
   galleryDisplay.addEventListener('click', (event) => {
@@ -137,52 +140,74 @@ if (galleryDisplay) {
       }
     }
   });
-
-  const openModalWithModel = (modelUrl, modelTitle) => {
-    window.currentModelTitle = modelTitle;
-    window.currentModelSrc = modelUrl;
-
-    modalDownloadBtn.href = modelUrl;
-    modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
-
-    if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
-      window.mobileDeployment.contentHasChanged = true;
-      if (window.mobileDeployment.sessionList.length > 0) {
-        const refreshBtn = document.getElementById('refreshMobileBtn');
-        if (refreshBtn) refreshBtn.style.display = 'block';
-      }
-    }
-
-    if (modalViewer) {
-      // The model might be in the browser's cache thanks to the interactive viewer
-      // Fetching it again to be sure and to place it in our specific cache if not already
-      caches.open('models-cache').then(cache => {
-        cache.match(modelUrl).then(cachedResponse => {
-          if (cachedResponse) {
-            return cachedResponse.blob();
-          }
-          return fetch(modelUrl).then(networkResponse => {
-            cache.put(modelUrl, networkResponse.clone());
-            return networkResponse.blob();
-          });
-        }).then(blob => {
-          const objectURL = URL.createObjectURL(blob);
-          modalViewer.src = ''; // Clear previous model
-          modalViewer.cameraOrbit = '0deg 75deg 105%';
-          modalViewer.setAttribute('src', objectURL);
-          modalViewer.setAttribute('alt', modelTitle);
-        });
-      });
-    }
-
-    if (overlay) {
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-    }
-  };
 } else {
   console.warn("Gallery display element ('modelGallery') not found. Click events for model cards will not work.");
 }
+
+// Moved out of the dead `if (galleryDisplay)` branch above and exposed on
+// `window` so the Vue-based gallery (js/gallery-vue.js) can trigger this
+// same modal -- previously only reachable via the now-inert .expand-btn
+// delegation, which meant this whole modal (camera-controls, AR, the
+// built-in download button, blob caching) was unreachable from the
+// current gallery despite being fully built and wired.
+const openModalWithModel = (modelUrl, modelTitle, autoRotate) => {
+  window.currentModelTitle = modelTitle;
+  window.currentModelSrc = modelUrl;
+
+  modalDownloadBtn.href = modelUrl;
+  modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
+
+  if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
+    window.mobileDeployment.contentHasChanged = true;
+    if (window.mobileDeployment.sessionList.length > 0) {
+      const refreshBtn = document.getElementById('refreshMobileBtn');
+      if (refreshBtn) refreshBtn.style.display = 'block';
+    }
+  }
+
+  if (modalViewer) {
+    // The model might be in the browser's cache thanks to the interactive viewer
+    // Fetching it again to be sure and to place it in our specific cache if not already.
+    //
+    // Real bug found while wiring this up to the new expand buttons (this
+    // modal was previously unreachable -- see the comment above
+    // openModalWithModel -- so this had never actually run in practice):
+    // the original code called `cache.put(url, response.clone())` WITHOUT
+    // awaiting it, then immediately read `.blob()` on the sibling
+    // (original) response. In this Chromium build that reliably hangs
+    // `.blob()` forever -- reproduced in isolation with a bare
+    // fetch+clone+put+blob sequence, and confirmed fixed by simply
+    // awaiting `cache.put()` before reading the blob, rather than racing
+    // the two reads of the tee'd stream against each other.
+    caches.open('models-cache').then(cache => {
+      cache.match(modelUrl).then(cachedResponse => {
+        if (cachedResponse) {
+          return cachedResponse.blob();
+        }
+        return fetch(modelUrl).then(networkResponse => {
+          return cache.put(modelUrl, networkResponse.clone()).then(() => networkResponse.blob());
+        });
+      }).then(blob => {
+        const objectURL = URL.createObjectURL(blob);
+        modalViewer.src = ''; // Clear previous model
+        modalViewer.cameraOrbit = '0deg 75deg 105%';
+        modalViewer.setAttribute('src', objectURL);
+        modalViewer.setAttribute('alt', modelTitle);
+        if (autoRotate) {
+          modalViewer.setAttribute('auto-rotate', '');
+        } else {
+          modalViewer.removeAttribute('auto-rotate');
+        }
+      });
+    });
+  }
+
+  if (overlay) {
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+};
+window.openModelModal = openModalWithModel;
 
 
 // Close button functionality for modal
