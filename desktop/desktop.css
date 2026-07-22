@@ -60,6 +60,28 @@ canvas { display: block; }
 }
 #btn-models:hover { background: rgba(255,255,255,0.14); }
 
+#bg-scan-select {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.8);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    max-width: 220px;
+}
+
+#btn-measure-potree {
+    background: rgba(41,182,246,0.15);
+    border: 1px solid rgba(41,182,246,0.4);
+    color: #7dd3fc;
+    padding: 4px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+}
+#btn-measure-potree:hover { background: rgba(41,182,246,0.28); }
+
 /* ── Sidebar ───────────────────────────────────────────────────────────────── */
 #sidebar {
     position: fixed;

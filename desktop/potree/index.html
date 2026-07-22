@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<title>Point Cloud Measure — Kaiser Roy</title>
+
+	<link rel="stylesheet" type="text/css" href="vendor/build/potree/potree.css">
+	<link rel="stylesheet" type="text/css" href="vendor/libs/jquery-ui/jquery-ui.min.css">
+	<link rel="stylesheet" type="text/css" href="vendor/libs/openlayers3/ol.css">
+	<link rel="stylesheet" type="text/css" href="vendor/libs/spectrum/spectrum.css">
+	<link rel="stylesheet" type="text/css" href="vendor/libs/jstree/themes/mixed/style.css">
+	<style>
+		#scan-picker {
+			position: absolute;
+			top: 10px;
+			left: 50%;
+			transform: translateX(-50%);
+			z-index: 1000;
+			background: rgba(20, 20, 28, 0.85);
+			border: 1px solid rgba(255, 255, 255, 0.15);
+			border-radius: 8px;
+			padding: 8px 12px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+			color: #e6e6ee;
+			box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+		}
+		#scan-picker a#back-link {
+			color: #7dd3fc;
+			text-decoration: none;
+			font-size: 13px;
+			white-space: nowrap;
+		}
+		#scan-picker a#back-link:hover { text-decoration: underline; }
+		#scan-picker select#scan-select {
+			background: #1a1a24;
+			color: #e6e6ee;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			border-radius: 4px;
+			padding: 5px 8px;
+			font-size: 13px;
+			max-width: 60vw;
+		}
+		#scan-picker #scan-hint {
+			font-size: 11px;
+			color: #9aa0ab;
+			white-space: nowrap;
+		}
+	</style>
+</head>
+
+<body>
+	<script src="vendor/libs/jquery/jquery-3.1.1.min.js"></script>
+	<script src="vendor/libs/spectrum/spectrum.js"></script>
+	<script src="vendor/libs/jquery-ui/jquery-ui.min.js"></script>
+	<script src="vendor/libs/other/BinaryHeap.js"></script>
+	<script src="vendor/libs/tween/tween.min.js"></script>
+	<script src="vendor/libs/d3/d3.js"></script>
+	<script src="vendor/libs/proj4/proj4.js"></script>
+	<script src="vendor/libs/openlayers3/ol.js"></script>
+	<script src="vendor/libs/i18next/i18next.js"></script>
+	<script src="vendor/libs/jstree/jstree.js"></script>
+	<script src="vendor/build/potree/potree.js"></script>
+	<script src="vendor/libs/plasio/js/laslaz.js"></script>
+
+	<div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px;">
+		<div id="potree_render_area" style="background-image: url('vendor/build/potree/resources/images/background.jpg');"></div>
+		<div id="potree_sidebar_container"></div>
+	</div>
+
+	<div id="scan-picker">
+		<a id="back-link" href="../desktop.html">&larr; Desktop</a>
+		<select id="scan-select"></select>
+		<span id="scan-hint">Sidebar &rarr; Tools has Potree's real measurement toolbar (distance / area / height / volume / angle)</span>
+	</div>
+
+	<script type="module">
+		// Pi3X monocular reconstructions, converted from the same
+		// aligned_pi3x.ply the main gallery's GLBs were exported from
+		// (via PotreeConverter, since Potree needs its own LOD octree
+		// format -- it can't load a GLB). Same 8-scan curated set as
+		// js/bg-carousel.js on the main site (091040 and 100354 excluded
+		// there as duplicate/degenerate).
+		const SCANS = [
+			{ dir: "VID20230408092322",   label: "VID20230408092322 · 566,905 pts" },
+			{ dir: "VID20230408092500",   label: "VID20230408092500 · 906,245 pts" },
+			{ dir: "VID20230408095210",   label: "VID20230408095210 · 140,899 pts" },
+			{ dir: "VID20230408100423",   label: "VID20230408100423 · 117,726 pts" },
+			{ dir: "VID20230408111201",   label: "VID20230408111201 · 77,622 pts" },
+			{ dir: "VID20230408113045_1", label: "VID20230408113045 · 28,408 pts" },
+			{ dir: "VID20230408152015",   label: "VID20230408152015 · 1,192,779 pts" },
+			{ dir: "VID20230408163443_2", label: "VID20230408163443 · 871,261 pts" },
+		];
+
+		window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
+
+		viewer.setEDLEnabled(true);
+		viewer.setFOV(60);
+		viewer.setPointBudget(2_000_000);
+		viewer.loadSettingsFromURL();
+		viewer.setBackground("gradient");
+		viewer.setDescription("Pi3X monocular point-cloud reconstruction");
+
+		viewer.loadGUI(() => {
+			viewer.setLanguage("en");
+			$("#menu_tools").next().show();
+			$("#menu_appearance").next().show();
+			viewer.toggleSidebar();
+		});
+
+		let current = null;
+
+		function loadScan(dir) {
+			// A measurement drawn against the previous scan's coordinates
+			// means nothing once it's swapped out -- clear it along with
+			// the old point cloud rather than leaving stale geometry/labels
+			// floating in the scene.
+			viewer.scene.removeAllMeasurements();
+			if (current) {
+				viewer.scene.scenePointCloud.remove(current);
+				viewer.scene.pointclouds = viewer.scene.pointclouds.filter(p => p !== current);
+				current = null;
+			}
+
+			Potree.loadPointCloud(`pointclouds/${dir}/metadata.json`, dir, (e) => {
+				current = e.pointcloud;
+				viewer.scene.addPointCloud(current);
+				const material = current.material;
+				material.size = 1;
+				material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+				material.shape = Potree.PointShape.SQUARE;
+				viewer.fitToScreen();
+			});
+		}
+
+		const select = document.getElementById("scan-select");
+		SCANS.forEach((s) => {
+			const opt = document.createElement("option");
+			opt.value = s.dir;
+			opt.textContent = s.label;
+			select.appendChild(opt);
+		});
+		select.addEventListener("change", () => loadScan(select.value));
+
+		// Pre-select whatever scan the 3D Desktop's own background dropdown
+		// currently shows (../desktop.js's "Measure" button links here with
+		// ?scan=<dir>), so the two stay in sync instead of always resetting
+		// to the first entry.
+		const requested = new URLSearchParams(location.search).get("scan");
+		const initial = SCANS.find(s => s.dir === requested) ? requested : SCANS[0].dir;
+		select.value = initial;
+		loadScan(initial);
+	</script>
+</body>
+</html>

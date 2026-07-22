@@ -257,17 +257,65 @@ const wallMat = new THREE.MeshStandardMaterial({ color: 0x090912, roughness: 0.9
     scene.add(w);
 });
 
-// GLB model
-if (window.modelsConfig?.length > 0) {
-    const loader = new GLTFLoader();
-    loader.load(`../${window.modelsConfig[0].url}`, (gltf) => {
+// ── Background scan (Pi3X reconstructions, dropdown-selectable) ────────────
+// Same 8-scan curated set as js/bg-carousel.js on the main gallery page and
+// desktop/potree/index.html's dropdown (091040 and 100354 excluded there as
+// duplicate/degenerate) -- kept in sync by hand since each page loads a
+// different representation of the same underlying scans (GLB here via
+// GLTFLoader for the room decoration, Potree octree in potree/index.html
+// for real measurement).
+const PI3X_SCANS = [
+    { dir: 'VID20230408092322',   label: 'VID20230408092322 · 566,905 pts' },
+    { dir: 'VID20230408092500',   label: 'VID20230408092500 · 906,245 pts' },
+    { dir: 'VID20230408095210',   label: 'VID20230408095210 · 140,899 pts' },
+    { dir: 'VID20230408100423',   label: 'VID20230408100423 · 117,726 pts' },
+    { dir: 'VID20230408111201',   label: 'VID20230408111201 · 77,622 pts' },
+    { dir: 'VID20230408113045_1', label: 'VID20230408113045 · 28,408 pts' },
+    { dir: 'VID20230408152015',   label: 'VID20230408152015 · 1,192,779 pts' },
+    { dir: 'VID20230408163443_2', label: 'VID20230408163443 · 871,261 pts' },
+];
+const PI3X_HF_BASE = 'https://huggingface.co/datasets/1kaiser/models/resolve/main/';
+// The hosted GLB filenames drop the _1/_2 disambiguation suffix (see
+// js/bg-carousel.js) -- only the local octree/frame directory names keep it.
+function pi3xGlbUrl(dir) {
+    return PI3X_HF_BASE + dir.replace(/_\d+$/, '') + '_pi3x.glb';
+}
+
+const gltfLoader = new GLTFLoader();
+let bgScanModel = null;
+let bgScanDir = PI3X_SCANS[0].dir;
+
+function loadBgScan(dir) {
+    bgScanDir = dir;
+    gltfLoader.load(pi3xGlbUrl(dir), (gltf) => {
+        if (bgScanModel) { scene.remove(bgScanModel); }
         const model = gltf.scene;
         model.position.set(4, 0, 0);
-        model.scale.set(0.4, 0.4, 0.4);
+        model.scale.set(2, 2, 2);
         model.traverse(c => { if (c.isMesh) c.castShadow = true; });
         scene.add(model);
-    }, undefined, (e) => console.warn('GLB load failed:', e));
+        bgScanModel = model;
+    }, undefined, (e) => console.warn('Pi3X scan GLB load failed:', e));
 }
+
+const bgScanSelect = document.getElementById('bg-scan-select');
+PI3X_SCANS.forEach((s) => {
+    const opt = document.createElement('option');
+    opt.value = s.dir;
+    opt.textContent = s.label;
+    bgScanSelect.appendChild(opt);
+});
+bgScanSelect.addEventListener('change', () => loadBgScan(bgScanSelect.value));
+loadBgScan(bgScanDir);
+
+// Real point-cloud measurement (distance/area/height/volume/angle) needs
+// Potree's own octree-format renderer -- a GLB mesh in this raw Three.js
+// scene has no equivalent public hook the way <model-viewer> doesn't
+// either (see js/measure.js on the main site for that constraint). Opens
+// the same scan currently shown in the room.
+document.getElementById('btn-measure-potree').addEventListener('click', () => {
+    window.open(`potree/index.html?scan=${encodeURIComponent(bgScanDir)}`, '_blank');
+});
 
 // ── Solar position math (standard astronomical algorithms) ─────────────────
 function solarPosition(lat, lon, doy, hour) {
