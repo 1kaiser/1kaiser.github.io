@@ -113,7 +113,11 @@
 
 #bg-scan-trigger {
   position: fixed;
-  top: 85px; /* clear of the site's own top-right nav (~70px tall) */
+  /* Tracks the background window's own top-right corner (.bg-scan-wrap:
+     top:20%, right:10px in bg-carousel.css) plus a little padding,
+     rather than a fixed px value tuned for nav clearance -- that was
+     only needed back when the window itself started at top:10px. */
+  top: calc(20% + 8px);
   right: 18px;
   z-index: 3;
   width: 32px;
