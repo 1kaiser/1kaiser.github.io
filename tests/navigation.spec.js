@@ -129,7 +129,7 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
     { path: '/desktop/desktop.html', refText: 'References' },
     { path: '/desktop/potree/index.html?scan=VID20230408113045_1', refText: 'Potree' },
     { path: '/soundcloud/index.html', refText: 'Playback Rewind' },
-    { path: '/experiments.html', refText: 'd3-milestones' }
+    { path: '/experiments.html', refText: 'D3.js' }
   ];
 
   for (const item of localPages) {
@@ -155,7 +155,33 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
     }
 
     if (item.path === '/experiments.html') {
-      await expect(page.locator('#featured-experiments article')).toHaveCount(8);
+      await expect(page.locator('#featured-experiments')).toHaveCount(0);
+      await page.locator('#timeline svg circle.repo-node').first().waitFor({ state: 'visible', timeout: 15000 });
+      await expect(page.locator('#timeline svg g.gap-badge').first()).toBeVisible();
+
+      const getSvgWidth = () => page.locator('#timeline svg').evaluate((el) => parseFloat(el.getAttribute('width') || '0'));
+      const widthDefault = await getSvgWidth();
+
+      await page.locator('#gap-compression').evaluate((el) => { el.value = '0'; el.dispatchEvent(new Event('input')); });
+      const widthLinear = await getSvgWidth();
+      expect(widthLinear).toBeGreaterThan(widthDefault);
+
+      await page.locator('#gap-compression').evaluate((el) => { el.value = '100'; el.dispatchEvent(new Event('input')); });
+      const widthUniform = await getSvgWidth();
+      expect(widthDefault).toBeGreaterThan(widthUniform);
+
+      await page.locator('[data-preset="adaptive"]').click();
+      await page.waitForTimeout(400);
+      const widthBeforeGapClick = await getSvgWidth();
+      await page.locator('#timeline svg g.gap-badge').first().click();
+      await page.waitForTimeout(400);
+      const widthAfterGapExpand = await getSvgWidth();
+      expect(widthAfterGapExpand).toBeGreaterThan(widthBeforeGapClick);
+
+      await page.locator('#timeline svg g.gap-badge').first().click();
+      await page.waitForTimeout(400);
+      const widthAfterGapShrink = await getSvgWidth();
+      expect(widthAfterGapShrink).toBeLessThan(widthAfterGapExpand);
     }
 
     expect(downloads404s, `downloads 404s on ${item.path}`).toEqual([]);

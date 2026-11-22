@@ -3,224 +3,672 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Timeline</title>
-
-    <!-- Required CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/d3-milestones/build/d3-milestones.css">
-
+    <title>Repository Timeline — 1kaiser.github.io</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
+        * { box-sizing: border-box; }
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
-            padding: 20px;
-            background-color: #f4f4f9;
+            padding: 18px 20px 32px;
+            background-color: #f4f6f9;
+            color: #1f2937;
         }
-
-        h1 {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            margin: 0;
-            z-index: 1000;
+        .page-shell {
+            max-width: 1380px;
+            margin: 0 auto;
         }
-
-        #legend {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            margin: 0;
-            z-index: 1000;
-            background-color: rgba(255, 255, 255, 0.8); /* translucent background for readability */
-            padding: 5px;
-            border-radius: 4px;
-        }
-
-        .download-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1000;
+        .top-nav {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
             gap: 10px;
-        }
-
-        .download-btn {
-            padding: 10px 20px;
+            margin-bottom: 14px;
             font-size: 14px;
+        }
+        .top-nav a {
+            color: #0366d6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .top-nav .nav-right {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .top-nav .nav-right a {
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 26px;
+            color: #111827;
+        }
+        .subtitle {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: #4b5563;
+        }
+        #legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 13px;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .presets {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .preset-btn, .action-btn {
+            padding: 6px 11px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #1e293b;
             cursor: pointer;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
         }
-
-        .download-btn:hover {
-            background-color: #0056b3;
+        .preset-btn:hover, .action-btn:hover { background: #e2e8f0; }
+        .preset-btn.active {
+            background: #0366d6;
+            color: #ffffff;
+            border-color: #0366d6;
         }
-
-        /* Scrollable Container */
+        .action-btn.primary {
+            background: #0366d6;
+            color: #ffffff;
+            border-color: #0366d6;
+        }
+        .action-btn.primary:hover { background: #0256b9; }
+        .sliders {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: #374151;
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .slider-group input[type="range"] {
+            width: 130px;
+            cursor: pointer;
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #4b5563;
+        }
         .timeline-wrapper {
             width: 100%;
             overflow-x: auto;
-            border: 1px solid #ddd; /* Visual boundary */
-            background-color: #fff;
-            padding: 20px 0;
-            /* Scrollbar styling for Firefox */
+            overflow-y: hidden;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            background-color: #ffffff;
+            padding: 8px 0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
             scrollbar-width: thin;
-            scrollbar-color: #888 #f1f1f1;
+            scrollbar-color: #94a3b8 #f1f5f9;
         }
-
-        /* Scrollbar styling for WebKit (Chrome, Safari, Edge) */
-        .timeline-wrapper::-webkit-scrollbar {
-            height: 12px;
-        }
-        .timeline-wrapper::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .timeline-wrapper::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 6px;
-        }
-        .timeline-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-
-        /* The Timeline Itself */
+        .timeline-wrapper::-webkit-scrollbar { height: 10px; }
+        .timeline-wrapper::-webkit-scrollbar-track { background: #f1f5f9; }
+        .timeline-wrapper::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 6px; }
         #timeline {
-            /* Fixed large width to accommodate many nodes without overlapping */
-            width: 3000px;
-            /* Fixed height is crucial for d3-milestones to calculate layout */
-            height: 400px;
+            min-width: 100%;
+            height: 460px;
             position: relative;
         }
-
-        /* Custom Styles for Labels */
-        .milestone-label text {
-            font-size: 12px !important;
+        #timeline svg { display: block; }
+        .gap-badge { cursor: pointer; }
+        .gap-badge rect { transition: fill 0.15s ease, stroke 0.15s ease; }
+        .gap-badge:hover rect { fill: #dbeafe; stroke: #2563eb; }
+        .repo-item { cursor: pointer; }
+        .repo-item:hover circle.repo-node { r: 6.5; stroke: #111827; stroke-width: 2px; }
+        .repo-label {
+            font-size: 11.5px;
+            user-select: none;
         }
-
+        .year-label {
+            font-size: 11px;
+            font-weight: 700;
+            fill: #64748b;
+        }
         .tooltip {
-            position: absolute;
-            background: rgba(0,0,0,0.85);
-            color: #fff;
-            padding: 8px;
-            border-radius: 4px;
+            position: fixed;
+            background: rgba(15, 23, 42, 0.94);
+            color: #f8fafc;
+            padding: 8px 10px;
+            border-radius: 6px;
             font-size: 12px;
+            line-height: 1.45;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 999;
+            transition: opacity 0.15s;
+            z-index: 1500;
+            max-width: 280px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
+        footer#references {
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid #d1d5db;
+            font-size: 12px;
+            color: #4b5563;
+            line-height: 1.6;
+        }
+        footer#references a { color: #0366d6; text-decoration: none; }
+        footer#references a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
+    <div class="page-shell">
+        <nav class="top-nav" aria-label="Site navigation">
+            <a href="index.html">&larr; 1kaiser.github.io</a>
+            <div class="nav-right">
+                <a href="cv/cv.html">CV</a>
+                <a href="desktop/desktop.html">3D Desktop</a>
+                <a href="https://github.com/1kaiser?tab=repositories" target="_blank" rel="noopener">GitHub Repos</a>
+            </div>
+        </nav>
 
-    <nav aria-label="Site navigation" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; font-size: 14px;">
-        <a href="index.html" style="color: #0366d6; font-weight: 600; text-decoration: none;">&larr; 1kaiser.github.io</a>
-        <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-            <a href="cv/cv.html" style="color: #586069; text-decoration: none;">Portfolio / CV</a>
-            <a href="desktop/desktop.html" style="color: #586069; text-decoration: none;">3D Desktop</a>
-            <a href="https://github.com/1kaiser?tab=repositories" target="_blank" rel="noopener" style="color: #586069; text-decoration: none;">GitHub Repos</a>
+        <div class="header-row">
+            <div>
+                <h1>Repository Timeline</h1>
+                <p class="subtitle">Dense bursts stretch apart automatically; idle calendar gaps shrink cleanly and expand on click.</p>
+            </div>
+            <div id="legend">
+                <span style="color: #008000; font-weight: 700;">&#9679; Source Repositories</span>
+                <span style="color: #FF2400; font-style: italic; font-weight: 600;">&#9679; Forked Repositories</span>
+                <span style="color: #2563eb;">&#9889; Click a gap pill to stretch/shrink</span>
+            </div>
         </div>
-    </nav>
 
-    <h1>⛰️ Repository Timeline</h1>
-    <div id="legend" style="font-size: 14px;">
-        <span style="color: #FF2400; font-weight: bold;">● Forked Repositories</span>
-        &nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style="color: #008000; font-style: italic;">● Source Repositories</span>
+        <div class="controls-bar">
+            <div class="presets">
+                <button type="button" class="preset-btn active" data-preset="adaptive">Adaptive</button>
+                <button type="button" class="preset-btn" data-preset="compact">Compact</button>
+                <button type="button" class="preset-btn" data-preset="linear">Linear Time</button>
+                <button type="button" id="reset-gaps-btn" class="action-btn">Reset Gaps</button>
+            </div>
+
+            <div class="sliders">
+                <label class="slider-group" for="gap-compression">
+                    <span>Gap Shrink: <strong id="gap-compression-val">72%</strong></span>
+                    <input id="gap-compression" type="range" min="0" max="100" step="1" value="72">
+                </label>
+                <label class="slider-group" for="burst-stretch">
+                    <span>Burst Stretch: <strong id="burst-stretch-val">36px</strong></span>
+                    <input id="burst-stretch" type="range" min="18" max="80" step="2" value="36">
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="download-svg-btn" class="action-btn primary" type="button">Download SVG</button>
+                <button id="download-png-btn" class="action-btn primary" type="button">Download PNG</button>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <span id="timeline-stats">Loading repositories...</span>
+            <span>Scroll horizontally to inspect &bull; Click any repository label or dot to open on GitHub</span>
+        </div>
+
+        <div class="timeline-wrapper" id="timeline-wrapper">
+            <div id="timeline"></div>
+        </div>
+
+        <footer id="references">
+            <details>
+                <summary style="cursor: pointer; font-weight: 600; color: #1f2937;">References &amp; Libraries</summary>
+                <p style="margin: 6px 0 0;">
+                    Gap-adaptive logarithmic/power timeline built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js v7</a>
+                    and <a href="https://docs.github.com/en/rest/repos/repos" target="_blank" rel="noopener">GitHub REST API v3</a>
+                    with native vector SVG &amp; Canvas PNG export. Back to <a href="index.html">1kaiser.github.io</a>.
+                </p>
+            </details>
+        </footer>
     </div>
 
-    <div class="download-container">
-        <button id="download-svg-btn" class="download-btn">Download SVG</button>
-        <button id="download-png-btn" class="download-btn">Download PNG</button>
-    </div>
-
-    <div class="timeline-wrapper">
-        <div id="timeline"></div>
-    </div>
-
-    <!-- Dependencies -->
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script src="https://unpkg.com/d3-milestones/build/d3-milestones.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <div id="tooltip" class="tooltip"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const node = document.getElementById('timeline');
+            const containerEl = document.getElementById('timeline');
+            const wrapperEl = document.getElementById('timeline-wrapper');
+            const statsEl = document.getElementById('timeline-stats');
+            const tooltip = d3.select('#tooltip');
+            const compressionSlider = document.getElementById('gap-compression');
+            const compressionValEl = document.getElementById('gap-compression-val');
+            const burstSlider = document.getElementById('burst-stretch');
+            const burstValEl = document.getElementById('burst-stretch-val');
+            const resetGapsBtn = document.getElementById('reset-gaps-btn');
+            const presetBtns = Array.from(document.querySelectorAll('.preset-btn'));
 
-            // Download SVG Handler
-            document.getElementById('download-svg-btn').addEventListener('click', () => {
-                domtoimage.toSvg(node)
-                    .then(function (dataUrl) {
-                        const link = document.createElement('a');
-                        link.download = 'timeline.svg';
-                        link.href = dataUrl;
-                        link.click();
-                    })
-                    .catch(function (error) {
-                        console.error('oops, something went wrong!', error);
-                    });
-            });
+            const SVG_HEIGHT = 460;
+            const SPINE_Y = 235;
+            const LEFT_PAD = 72;
+            const RIGHT_PAD = 110;
+            const COMPRESS_THRESHOLD_DAYS = 30;
+            const expandedGaps = new Set();
 
-            // Download PNG Handler
-            document.getElementById('download-png-btn').addEventListener('click', () => {
-                domtoimage.toPng(node)
-                    .then(function (dataUrl) {
-                        const link = document.createElement('a');
-                        link.download = 'timeline.png';
-                        link.href = dataUrl;
-                        link.click();
-                    })
-                    .catch(function (error) {
-                        console.error('oops, something went wrong!', error);
-                    });
-            });
+            const state = {
+                compressionPct: 72,
+                burstStretchPx: 36,
+                items: [],
+                sourceLabel: 'GitHub API'
+            };
 
-            // Tooltip
-            const tooltip = d3.select("body").append("div").attr("class", "tooltip");
-
-            // Initialize Timeline
-            const timeline = milestones('#timeline')
-                .mapping({
-                    'timestamp': 'timestamp',
-                    'text': 'text',
-                    'textStyle': 'customStyle'
-                })
-                .parseTime('%Y-%m-%dT%H:%M:%SZ')
-                .aggregateBy('day') // Aggregate by day to avoid stacking too much
-                .optimize(true)
-                .distribution('top-bottom');
-
-            // Tooltip & click events
-            timeline.onEventMouseOver((d) => {
-                const dateStr = d.timestamp ? d.timestamp.split('T')[0] : '';
-                tooltip.style("opacity", 1)
-                       .html(`<strong>${d.text}</strong><br>${dateStr}${d.url ? '<br><em>Click to open repo</em>' : ''}`)
-                       .style("left", (d3.event.pageX + 15) + "px")
-                       .style("top", (d3.event.pageY - 15) + "px");
-            });
-            timeline.onEventMouseLeave(() => tooltip.style("opacity", 0));
-            timeline.onEventClick((d) => {
-                if (d && d.url) {
-                    window.open(d.url, '_blank', 'noopener');
-                }
-            });
-
-            // Curated fallback timeline items (used when offline or GitHub API rate-limited)
             const FALLBACK_TIMELINE = [
-                { timestamp: '2024-06-01T00:00:00Z', text: '1kaiser.github.io', url: 'https://github.com/1kaiser/1kaiser.github.io', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
-                { timestamp: '2025-07-01T00:00:00Z', text: 'graph-queen', url: 'https://github.com/1kaiser/graph-queen', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
-                { timestamp: '2025-09-15T00:00:00Z', text: 'gemma-chat-app', url: 'https://github.com/1kaiser/gemma-chat-app', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
-                { timestamp: '2025-10-01T00:00:00Z', text: 'TextGraph', url: 'https://github.com/1kaiser/TextGraph', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
-                { timestamp: '2025-10-20T00:00:00Z', text: 'llm-consistency-vis', url: 'https://github.com/1kaiser/llm-consistency-vis', customStyle: { 'color': '#FF2400', 'font-style': 'italic' } },
-                { timestamp: '2025-11-01T00:00:00Z', text: 'llm-wordgraph-exact', url: 'https://github.com/1kaiser/llm-wordgraph-exact', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
-                { timestamp: '2026-01-15T00:00:00Z', text: 'wordy', url: 'https://github.com/1kaiser/wordy', customStyle: { 'color': '#008000', 'font-weight': 'bold' } }
+                { created_at: '2017-03-13T10:52:06Z', name: 'lineage', html_url: 'https://github.com/1kaiser/lineage', fork: true, description: 'Fallback timeline snapshot' },
+                { created_at: '2017-03-13T11:30:00Z', name: 'family-tree', html_url: 'https://github.com/1kaiser/family-tree', fork: true },
+                { created_at: '2017-12-27T00:00:00Z', name: 'capsule-networks', html_url: 'https://github.com/1kaiser/capsule-networks', fork: false },
+                { created_at: '2018-10-06T00:00:00Z', name: 'md-page', html_url: 'https://github.com/1kaiser/md-page', fork: true },
+                { created_at: '2019-08-13T00:00:00Z', name: 'SETSM', html_url: 'https://github.com/1kaiser/SETSM', fork: true },
+                { created_at: '2021-01-25T00:00:00Z', name: 'colmap-Google-colab', html_url: 'https://github.com/1kaiser/colmap-Google-colab', fork: false },
+                { created_at: '2022-07-22T00:00:00Z', name: 'instant-ngp', html_url: 'https://github.com/1kaiser/instant-ngp', fork: true },
+                { created_at: '2023-06-04T00:00:00Z', name: 'Parvati_track_analysis', html_url: 'https://github.com/1kaiser/Parvati_track_analysis', fork: false },
+                { created_at: '2024-03-05T00:00:00Z', name: 'nerf-keras-jax', html_url: 'https://github.com/1kaiser/nerf-keras-jax', fork: false },
+                { created_at: '2025-03-31T00:00:00Z', name: '1kaiser.github.io', html_url: 'https://github.com/1kaiser/1kaiser.github.io', fork: false },
+                { created_at: '2025-07-27T00:00:00Z', name: 'graph-queen', html_url: 'https://github.com/1kaiser/graph-queen', fork: false },
+                { created_at: '2025-09-15T00:00:00Z', name: 'gemma-chat-app', html_url: 'https://github.com/1kaiser/gemma-chat-app', fork: false },
+                { created_at: '2025-09-20T00:00:00Z', name: 'llm-consistency-vis', html_url: 'https://github.com/1kaiser/llm-consistency-vis', fork: true },
+                { created_at: '2025-09-23T00:00:00Z', name: 'llm-wordgraph-exact', html_url: 'https://github.com/1kaiser/llm-wordgraph-exact', fork: false },
+                { created_at: '2025-10-01T00:00:00Z', name: 'TextGraph', html_url: 'https://github.com/1kaiser/TextGraph', fork: false },
+                { created_at: '2025-10-07T00:00:00Z', name: 'wordy', html_url: 'https://github.com/1kaiser/wordy', fork: false },
+                { created_at: '2026-02-15T00:00:00Z', name: 'superpoint-jax', html_url: 'https://github.com/1kaiser/superpoint-jax', fork: false },
+                { created_at: '2026-11-21T19:21:15Z', name: 'DrinkLog', html_url: 'https://github.com/1kaiser/DrinkLog', fork: false }
             ];
+
+            function formatGapLabel(days) {
+                if (days >= 365) return `${(days / 365.25).toFixed(1)} yr`;
+                if (days >= 45) return `${Math.round(days / 30.4375)} mo`;
+                return `${Math.round(days)} d`;
+            }
+
+            function computeLayout(items) {
+                const compression = state.compressionPct / 100;
+                const minStep = state.burstStretchPx;
+                const sorted = [...items]
+                    .map(r => ({
+                        ...r,
+                        dateObj: new Date(r.created_at),
+                        dateStr: (r.created_at || '').slice(0, 10)
+                    }))
+                    .sort((a, b) => a.dateObj - b.dateObj);
+
+                const nodes = [];
+                const segments = [];
+                const tierRightTop = new Array(6).fill(-Infinity);
+                const tierRightBottom = new Array(6).fill(-Infinity);
+                let x = LEFT_PAD;
+
+                sorted.forEach((repo, i) => {
+                    let gapDays = 0;
+                    let isCompressed = false;
+                    let isExpanded = false;
+                    let isBigGap = false;
+
+                    if (i > 0) {
+                        gapDays = Math.max(0, (repo.dateObj - sorted[i - 1].dateObj) / 86400000);
+                        isBigGap = gapDays >= COMPRESS_THRESHOLD_DAYS;
+                        const linearDx = isBigGap
+                            ? Math.max(minStep + 86, Math.min(920, gapDays * 2.4))
+                            : Math.max(minStep, gapDays * 2.4);
+                        const logFactor = Math.log1p(gapDays) / Math.log1p(400);
+
+                        let dx;
+                        if (expandedGaps.has(i) || compression === 0) {
+                            dx = linearDx;
+                            isExpanded = isBigGap && expandedGaps.has(i);
+                        } else if (compression >= 0.995) {
+                            dx = minStep;
+                        } else if (isBigGap && compression >= 0.25) {
+                            isCompressed = true;
+                            const shrunkDx = minStep + 40 + (1 - compression) * 110 * logFactor;
+                            dx = Math.min(linearDx * 0.92, shrunkDx);
+                        } else {
+                            dx = Math.max(minStep, minStep + (1 - compression) * Math.min(110, gapDays * 1.9));
+                        }
+
+                        const prevX = x;
+                        x += dx;
+                        segments.push({
+                            gapIndex: i,
+                            x1: prevX,
+                            x2: x,
+                            gapDays,
+                            isCompressed,
+                            isExpanded,
+                            hasBadge: isBigGap && (isCompressed || isExpanded),
+                            label: formatGapLabel(gapDays)
+                        });
+                    }
+
+                    // Alternate side (above/below spine) and choose lowest collision-free tier
+                    const side = i % 2 === 0 ? -1 : 1;
+                    const tierRights = side === -1 ? tierRightTop : tierRightBottom;
+                    const estWidth = Math.max(54, repo.name.length * 6.8 + 18);
+                    const boxLeft = x - 6;
+                    let chosenTier = 0;
+                    for (let t = 0; t < tierRights.length; t++) {
+                        if (boxLeft > tierRights[t] + 10) {
+                            chosenTier = t;
+                            break;
+                        }
+                        if (t === tierRights.length - 1) {
+                            // Fallback to tier with smallest rightmost extent
+                            chosenTier = tierRights.indexOf(Math.min(...tierRights));
+                        }
+                    }
+                    tierRights[chosenTier] = Math.max(tierRights[chosenTier], boxLeft + estWidth);
+
+                    const stemOffset = 34 + chosenTier * 29;
+                    const yLabel = SPINE_Y + side * stemOffset;
+
+                    nodes.push({
+                        ...repo,
+                        idx: i,
+                        x,
+                        yLabel,
+                        side,
+                        gapDays,
+                        year: repo.dateObj.getUTCFullYear()
+                    });
+                });
+
+                const yearTicks = [];
+                let lastYear = null;
+                nodes.forEach((n) => {
+                    if (n.year !== lastYear) {
+                        lastYear = n.year;
+                        yearTicks.push({ year: n.year, x: n.x });
+                    }
+                });
+
+                const totalWidth = Math.max(520, Math.ceil(x + RIGHT_PAD));
+                return { nodes, segments, yearTicks, totalWidth };
+            }
+
+            const svg = d3.select(containerEl)
+                .append('svg')
+                .attr('height', SVG_HEIGHT)
+                .style('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+
+            const gYears = svg.append('g').attr('class', 'year-guides');
+            const gSpine = svg.append('g').attr('class', 'spine-segments');
+            const gBadges = svg.append('g').attr('class', 'gap-badges');
+            const gNodes = svg.append('g').attr('class', 'repo-nodes');
+
+            function zigzagPath(x1, x2, y) {
+                const mid = (x1 + x2) / 2;
+                const z = 8;
+                return `M${x1},${y} L${mid - z * 1.5},${y} L${mid - z * 0.75},${y - 7} L${mid},${y + 7} L${mid + z * 0.75},${y - 7} L${mid + z * 1.5},${y} L${x2},${y}`;
+            }
+
+            function renderTimeline(animate = true) {
+                if (!state.items.length) return;
+                const { nodes, segments, yearTicks, totalWidth } = computeLayout(state.items);
+                const dur = animate ? 320 : 0;
+
+                svg.interrupt().attr('width', totalWidth);
+
+                // Year vertical ticks
+                const yearsSel = gYears.selectAll('g.year-tick').data(yearTicks, d => d.year);
+                yearsSel.exit().remove();
+                const yearsEnter = yearsSel.enter().append('g').attr('class', 'year-tick');
+                yearsEnter.append('line').attr('stroke', '#e2e8f0').attr('stroke-dasharray', '3,4').attr('y1', 26).attr('y2', SVG_HEIGHT - 24);
+                yearsEnter.append('text').attr('class', 'year-label').attr('y', 18).attr('text-anchor', 'middle');
+                const yearsMerge = yearsEnter.merge(yearsSel);
+                yearsMerge.transition().duration(dur).attr('transform', d => `translate(${d.x},0)`);
+                yearsMerge.select('text').text(d => d.year);
+
+                // Spine segments
+                const spineSel = gSpine.selectAll('path.spine-seg').data(segments, d => d.gapIndex);
+                spineSel.exit().remove();
+                spineSel.enter().append('path')
+                    .attr('class', 'spine-seg')
+                    .attr('fill', 'none')
+                    .attr('stroke-width', 2)
+                    .merge(spineSel)
+                    .transition().duration(dur)
+                    .attr('stroke', d => d.isExpanded ? '#2563eb' : (d.isCompressed ? '#f59e0b' : '#cbd5e1'))
+                    .attr('stroke-dasharray', d => d.isExpanded ? '6,4' : null)
+                    .attr('d', d => d.isCompressed ? zigzagPath(d.x1, d.x2, SPINE_Y) : `M${d.x1},${SPINE_Y} L${d.x2},${SPINE_Y}`);
+
+                // Interactive Gap Badges (for gaps >= 30d)
+                const badgeData = segments.filter(s => s.hasBadge);
+                const badgeSel = gBadges.selectAll('g.gap-badge').data(badgeData, d => d.gapIndex);
+                badgeSel.exit().remove();
+                const badgeEnter = badgeSel.enter().append('g').attr('class', 'gap-badge');
+                badgeEnter.append('rect')
+                    .attr('x', -24).attr('y', -11)
+                    .attr('width', 48).attr('height', 20)
+                    .attr('rx', 10);
+                badgeEnter.append('text')
+                    .attr('y', 2.5)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', '10px')
+                    .style('font-weight', '700');
+
+                const badgeMerge = badgeEnter.merge(badgeSel);
+                badgeMerge.transition().duration(dur)
+                    .attr('transform', d => `translate(${(d.x1 + d.x2) / 2},${SPINE_Y + (d.isExpanded ? -20 : 20)})`);
+                badgeMerge.select('rect')
+                    .attr('fill', d => d.isExpanded ? '#eff6ff' : '#fffbeb')
+                    .attr('stroke', d => d.isExpanded ? '#2563eb' : '#d97706');
+                badgeMerge.select('text')
+                    .attr('fill', d => d.isExpanded ? '#1d4ed8' : '#b45309')
+                    .text(d => d.isExpanded ? `↔ ${d.label}` : `⚡ ${d.label}`);
+                badgeMerge.on('click', (event, d) => {
+                    event.stopPropagation();
+                    if (expandedGaps.has(d.gapIndex)) {
+                        expandedGaps.delete(d.gapIndex);
+                    } else {
+                        expandedGaps.add(d.gapIndex);
+                    }
+                    renderTimeline(true);
+                }).on('mouseover', (event, d) => {
+                    tooltip.style('opacity', 1).html(
+                        `<strong>${Math.round(d.gapDays)} days gap</strong><br>` +
+                        (d.isExpanded ? 'Click to shrink this gap back' : 'Click to stretch this gap to calendar scale')
+                    );
+                }).on('mousemove', (event) => {
+                    tooltip.style('left', `${Math.min(window.innerWidth - 290, event.clientX + 14)}px`)
+                           .style('top', `${Math.max(8, event.clientY - 24)}px`);
+                }).on('mouseout', () => tooltip.style('opacity', 0));
+
+                // Nodes + stems + labels
+                const nodeSel = gNodes.selectAll('g.repo-item').data(nodes, d => d.name + d.created_at);
+                nodeSel.exit().remove();
+                const nodeEnter = nodeSel.enter().append('g').attr('class', 'repo-item');
+                nodeEnter.append('line').attr('class', 'repo-stem').attr('stroke', '#cbd5e1').attr('stroke-width', 1.2);
+                nodeEnter.append('circle').attr('class', 'repo-node').attr('r', 4.8).attr('cy', SPINE_Y);
+                nodeEnter.append('text').attr('class', 'repo-label').attr('text-anchor', 'start');
+
+                const nodeMerge = nodeEnter.merge(nodeSel);
+                nodeMerge.select('line.repo-stem')
+                    .transition().duration(dur)
+                    .attr('x1', d => d.x).attr('x2', d => d.x)
+                    .attr('y1', SPINE_Y).attr('y2', d => d.yLabel + (d.side === -1 ? 4 : -4));
+
+                nodeMerge.select('circle.repo-node')
+                    .transition().duration(dur)
+                    .attr('cx', d => d.x)
+                    .attr('fill', d => d.fork ? '#FF2400' : '#008000')
+                    .attr('stroke', '#ffffff')
+                    .attr('stroke-width', 1.4);
+
+                nodeMerge.select('text.repo-label')
+                    .text(d => d.name)
+                    .transition().duration(dur)
+                    .attr('x', d => d.x - 4)
+                    .attr('y', d => d.yLabel + (d.side === -1 ? -4 : 11))
+                    .attr('fill', d => d.fork ? '#FF2400' : '#008000')
+                    .style('font-style', d => d.fork ? 'italic' : 'normal')
+                    .style('font-weight', d => d.fork ? '500' : '700');
+
+                nodeMerge.on('mouseover', (event, d) => {
+                    const gapInfo = d.idx > 0 ? `<br>Gap from previous: ${formatGapLabel(d.gapDays)}` : '';
+                    const desc = d.description ? `<br><span style="color:#cbd5e1;">${d.description}</span>` : '';
+                    tooltip.style('opacity', 1).html(
+                        `<strong>${d.name}</strong> (${d.fork ? 'Fork' : 'Source'})<br>${d.dateStr}${gapInfo}${desc}<br><em>Click to open GitHub</em>`
+                    );
+                }).on('mousemove', (event) => {
+                    tooltip.style('left', `${Math.min(window.innerWidth - 290, event.clientX + 14)}px`)
+                           .style('top', `${Math.max(8, event.clientY - 24)}px`);
+                }).on('mouseout', () => {
+                    tooltip.style('opacity', 0);
+                }).on('click', (event, d) => {
+                    if (d.html_url || d.url) {
+                        window.open(d.html_url || d.url, '_blank', 'noopener');
+                    }
+                });
+
+                const compressedCount = badgeData.filter(b => b.isCompressed).length;
+                statsEl.textContent = `${nodes.length} repos (${state.sourceLabel}) · Timeline width: ${totalWidth}px · ${compressedCount} compressed gaps (${expandedGaps.size} expanded)`;
+            }
+
+            function syncPresetHighlight() {
+                presetBtns.forEach(b => b.classList.remove('active'));
+                if (state.compressionPct === 72 && state.burstStretchPx === 36) {
+                    document.querySelector('[data-preset="adaptive"]')?.classList.add('active');
+                } else if (state.compressionPct === 92 && state.burstStretchPx === 24) {
+                    document.querySelector('[data-preset="compact"]')?.classList.add('active');
+                } else if (state.compressionPct === 0) {
+                    document.querySelector('[data-preset="linear"]')?.classList.add('active');
+                }
+            }
+
+            compressionSlider.addEventListener('input', () => {
+                state.compressionPct = parseInt(compressionSlider.value, 10);
+                compressionValEl.textContent = `${state.compressionPct}%`;
+                syncPresetHighlight();
+                renderTimeline(false);
+            });
+
+            burstSlider.addEventListener('input', () => {
+                state.burstStretchPx = parseInt(burstSlider.value, 10);
+                burstValEl.textContent = `${state.burstStretchPx}px`;
+                syncPresetHighlight();
+                renderTimeline(false);
+            });
+
+            presetBtns.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const preset = btn.dataset.preset;
+                    expandedGaps.clear();
+                    if (preset === 'adaptive') {
+                        state.compressionPct = 72;
+                        state.burstStretchPx = 36;
+                    } else if (preset === 'compact') {
+                        state.compressionPct = 92;
+                        state.burstStretchPx = 24;
+                    } else if (preset === 'linear') {
+                        state.compressionPct = 0;
+                        state.burstStretchPx = 28;
+                    }
+                    compressionSlider.value = String(state.compressionPct);
+                    compressionValEl.textContent = `${state.compressionPct}%`;
+                    burstSlider.value = String(state.burstStretchPx);
+                    burstValEl.textContent = `${state.burstStretchPx}px`;
+                    syncPresetHighlight();
+                    renderTimeline(true);
+                });
+            });
+
+            resetGapsBtn.addEventListener('click', () => {
+                expandedGaps.clear();
+                renderTimeline(true);
+            });
+
+            function serializeSvg() {
+                const svgEl = containerEl.querySelector('svg');
+                const clone = svgEl.cloneNode(true);
+                clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('width', '100%');
+                rect.setAttribute('height', '100%');
+                rect.setAttribute('fill', '#ffffff');
+                clone.insertBefore(rect, clone.firstChild);
+                return new XMLSerializer().serializeToString(clone);
+            }
+
+            document.getElementById('download-svg-btn').addEventListener('click', () => {
+                const blob = new Blob([serializeSvg()], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'timeline.svg';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            document.getElementById('download-png-btn').addEventListener('click', () => {
+                const svgEl = containerEl.querySelector('svg');
+                const w = Number(svgEl.getAttribute('width')) || wrapperEl.clientWidth;
+                const h = Number(svgEl.getAttribute('height')) || SVG_HEIGHT;
+                const svgBlob = new Blob([serializeSvg()], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(svgBlob);
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w * 2;
+                    canvas.height = h * 2;
+                    const ctx = canvas.getContext('2d');
+                    ctx.scale(2, 2);
+                    ctx.drawImage(img, 0, 0);
+                    URL.revokeObjectURL(url);
+                    const a = document.createElement('a');
+                    a.href = canvas.toDataURL('image/png');
+                    a.download = 'timeline.png';
+                    a.click();
+                };
+                img.src = url;
+            });
 
             async function fetchAllRepos(username) {
                 const allRepos = [];
-                for (let page = 1; page <= 2; page++) {
+                for (let page = 1; page <= 3; page++) {
                     const url = `https://api.github.com/users/${username}/repos?sort=created&direction=asc&per_page=100&page=${page}`;
                     const response = await fetch(url);
                     if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
@@ -232,78 +680,19 @@
                 return allRepos;
             }
 
-            const username = '1kaiser';
-            fetchAllRepos(username)
-                .then(repos => {
-                    const timelineData = repos.map(repo => ({
-                        timestamp: repo.created_at,
-                        text: repo.name,
-                        url: repo.html_url,
-                        customStyle: {
-                            'color': repo.fork ? '#FF2400' : '#008000',
-                            'font-style': repo.fork ? 'italic' : 'normal',
-                            'font-weight': repo.fork ? 'normal' : 'bold'
-                        }
-                    }));
-
-                    if (timelineData.length === 0) {
-                        timeline.render(FALLBACK_TIMELINE);
-                        return;
-                    }
-                    timeline.render(timelineData);
+            fetchAllRepos('1kaiser')
+                .then((repos) => {
+                    state.items = repos.length ? repos : FALLBACK_TIMELINE;
+                    state.sourceLabel = repos.length ? 'Live GitHub API' : 'Curated Fallback';
+                    renderTimeline(false);
                 })
-                .catch(error => {
-                    console.warn('Using curated fallback timeline (GitHub API unavailable):', error);
-                    timeline.render(FALLBACK_TIMELINE);
+                .catch((err) => {
+                    console.warn('Using curated fallback timeline:', err);
+                    state.items = FALLBACK_TIMELINE;
+                    state.sourceLabel = 'Curated Fallback';
+                    renderTimeline(false);
                 });
         });
     </script>
-
-    <section id="featured-experiments" style="max-width: 1120px; margin: 36px auto 0; text-align: left;">
-        <h2 style="font-size: 20px; margin: 0 0 14px; color: #24292e;">Featured Live Interactive Experiments</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/gemma-chat-app/" style="color: #0366d6; text-decoration: none;">Gemma Chat App &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Browser WebGPU/WASM chat with Gemma 3 (270M, 1B), Gemma 4 E2B &amp; Granite 4.0.</p>
-            </article>
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/TextGraph/" style="color: #0366d6; text-decoration: none;">TextGraph (GAT &amp; Embeddings) &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Graph Attention Network interactive visualization &amp; EmbeddingGemma token vectors.</p>
-            </article>
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/graph-queen/" style="color: #0366d6; text-decoration: none;">Graph Queen (3D Graph &amp; OCR) &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Force-directed 3D knowledge graphs, PDF.js, Tesseract/Scribe OCR &amp; JSON Canvas.</p>
-            </article>
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/llm-consistency-vis/" style="color: #0366d6; text-decoration: none;">LLM Consistency Vis &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Interactive word-graph visualization of prompt variation outputs (after Reif et al.).</p>
-            </article>
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/llm-wordgraph-exact/" style="color: #0366d6; text-decoration: none;">LLM Wordgraph Exact &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Exact token graph &amp; client-side Gemma prompt variation explorer.</p>
-            </article>
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/wordy/" style="color: #0366d6; text-decoration: none;">Wordy (WordNet, MUVERA &amp; RAG) &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Lexical network, MUVERA multi-vector retrieval, and client-side RAG explorer.</p>
-            </article>
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="cv/dem-to-glb.html" style="color: #0366d6; text-decoration: none;">DEM to GLB Converter &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Client-side GeoTIFF to 3D GLB mesh pipeline with GDAL-WASM &amp; Proj4js.</p>
-            </article>
-            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
-                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="desktop/desktop.html" style="color: #0366d6; text-decoration: none;">3D Desktop &amp; Potree &rarr;</a></h3>
-                <p style="margin: 0; font-size: 13px; color: #586069;">Pi3X point clouds, solar simulation, jax-js kernels &amp; architectural tools.</p>
-            </article>
-        </div>
-    </section>
-
-    <footer id="references" style="max-width: 1120px; margin: 28px auto 20px; padding-top: 14px; border-top: 1px solid #e1e4e8; font-size: 12px; color: #586069; text-align: left; line-height: 1.6;">
-        <strong>References &amp; Libraries:</strong>
-        Timeline built with <a href="https://github.com/walterra/d3-milestones" target="_blank" rel="noopener">d3-milestones</a>,
-        <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js v5</a>,
-        <a href="https://github.com/tsayen/dom-to-image" target="_blank" rel="noopener">dom-to-image</a>, and
-        <a href="https://docs.github.com/en/rest/repos/repos" target="_blank" rel="noopener">GitHub REST API v3</a>.
-        Back to <a href="index.html">1kaiser.github.io</a> &middot; <a href="cv/cv.html">Portfolio &amp; Technical Index</a>.
-    </footer>
 </body>
 </html>
