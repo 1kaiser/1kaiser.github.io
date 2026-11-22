@@ -132,7 +132,7 @@ test('cv/googlephotos.html loads cv/images.json, searches, and closes lightbox w
 });
 
 test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(IS_LIVE ? 240000 : 120000);
   await stubHeavyWeights(page);
 
   const localPages = [
@@ -184,7 +184,7 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
 
       // Verify deep-linked Gallery model + 3D Sun-Path + Supershapes Star preset
       await page.goto(BASE_URL + '/desktop/desktop.html?model=momos&tool=sunpath', { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('#stage-hud-meta')).toContainText('Draco/GLB', { timeout: 45000 });
+      await expect(page.locator('#stage-hud-meta')).toContainText('Draco/GLB', { timeout: IS_LIVE ? 95000 : 30000 });
       await page.locator('#sp-preset-delhi').click();
       const spTxt = await page.locator('#sp-info').innerText();
       const altMatch = spTxt.match(/Alt:\s*([\d.]+)/);
