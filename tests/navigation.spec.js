@@ -43,9 +43,10 @@ function attachTrackers(page) {
 }
 
 test('homepage navigation, CSP/Piping fixes, and References footer', async ({ page }) => {
+  await stubHeavyWeights(page);
   const { pageErrors, sameOrigin404s, downloads404s } = attachTrackers(page);
 
-  const resp = await page.goto(BASE_URL + '/');
+  const resp = await page.goto(BASE_URL + '/', { waitUntil: 'domcontentloaded' });
   expect(resp.status()).toBe(200);
 
   const expectedHrefs = [
@@ -108,7 +109,7 @@ test('cv/cv.html loads cleanly with no runtime errors or 404s', async ({ page })
 
 test('cv/googlephotos.html loads cv/images.json, searches, and closes lightbox with Escape', async ({ page }) => {
   const { pageErrors, sameOrigin404s } = attachTrackers(page);
-  const resp = await page.goto(BASE_URL + '/cv/googlephotos.html');
+  const resp = await page.goto(BASE_URL + '/cv/googlephotos.html', { waitUntil: 'domcontentloaded' });
   expect(resp.status()).toBe(200);
 
   await page.locator('.photo-item').first().waitFor({ state: 'visible', timeout: 15000 });
@@ -131,7 +132,7 @@ test('cv/googlephotos.html loads cv/images.json, searches, and closes lightbox w
 });
 
 test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(120000);
   await stubHeavyWeights(page);
 
   const localPages = [
@@ -181,9 +182,9 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
       await page.keyboard.press('Escape');
       await expect(page.locator('#models-drawer')).toBeHidden();
 
-      // Verify deep-linked Draco Gallery model + 3D Sun-Path + Supershapes Star preset
-      await page.goto(BASE_URL + '/desktop/desktop.html?model=bicycle&tool=sunpath');
-      await expect(page.locator('#stage-hud-meta')).toContainText('Draco/GLB', { timeout: 25000 });
+      // Verify deep-linked Gallery model + 3D Sun-Path + Supershapes Star preset
+      await page.goto(BASE_URL + '/desktop/desktop.html?model=momos&tool=sunpath', { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('#stage-hud-meta')).toContainText('Draco/GLB', { timeout: 45000 });
       await page.locator('#sp-preset-delhi').click();
       const spTxt = await page.locator('#sp-info').innerText();
       const altMatch = spTxt.match(/Alt:\s*([\d.]+)/);

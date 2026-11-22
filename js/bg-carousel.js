@@ -173,8 +173,16 @@
   var index = 0;
   var carouselTimer = null;
   updateScanLinks();
-  ensureLoaded(0, true);
-  if (scans.length > 1) ensureLoaded(1, false);
+
+  function startInitialPreload() {
+    ensureLoaded(0, true);
+    if (scans.length > 1) ensureLoaded(1, false);
+  }
+  if (document.readyState === "complete") {
+    startInitialPreload();
+  } else {
+    window.addEventListener("load", startInitialPreload, { once: true });
+  }
 
   function goTo(next) {
     wraps[index].classList.remove("is-current");
