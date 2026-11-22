@@ -50,8 +50,8 @@ async function loadSoundCloudData() {
                     remoteUrl = remoteUrl.replace('t50x50', 't500x500');
                 }
 
-                // Adjust local path to be relative to root
-                let localPath = track.local_artwork ? `soundcloud/${track.local_artwork}` : null;
+                // Use SoundCloud CDN artwork directly (soundcloud/downloads/ is gitignored & not deployed)
+                let localPath = null;
 
                 // Load image logic with fallback
                 if (localPath) {

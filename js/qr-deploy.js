@@ -460,7 +460,8 @@ class GoogleMobileDeployment {
     }
     
     this.pingLoop();
-    this.updateStatus(`QR code generated. Using server: ${CURRENT_DOMAIN}`, 'info');
+    const activeDomain = window.PipingUtils ? window.PipingUtils.getCurrentDomain() : 'https://ppng.io/';
+    this.updateStatus(`QR code generated. Using server: ${activeDomain}`, 'info');
   }
 
   // Open QR modal
@@ -480,9 +481,10 @@ class GoogleMobileDeployment {
 
     // Show URL and server info
     if (this.elements.qrUrl) {
+      const activeDomain = window.PipingUtils ? window.PipingUtils.getCurrentDomain() : 'https://ppng.io/';
       this.elements.qrUrl.innerHTML = `
         <div style="margin-bottom: 10px;">${this.viewableSite}</div>
-        <div style="font-size: 10px; color: #666;">Using: ${CURRENT_DOMAIN}</div>
+        <div style="font-size: 10px; color: #666;">Using: ${activeDomain}</div>
       `;
     }
 
@@ -762,10 +764,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Export for debugging
-window.PipingServerUtils = {
-  PIPING_SERVERS,
-  CURRENT_DOMAIN,
-  testPipingServer,
-  findWorkingPipingServer,
-  TESTED_SERVERS
-};
+window.PipingServerUtils = window.PipingUtils
+  ? {
+      CURRENT_DOMAIN: window.PipingUtils.getCurrentDomain(),
+      getCurrentDomain: () => window.PipingUtils.getCurrentDomain(),
+      getSessionUrl: (id, type) => window.PipingUtils.getSessionUrl(id, type),
+      getPingUrl: (id) => window.PipingUtils.getPingUrl(id),
+      getWithTimeout: (url, opts) => window.PipingUtils.getWithTimeout(url, opts)
+    }
+  : {};

@@ -433,13 +433,13 @@
                 this.tokenizer = null;
                 this.isLoading = false;
                 this.isReady = false;
-                this.modelName = "onnx-community/embeddinggemma-300m-ONNX"; 
+                this.modelName = "onnx-community/embeddinggemma-300m-ONNX";
             }
 
             async initialize() {
                 if (this.model) return;
                 console.log('🚀 TextGraph: Initializing EmbeddingGemma (Main Thread)...');
-                
+
                 this.isLoading = true;
                 window.dispatchEvent(new CustomEvent('embedding-progress', {
                     detail: { progress: 0, status: "Checking device...", isLoading: true }
@@ -464,7 +464,7 @@
                     }));
 
                     this.tokenizer = await AutoTokenizer.from_pretrained(this.modelName);
-                    
+
                     // Verify tokenizer works
                     const testToken = this.tokenizer(['test'], { padding: true, truncation: true });
                     console.log('✅ Tokenizer loaded and tested.', testToken);
@@ -493,7 +493,7 @@
                             }
                         }
                     });
-                    
+
                     this.isReady = true;
                     this.isLoading = false;
                     window.dispatchEvent(new CustomEvent('embedding-progress', {
@@ -501,10 +501,11 @@
                     }));
                     console.log('✅ TextGraph: Model loaded.');
                 } catch (e) {
+                    const msg = (e && e.message) || String(e);
                     console.error("Model load failed", e);
                     this.isLoading = false;
                     window.dispatchEvent(new CustomEvent('embedding-progress', {
-                        detail: { progress: 0, status: "Error loading model", isLoading: false }
+                        detail: { progress: 0, status: `Model error (using synthetic fallback): ${msg}`, isLoading: false }
                     }));
                     throw e;
                 }
@@ -512,7 +513,7 @@
 
             async generateEmbeddings(texts, taskType = 'document') {
                 if (!this.model) await this.initialize();
-                
+
                 console.log(`🔄 Generating embeddings for ${texts.length} texts...`);
                 window.dispatchEvent(new CustomEvent('embedding-progress', {
                     detail: { progress: 50, status: `Generating embeddings for ${texts.length} tokens...`, isLoading: true }
@@ -524,7 +525,7 @@
                 // inputs: dict of tensors
                 const inputs = await this.tokenizer(texts, { padding: true, truncation: true });
                 const { sentence_embedding } = await this.model(inputs);
-                
+
                 window.dispatchEvent(new CustomEvent('embedding-progress', {
                     detail: { progress: 100, status: "Ready", isLoading: false }
                 }));
@@ -558,7 +559,7 @@
                     const row = [];
                     for (let j = 0; j < tokens.length; j++) {
                         if (i === j) {
-                            row.push(0); 
+                            row.push(0);
                         } else {
                             const similarity = this.calculateCosineSimilarity(embeddings[i], embeddings[j]);
                             const attention = (similarity + 1) / 2;
@@ -1274,7 +1275,7 @@
                         const vizHeight = 10;
                     }
                 });
-                
+
                 // Post-process for embeddings if available
                 if (embeddings) {
                     this.renderNodeEmbeddings(embeddings, wordPositions);
@@ -1402,7 +1403,7 @@
 
                 wordPositions.forEach((d, i) => {
                     if (!embeddings[i]) return;
-                    
+
                     const width = d.width + pad * 2;
                     const height = 10;
                     // Absolute positioning calculation
@@ -1425,7 +1426,7 @@
                     const ctx = canvas.getContext('2d');
                     const vector = embeddings[i];
                     const cols = vector.length;
-                    
+
                     // Normalize
                     let min = Infinity, max = -Infinity;
                     vector.forEach(v => {
@@ -1436,7 +1437,7 @@
 
                     // Draw stretched barcodes
                     const barWidth = width / cols;
-                    
+
                     for(let k=0; k<cols; k++) {
                         const val = vector[k];
                         const norm = (val - min) / range;
@@ -1590,16 +1591,16 @@
                     if (visualizationInput) {
                         visualizationInput.value = queryText;
                         visualizationInput.dispatchEvent(new Event('input', { bubbles: true }));
-                        
+
                         // Return promise that resolves when visualization updates
                         return new Promise(resolve => {
                             setTimeout(() => {
                                 applyDualAttentionColoring(educationalGAT, originalGAT, queryText);
-                                
+
                                 // Render embedding visualizations on nodes
                                 if (textAsGraphInstance.value && educationalGAT.embeddings) {
                                     textAsGraphInstance.value.renderNodeEmbeddings(educationalGAT.embeddings, textAsGraphInstance.value.latestWordPositions || []);
-                                    // Note: renderNodeEmbeddings requires word positions. TextAsGraph keeps track of them internally? 
+                                    // Note: renderNodeEmbeddings requires word positions. TextAsGraph keeps track of them internally?
                                     // TextAsGraph.render calculates them locally. We should probably just trigger a re-render.
                                     // Modified TextAsGraph.render to accept embeddings.
                                     textAsGraphInstance.value.render(educationalGAT.embeddings);
@@ -1831,6 +1832,25 @@
         const App = {
             template: `
                 <div class="app-container">
+                    <div style="position: fixed; top: 10px; right: 12px; z-index: 1002; display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,0.92); backdrop-filter: blur(6px); padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                        <a href="../index.html" style="color: #2563eb; text-decoration: none; font-weight: 600;">&larr; 1kaiser.github.io</a>
+                        <span style="color: #cbd5e1;">|</span>
+                        <a href="/TextGraph/" style="color: #2563eb; text-decoration: none;">Canonical App</a>
+                        <span style="color: #cbd5e1;">|</span>
+                        <a href="https://github.com/1kaiser/TextGraph" target="_blank" rel="noopener" style="color: #4b5563; text-decoration: none;">GitHub</a>
+                        <button type="button" @click="showRefs = !showRefs" style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 12px; color: #1f2937; font-weight: 500;">References</button>
+                    </div>
+                    <div v-if="showRefs" style="position: fixed; top: 48px; right: 12px; z-index: 1003; max-width: 440px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.16); font-size: 12px; color: #334155; line-height: 1.55;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong style="font-size: 13px; color: #0f172a;">References &amp; Attribution</strong>
+                            <button type="button" @click="showRefs = false" style="background: none; border: none; cursor: pointer; font-size: 14px; color: #64748b;">&times;</button>
+                        </div>
+                        <ul style="margin: 0; padding-left: 16px;">
+                            <li>Veličković, P. et al. (2018). <em>Graph Attention Networks</em>. ICLR (<a href="https://arxiv.org/abs/1710.10903" target="_blank" rel="noopener">arXiv:1710.10903</a>).</li>
+                            <li>Sanchez-Lengeling, B., Reif, E., Pearce, A., &amp; Wiltschko, A. B. (2021). <em>A Gentle Introduction to Graph Neural Networks</em>. Distill (<a href="https://doi.org/10.23915/distill.00033" target="_blank" rel="noopener">doi:10.23915/distill.00033</a>).</li>
+                            <li><strong>Models &amp; Libraries:</strong> <a href="https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX" target="_blank" rel="noopener">EmbeddingGemma-300M (ONNX)</a>, <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">Transformers.js</a>, <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a>, <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a>, <a href="https://www.mathjax.org/" target="_blank" rel="noopener">MathJax</a>.</li>
+                        </ul>
+                    </div>
                     <ControlPanel
                         v-model:query="queryText"
                         v-model:paragraph="paragraphText"
@@ -1849,6 +1869,7 @@
             `,
             components: { ControlPanel, GraphVisualizer, CalculationBreakdown },
             setup() {
+                const showRefs = ref(false);
                 const queryText = ref('Graph attention mechanisms capture relationships');
                 const paragraphText = ref('Neural networks are powerful machine learning models. Graph attention mechanisms capture complex relationships between words. These models can transform how we process natural language understanding.');
                 const isLoading = ref(false);
@@ -1941,8 +1962,8 @@
                                 let embJ = [];
 
                                 // Check if we have valid stored data that matches current query length
-                                const hasValidStoredData = storedEducationalData.value && 
-                                                         storedEducationalData.value.embeddings && 
+                                const hasValidStoredData = storedEducationalData.value &&
+                                                         storedEducationalData.value.embeddings &&
                                                          storedEducationalData.value.embeddings.length === qTokens.length;
 
                                 if (hasValidStoredData) {
@@ -2006,7 +2027,7 @@
                 });
 
                 return {
-                    queryText, paragraphText, isLoading, loadingProgress, loadingStatus, graphVisualizer, handleUpdate, interactionDetails
+                    showRefs, queryText, paragraphText, isLoading, loadingProgress, loadingStatus, graphVisualizer, handleUpdate, interactionDetails
                 };
             }
         };

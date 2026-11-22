@@ -246,6 +246,10 @@
     </style>
 </head>
 <body>
+    <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 1200px; margin-left: auto; margin-right: auto;">
+        <a href="../index.html" style="color: #ff5500; text-decoration: none; font-weight: 600; font-size: 14px;">&larr; 1kaiser.github.io</a>
+        <a href="https://github.com/1kaiser/1kaiser.github.io/tree/main/soundcloud" target="_blank" rel="noopener" style="color: #aaa; text-decoration: none; font-size: 13px;">Source &amp; Scraper</a>
+    </div>
 
     <h1>Your Playback Rewind</h1>
     <div id="content">Loading...</div>
@@ -297,7 +301,8 @@
                             remoteUrl = remoteUrl.replace('t50x50', 't500x500');
                         }
 
-                        if (track.local_artwork) {
+                        // Use remote CDN artwork directly (local downloads/ directory is not committed)
+                        if (false && track.local_artwork) {
                              bgDiv.style.backgroundImage = `url('${track.local_artwork}')`;
                              const img = new Image();
                              img.src = track.local_artwork;
@@ -361,5 +366,9 @@
 
         loadData();
     </script>
+    <footer style="max-width: 1200px; margin: 40px auto 20px; padding-top: 16px; border-top: 1px solid #333; color: #888; font-size: 12px; line-height: 1.6;">
+        <strong>References &amp; Attribution:</strong>
+        Archived SoundCloud listening history rendered from <code>playback_data.json</code> (captured via <a href="https://playwright.dev/" target="_blank" rel="noopener" style="color: #aaa;">Playwright</a>, see <a href="README.md" style="color: #aaa;">soundcloud/README.md</a>). Audio previews &amp; cover artwork streamed from <a href="https://soundcloud.com/" target="_blank" rel="noopener" style="color: #aaa;">SoundCloud CDN</a>. Part of <a href="../index.html" style="color: #aaa;">1kaiser.github.io</a>.
+    </footer>
 </body>
 </html>

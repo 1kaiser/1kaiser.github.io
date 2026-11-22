@@ -73,6 +73,7 @@
 
 	<div id="scan-picker">
 		<a id="back-link" href="../desktop.html">&larr; Desktop</a>
+		<a id="gallery-link" href="../../index.html" style="margin-left: 8px; color: #93c5fd; text-decoration: none; font-size: 13px;">&larr; Gallery</a>
 		<select id="scan-select"></select>
 		<span id="scan-hint">Sidebar &rarr; Tools has Potree's real measurement toolbar (distance / area / height / volume / angle)</span>
 	</div>
@@ -102,7 +103,7 @@
 		viewer.setPointBudget(2_000_000);
 		viewer.loadSettingsFromURL();
 		viewer.setBackground("gradient");
-		viewer.setDescription("Pi3X monocular point-cloud reconstruction");
+		viewer.setDescription('Pi3X monocular point-cloud reconstruction &bull; Rendered with <a href="https://github.com/potree/potree" target="_blank" rel="noopener" style="color:#93c5fd;">Potree</a> (Sch&uuml;tz, 2016) &bull; <a href="../../index.html" style="color:#93c5fd;">1kaiser.github.io</a>');
 
 		viewer.loadGUI(() => {
 			viewer.setLanguage("en");

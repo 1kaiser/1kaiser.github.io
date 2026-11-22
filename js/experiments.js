@@ -7,9 +7,15 @@ const projects = [
   },
   {
     date: '2025-10-01',
-    text: 'https://github.com/1kaiser/TextGraph/raw/master/textgraph-demo-updated.gif',
+    text: 'https://raw.githubusercontent.com/1kaiser/TextGraph/master/screenshot_final.png',
     link: 'https://github.com/1kaiser/TextGraph',
     demo: 'https://1kaiser.github.io/TextGraph/'
+  },
+  {
+    date: '2025-07-01',
+    text: 'Graph Queen (3D Force Graph & OCR)',
+    link: 'https://github.com/1kaiser/graph-queen',
+    demo: 'https://1kaiser.github.io/graph-queen/'
   },
   {
     date: '2025-08-29',
@@ -20,7 +26,8 @@ const projects = [
   {
     date: '2025-09-20',
     text: 'LLM Consistency Vis',
-    link: 'https://github.com/1kaiser/llm-consistency-vis'
+    link: 'https://github.com/1kaiser/llm-consistency-vis',
+    demo: 'https://1kaiser.github.io/llm-consistency-vis/'
   },
   {
     date: '2025-09-23',
@@ -40,6 +47,9 @@ milestones('#timeline')
   .aggregateBy('month')
   .optimize(true)
   .onEventClick((d) => {
-    window.open(d.demo, '_blank');
+    const targetUrl = (d && (d.demo || d.link || d.url)) || null;
+    if (targetUrl) {
+      window.open(targetUrl, '_blank', 'noopener');
+    }
   })
   .render(projects);

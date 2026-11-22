@@ -57,6 +57,7 @@ This project leverages several key technologies and AI assistance:
 *   **TextGraph**: [Live Demo](https://1kaiser.github.io/TextGraph/) | [GitHub](https://github.com/1kaiser/TextGraph)
 *   **Gemma Chat App**: [Live Demo](https://1kaiser.github.io/gemma-chat-app/) | [GitHub](https://github.com/1kaiser/gemma-chat-app)
 *   **LLM Consistency Vis**: [Live Demo](https://1kaiser.github.io/llm-consistency-vis/) | [GitHub](https://github.com/1kaiser/llm-consistency-vis)
+*   **LLM Wordgraph Exact**: [Live Demo](https://1kaiser.github.io/llm-wordgraph-exact/) | [GitHub](https://github.com/1kaiser/llm-wordgraph-exact)
 *   **Graph Queen**: [Live Demo](https://1kaiser.github.io/graph-queen/) | [GitHub](https://github.com/1kaiser/graph-queen)
 
 ## Current Folder Structure
@@ -64,27 +65,44 @@ This project leverages several key technologies and AI assistance:
 ```ascii
 .
 ├── css/
+│   ├── bg-carousel.css
 │   ├── styles.css
 │   └── soundcloud-integration.css
 ├── cv/
 │   ├── cv.html
 │   ├── dem-to-glb.html
-│   └── ... (other pages)
+│   ├── googlephotos.html
+│   ├── images.json
+│   ├── layerflow-BERT.html
+│   ├── Neuron_Factors.html
+│   ├── TextGraph.html
+│   ├── WMO_2012.html
+│   └── chat-app.html
 ├── desktop/
+│   ├── desktop.css
 │   ├── desktop.html
-│   └── desktop.js
+│   ├── desktop.js
+│   └── potree/ (pointclouds & viewer)
 ├── js/
 │   ├── app.js
+│   ├── bg-carousel.js
+│   ├── experiments.js
+│   ├── gallery-fit.js
 │   ├── gallery-vue.js
+│   ├── measure.js
+│   ├── model-cache.js
 │   ├── piping-utils.js
 │   ├── qr-deploy.js
-│   └── soundcloud-integration.js
+│   ├── soundcloud-integration.js
+│   └── sun-lighting.js
 ├── models/
-│   ├── models.js
-│   └── ... (model files)
+│   ├── bg_scans/
+│   └── models.js
 ├── soundcloud/
 │   ├── index.html
 │   └── playback_data.json
+├── tests/
+│   └── navigation.spec.js
 ├── view/ (Mobile View)
 │   ├── index.html
 │   ├── mobile-view.css
@@ -112,3 +130,11 @@ This project leverages several key technologies and AI assistance:
 
 ### DEM to GLB Converter
 ![DEM to GLB Demo](cv/dem-to-glb-demo.gif)
+
+## References & Citations
+
+- **3D Rendering & Compression:** Google [`<model-viewer>`](https://modelviewer.dev/), [Three.js](https://threejs.org/), [Google Draco](https://github.com/google/draco), [Potree](https://github.com/potree/potree) (Schütz, 2016), [Pi3X Dataset](https://huggingface.co/datasets/kaiser-1/pi3x), [Piping Server](https://github.com/nwtgck/piping-server).
+- **Browser ML & Explainability:** [Hugging Face Transformers.js](https://huggingface.co/docs/transformers.js), Google Gemma 3 ([arXiv:2503.19786](https://arxiv.org/abs/2503.19786)), EmbeddingGemma, IBM Granite 4.0, Ecco (Alammar, 2021, [ACL Demo](https://aclanthology.org/2021.acl-demo.30/)), NMF (Lee & Seung, 1999, *Nature* 401), UMAP (McInnes et al., 2018, [arXiv:1802.03426](https://arxiv.org/abs/1802.03426)), Scatter-GL.
+- **Graph & Retrieval Research:** Graph Attention Networks (Veličković et al., 2018, [arXiv:1710.10903](https://arxiv.org/abs/1710.10903)), *A Gentle Introduction to Graph Neural Networks* (Sanchez-Lengeling et al., 2021, [doi:10.23915/distill.00033](https://doi.org/10.23915/distill.00033)), LLM Consistency Wordgraph (Reif et al., [`EmilyReif/llm-consistency-vis`](https://github.com/EmilyReif/llm-consistency-vis)), WordNet 3.1 (Miller, 1995; Fellbaum, 1998), MUVERA (Jayaram et al., 2024, [arXiv:2405.19504](https://arxiv.org/abs/2405.19504)).
+- **Geospatial & Hydrology:** WMO & UNESCO (2012) *International Glossary of Hydrology* (WMO-No. 385), [GDAL](https://gdal.org/) / [Azavea Loam](https://github.com/azavea/loam), [Proj4js](https://proj4js.org/).
+- **Solar & Array Computing Tools:** Dr. Andrew Marsh ([andrewmarsh.com](https://andrewmarsh.com/), [drajmarsh.bitbucket.io](https://drajmarsh.bitbucket.io/)), Eric Zhang ([jax-js](https://jax-js.com/)), Johan Gielis (2003, Superformula, *Am. J. Bot.* 90(3)).

@@ -115,6 +115,15 @@
 </head>
 <body>
 
+    <nav aria-label="Site navigation" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; font-size: 14px;">
+        <a href="index.html" style="color: #0366d6; font-weight: 600; text-decoration: none;">&larr; 1kaiser.github.io</a>
+        <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+            <a href="cv/cv.html" style="color: #586069; text-decoration: none;">Portfolio / CV</a>
+            <a href="desktop/desktop.html" style="color: #586069; text-decoration: none;">3D Desktop</a>
+            <a href="https://github.com/1kaiser?tab=repositories" target="_blank" rel="noopener" style="color: #586069; text-decoration: none;">GitHub Repos</a>
+        </div>
+    </nav>
+
     <h1>⛰️ Repository Timeline</h1>
     <div id="legend" style="font-size: 14px;">
         <span style="color: #FF2400; font-weight: bold;">● Forked Repositories</span>
@@ -183,59 +192,118 @@
                 .optimize(true)
                 .distribution('top-bottom');
 
-            // Tooltip events
+            // Tooltip & click events
             timeline.onEventMouseOver((d) => {
                 const dateStr = d.timestamp ? d.timestamp.split('T')[0] : '';
                 tooltip.style("opacity", 1)
-                       .html(`<strong>${d.text}</strong><br>${dateStr}`)
+                       .html(`<strong>${d.text}</strong><br>${dateStr}${d.url ? '<br><em>Click to open repo</em>' : ''}`)
                        .style("left", (d3.event.pageX + 15) + "px")
                        .style("top", (d3.event.pageY - 15) + "px");
             });
             timeline.onEventMouseLeave(() => tooltip.style("opacity", 0));
+            timeline.onEventClick((d) => {
+                if (d && d.url) {
+                    window.open(d.url, '_blank', 'noopener');
+                }
+            });
 
-            // Fetch Data
-            const username = '1kaiser';
-            const apiUrl = `https://api.github.com/users/${username}/repos?sort=created&direction=asc&per_page=100`;
+            // Curated fallback timeline items (used when offline or GitHub API rate-limited)
+            const FALLBACK_TIMELINE = [
+                { timestamp: '2024-06-01T00:00:00Z', text: '1kaiser.github.io', url: 'https://github.com/1kaiser/1kaiser.github.io', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
+                { timestamp: '2025-07-01T00:00:00Z', text: 'graph-queen', url: 'https://github.com/1kaiser/graph-queen', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
+                { timestamp: '2025-09-15T00:00:00Z', text: 'gemma-chat-app', url: 'https://github.com/1kaiser/gemma-chat-app', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
+                { timestamp: '2025-10-01T00:00:00Z', text: 'TextGraph', url: 'https://github.com/1kaiser/TextGraph', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
+                { timestamp: '2025-10-20T00:00:00Z', text: 'llm-consistency-vis', url: 'https://github.com/1kaiser/llm-consistency-vis', customStyle: { 'color': '#FF2400', 'font-style': 'italic' } },
+                { timestamp: '2025-11-01T00:00:00Z', text: 'llm-wordgraph-exact', url: 'https://github.com/1kaiser/llm-wordgraph-exact', customStyle: { 'color': '#008000', 'font-weight': 'bold' } },
+                { timestamp: '2026-01-15T00:00:00Z', text: 'wordy', url: 'https://github.com/1kaiser/wordy', customStyle: { 'color': '#008000', 'font-weight': 'bold' } }
+            ];
 
-            console.log(`Fetching repos for ${username}...`);
-
-            fetch(apiUrl)
-                .then(response => {
+            async function fetchAllRepos(username) {
+                const allRepos = [];
+                for (let page = 1; page <= 2; page++) {
+                    const url = `https://api.github.com/users/${username}/repos?sort=created&direction=asc&per_page=100&page=${page}`;
+                    const response = await fetch(url);
                     if (!response.ok) throw new Error(`GitHub API error: ${response.status}`);
-                    return response.json();
-                })
-                .then(repos => {
-                    if (!Array.isArray(repos)) throw new Error('Invalid response');
+                    const batch = await response.json();
+                    if (!Array.isArray(batch)) throw new Error('Invalid GitHub API response');
+                    allRepos.push(...batch);
+                    if (batch.length < 100) break;
+                }
+                return allRepos;
+            }
 
+            const username = '1kaiser';
+            fetchAllRepos(username)
+                .then(repos => {
                     const timelineData = repos.map(repo => ({
                         timestamp: repo.created_at,
                         text: repo.name,
                         url: repo.html_url,
                         customStyle: {
-                            'color': repo.fork ? '#FF2400' : '#008000', // Scarlet for forks, Green for sources
+                            'color': repo.fork ? '#FF2400' : '#008000',
                             'font-style': repo.fork ? 'italic' : 'normal',
                             'font-weight': repo.fork ? 'normal' : 'bold'
                         }
                     }));
 
-                    console.log(`Fetched ${timelineData.length} repositories.`);
-
                     if (timelineData.length === 0) {
-                        console.warn('No repositories found.');
+                        timeline.render(FALLBACK_TIMELINE);
                         return;
                     }
-
                     timeline.render(timelineData);
-                    console.log('Timeline rendered with GitHub data.');
                 })
                 .catch(error => {
-                    console.error('Error fetching GitHub data:', error);
-                    // Fallback
-                    timeline.render([
-                        { timestamp: '2023-01-01T00:00:00Z', text: 'Error Fetching Data' }
-                    ]);
+                    console.warn('Using curated fallback timeline (GitHub API unavailable):', error);
+                    timeline.render(FALLBACK_TIMELINE);
                 });
         });
     </script>
+
+    <section id="featured-experiments" style="max-width: 1120px; margin: 36px auto 0; text-align: left;">
+        <h2 style="font-size: 20px; margin: 0 0 14px; color: #24292e;">Featured Live Interactive Experiments</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/gemma-chat-app/" style="color: #0366d6; text-decoration: none;">Gemma Chat App &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Browser WebGPU/WASM chat with Gemma 3 (270M, 1B), Gemma 4 E2B &amp; Granite 4.0.</p>
+            </article>
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/TextGraph/" style="color: #0366d6; text-decoration: none;">TextGraph (GAT &amp; Embeddings) &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Graph Attention Network interactive visualization &amp; EmbeddingGemma token vectors.</p>
+            </article>
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/graph-queen/" style="color: #0366d6; text-decoration: none;">Graph Queen (3D Graph &amp; OCR) &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Force-directed 3D knowledge graphs, PDF.js, Tesseract/Scribe OCR &amp; JSON Canvas.</p>
+            </article>
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/llm-consistency-vis/" style="color: #0366d6; text-decoration: none;">LLM Consistency Vis &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Interactive word-graph visualization of prompt variation outputs (after Reif et al.).</p>
+            </article>
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/llm-wordgraph-exact/" style="color: #0366d6; text-decoration: none;">LLM Wordgraph Exact &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Exact token graph &amp; client-side Gemma prompt variation explorer.</p>
+            </article>
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="/wordy/" style="color: #0366d6; text-decoration: none;">Wordy (WordNet, MUVERA &amp; RAG) &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Lexical network, MUVERA multi-vector retrieval, and client-side RAG explorer.</p>
+            </article>
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="cv/dem-to-glb.html" style="color: #0366d6; text-decoration: none;">DEM to GLB Converter &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Client-side GeoTIFF to 3D GLB mesh pipeline with GDAL-WASM &amp; Proj4js.</p>
+            </article>
+            <article style="background: #fff; border: 1px solid #e1e4e8; border-radius: 8px; padding: 14px;">
+                <h3 style="margin: 0 0 6px; font-size: 16px;"><a href="desktop/desktop.html" style="color: #0366d6; text-decoration: none;">3D Desktop &amp; Potree &rarr;</a></h3>
+                <p style="margin: 0; font-size: 13px; color: #586069;">Pi3X point clouds, solar simulation, jax-js kernels &amp; architectural tools.</p>
+            </article>
+        </div>
+    </section>
+
+    <footer id="references" style="max-width: 1120px; margin: 28px auto 20px; padding-top: 14px; border-top: 1px solid #e1e4e8; font-size: 12px; color: #586069; text-align: left; line-height: 1.6;">
+        <strong>References &amp; Libraries:</strong>
+        Timeline built with <a href="https://github.com/walterra/d3-milestones" target="_blank" rel="noopener">d3-milestones</a>,
+        <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js v5</a>,
+        <a href="https://github.com/tsayen/dom-to-image" target="_blank" rel="noopener">dom-to-image</a>, and
+        <a href="https://docs.github.com/en/rest/repos/repos" target="_blank" rel="noopener">GitHub REST API v3</a>.
+        Back to <a href="index.html">1kaiser.github.io</a> &middot; <a href="cv/cv.html">Portfolio &amp; Technical Index</a>.
+    </footer>
 </body>
 </html>

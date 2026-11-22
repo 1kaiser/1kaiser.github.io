@@ -261,7 +261,8 @@
 <body>
     <header class="app-header">
         <div class="header-left">
-            <button class="icon-btn menu-btn">
+            <a href="../index.html" class="icon-btn" title="Back to 1kaiser.github.io" style="text-decoration: none; font-size: 13px; width: auto; padding: 0 10px; border-radius: 18px; color: #5f6368; font-weight: 500;">&larr; Home</a>
+            <button id="menu-btn" class="icon-btn menu-btn" title="Toggle Collections / Reset Filter">
                 <span class="material-symbols-outlined">menu</span>
             </button>
             <div class="logo">
@@ -273,7 +274,7 @@
         <div class="header-center">
             <div class="search-bar">
                 <span class="material-symbols-outlined search-icon">search</span>
-                <input type="text" placeholder="Search your photos">
+                <input id="search-input" type="text" placeholder="Search your photos (filename or collection)">
             </div>
         </div>
 
@@ -281,19 +282,23 @@
             <button id="upload-btn" class="icon-btn" title="Upload Folder">
                 <span class="material-symbols-outlined">drive_folder_upload</span>
             </button>
-            <button class="icon-btn" title="Help">
+            <button id="help-btn" class="icon-btn" title="Help &amp; References">
                 <span class="material-symbols-outlined">help</span>
             </button>
-            <button class="icon-btn" title="Settings">
+            <button id="settings-btn" class="icon-btn" title="Grid Info">
                 <span class="material-symbols-outlined">settings</span>
             </button>
-            <div class="profile-icon">J</div>
+            <div class="profile-icon" title="Kaiser Roy (1kaiser)">K</div>
         </div>
     </header>
 
     <main id="main-content">
         <!-- Photo Grid will be injected here -->
         <div id="photo-grid" class="photo-grid"></div>
+        <details id="gphotos-references" style="margin: 24px 0 8px; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px; color: #475569; line-height: 1.6;">
+            <summary style="cursor: pointer; font-weight: 600; color: #1e293b;">References &amp; Local Image Manifest</summary>
+            <p style="margin: 8px 0 0;">Justified photo-grid prototype loading verified scans and renders from <code>cv/images.json</code> (or any local folder chosen via the upload icon). Uses Material Symbols &amp; Roboto typography. Part of <a href="../index.html" style="color: #1a73e8;">1kaiser.github.io</a> (<a href="https://github.com/1kaiser/1kaiser.github.io/blob/main/cv/googlephotos.html" target="_blank" rel="noopener" style="color: #1a73e8;">source</a>).</p>
+        </details>
     </main>
 
     <!-- Hidden Input for Folder Selection -->
@@ -314,10 +319,51 @@
             initApp();
         });
 
-        function initApp() {
-            // Load photos from images.json
-            loadImagesFromJson();
+        let allPhotosCache = [];
+
+        async function initApp() {
+            setupControls();
             setupUploadHandler();
+            loadImagesFromJson();
+        }
+
+        function setupControls() {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const q = e.target.value.trim().toLowerCase();
+                    if (!allPhotosCache.length) return;
+                    const filtered = q
+                        ? allPhotosCache.filter(p => p.name.toLowerCase().includes(q) || p.date.toLowerCase().includes(q))
+                        : allPhotosCache;
+                    renderPhotoGrid(groupPhotosByDate(filtered));
+                });
+            }
+            const menuBtn = document.getElementById('menu-btn');
+            if (menuBtn) {
+                menuBtn.addEventListener('click', () => {
+                    if (searchInput) searchInput.value = '';
+                    if (allPhotosCache.length) renderPhotoGrid(groupPhotosByDate(allPhotosCache));
+                });
+            }
+            const helpBtn = document.getElementById('help-btn');
+            if (helpBtn) {
+                helpBtn.addEventListener('click', () => {
+                    const refEl = document.getElementById('gphotos-references');
+                    if (refEl) {
+                        refEl.open = true;
+                        refEl.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            }
+            document.addEventListener('keydown', (e) => {
+                const lb = document.getElementById('lightbox');
+                if (e.key === 'Escape' && lb && !lb.classList.contains('hidden')) {
+                    lb.classList.add('hidden');
+                    const img = document.getElementById('lightbox-img');
+                    if (img) img.src = '';
+                }
+            });
         }
 
         async function loadImagesFromJson() {
@@ -333,35 +379,36 @@
                 
                 gridContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Processing ${imageFiles.length} photos...</div>`;
 
-                // Process these files
                 const photos = await processImageFiles(imageFiles);
+                allPhotosCache = photos;
                 
                 const groupedPhotos = groupPhotosByDate(photos);
                 renderPhotoGrid(groupedPhotos);
             } catch (error) {
                 console.error('Error initializing app:', error);
-                gridContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: red;">Failed to load photos. Ensure images.json and input_frames are served.</div>';
+                gridContainer.innerHTML = '<div style="text-align:center; padding: 20px; color: red;">Failed to load photos. Ensure images.json is served or click the folder upload icon above.</div>';
             }
         }
 
         async function processImageFiles(imageFiles) {
-            // Process in chunks to avoid blocking too much? 
-            // For now, let's try parallel with a limit or just Promise.all
-            // Since we need dimensions, we must load them.
-            
             const processedPhotos = [];
-            const concurrencyLimit = 50; // Limit concurrent image loads
+            const concurrencyLimit = 50;
             
             for (let i = 0; i < imageFiles.length; i += concurrencyLimit) {
                 const chunk = imageFiles.slice(i, i + concurrencyLimit);
-                const chunkPromises = chunk.map((filename, index) => {
+                const chunkPromises = chunk.map((entry, index) => {
                     return new Promise((resolve) => {
-                        const url = `input_frames/${filename}`;
+                        const isObj = typeof entry === 'object' && entry !== null;
+                        const rawPath = isObj ? entry.src : String(entry);
+                        const url = /^(https?:|\.\.?\/|data:|blob:)/.test(rawPath)
+                            ? rawPath
+                            : `input_frames/${rawPath}`;
+                        const name = (isObj && entry.name) ? entry.name : rawPath.split('/').pop();
+                        const customDate = isObj && entry.date ? entry.date : null;
                         const img = new Image();
                         img.onload = () => {
-                            // Assign date based on index to group them nicely
                             const globalIndex = i + index;
-                            const date = getDateForIndex(globalIndex);
+                            const date = customDate || getDateForIndex(globalIndex);
                             
                             resolve({
                                 id: globalIndex,
@@ -369,12 +416,12 @@
                                 width: img.naturalWidth,
                                 height: img.naturalHeight,
                                 date: date,
-                                timestamp: Date.now() - globalIndex * 100000, // Fake timestamp
-                                name: filename
+                                timestamp: Date.now() - globalIndex * 100000,
+                                name: name
                             });
                         };
                         img.onerror = () => {
-                            console.warn(`Failed to load image: ${filename}`);
+                            console.warn(`Failed to load image: ${url}`);
                             resolve(null);
                         };
                         img.src = url;
@@ -386,7 +433,6 @@
                     if (p) processedPhotos.push(p);
                 });
                 
-                // Update progress
                 const gridContainer = document.getElementById('photo-grid');
                 if (gridContainer) {
                     gridContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Loaded ${processedPhotos.length} / ${imageFiles.length} photos...</div>`;
@@ -575,13 +621,6 @@
                     closeLightbox();
                 }
             };
-
-            // Close on Escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
-                    closeLightbox();
-                }
-            });
         }
     </script>
 </body>

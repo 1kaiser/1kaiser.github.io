@@ -36,6 +36,10 @@
 </head>
 
 <body>
+  <nav style="max-width: 1200px; margin: 0 auto; padding: 12px 24px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 14px;">
+    <a href="../index.html" style="font-weight: 600; color: #3273dc;">&larr; 1kaiser.github.io</a>
+    <a href="#references-section" onclick="document.querySelector('h3')?.scrollIntoView({behavior:'smooth'})" style="color: #4a4a4a; font-size: 13px;">References (GDAL / Loam / Three.js)</a>
+  </nav>
   <div class="container">
     <div class="box">
       <h1 class="title is-4">DEM to GLB Converter</h1>
@@ -229,8 +233,12 @@ Universal DEM-to-3D Pipeline
         <li><a href="https://github.com/CesiumGS/3d-tiles/tree/main" target="_blank">3d-tiles</a></li>
         <li><a href="https://cesium.com/learn/data-formats/" target="_blank">Cesium Data Formats</a></li>
         <li><a href="https://www.ogc.org/standards/3dtiles/" target="_blank">OGC 3D Tiles Standard</a></li>
-        <li><a href="https://www.jsdelivr.com/package/npm/loam?tab=files" target="_blank">loam on jsDelivr</a></li>
-        <li><a href="https://github.com/azavea/loam/blob/develop/demo/index.js" target="_blank">loam demo</a></li>
+        <li><a href="https://www.jsdelivr.com/package/npm/loam?tab=files" target="_blank" rel="noopener">loam on jsDelivr</a></li>
+        <li><a href="https://github.com/azavea/loam/blob/develop/demo/index.js" target="_blank" rel="noopener">Azavea Loam Demo (GDAL-WASM)</a></li>
+        <li><a href="https://gdal.org/" target="_blank" rel="noopener">GDAL / OGR Geospatial Data Abstraction Library</a></li>
+        <li><a href="https://proj4js.org/" target="_blank" rel="noopener">Proj4js Coordinate Reprojection</a> &amp; <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js GLTFExporter</a></li>
+        <li><a href="https://modelviewer.dev/" target="_blank" rel="noopener">Google &lt;model-viewer&gt;</a>, <a href="https://github.com/CesiumGS/quantized-mesh" target="_blank" rel="noopener">Cesium Quantized Mesh</a>, <a href="https://www.ogc.org/standards/3dtiles/" target="_blank" rel="noopener">OGC 3D Tiles</a> &amp; <a href="https://github.com/kylebarron/pydelatin" target="_blank" rel="noopener">pydelatin</a></li>
+        <li>Back to <a href="../index.html">1kaiser.github.io</a> &middot; <a href="https://github.com/1kaiser/1kaiser.github.io/blob/main/cv/dem-to-glb.html" target="_blank" rel="noopener">Source</a></li>
         <li><a href="https://github.com/kylebarron/quantized-mesh-encoder" target="_blank">quantized-mesh-encoder</a></li>
         <li><a href="https://github.com/kylebarron/pydelatin?tab=readme-ov-file" target="_blank">pydelatin</a></li>
       </ul>

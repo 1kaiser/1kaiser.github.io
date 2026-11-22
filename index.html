@@ -16,14 +16,9 @@
     connect-src 'self'
       https://ppng.io
       https://piping.onrender.com
-      https://piping-server.herokuapp.com
-      https://pipes.sh
-      https://piping.glitch.me
-      https://*.piping.glitch.me
       https://api.allorigins.win
       https://cors-anywhere.herokuapp.com
-      https://cdn.glitch.me
-      https://cdn.glitch.global
+      https://api.github.com
       https://*.github.io
       https://*.githubusercontent.com
       https://huggingface.co
@@ -50,7 +45,6 @@
 
   <!-- Model Viewer with Draco support -->
   <script type="module" src="https://unpkg.com/@google/model-viewer@3.3.0/dist/model-viewer.min.js"></script>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <!-- Vue.js Library -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <!-- Load the QRCode library -->
@@ -69,30 +63,27 @@
     </div>
   </div>
 
-  <h1>Space</h1>
-
-  <div style="position: absolute; top: 10px; right: 10px; text-align: right;">
-    <div style="margin-bottom: 5px;">
-      <a href="cv/cv.html">CV</a>
-      <a href="cv/googlephotos.html">GPhotosUI</a>
-      <a href="cv/dem-to-glb.html" style="margin-left: 10px;">DEM to GLB</a>
-      <a href="cv/WMO_2012.html" style="margin-left: 10px;">hydrology WMO glossary</a>
-      
-      <a href="cv/layerflow-BERT.html" style="margin-left: 10px;">layerflow BERT</a>
-      <a href="cv/Neuron_Factors.html" style="margin-left: 10px;">Neuron Factors</a>
-      <a href="desktop/desktop.html" style="margin-left: 10px;">Desktop</a>
-      <a href="/soundcloud/index.html" style="margin-left: 10px;">Soundcloud</a>
-      <a href="experiments.html" style="margin-left: 10px;">Experiments</a>
+  <nav aria-label="Site navigation" style="position: fixed; top: 10px; right: 12px; z-index: 1000; text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; pointer-events: auto;">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end;">
+      <a href="cv/cv.html" title="Portfolio &amp; Technical Index">CV</a>
+      <a href="cv/googlephotos.html" title="Google Photos-style Grid Viewer">GPhotosUI</a>
+      <a href="cv/dem-to-glb.html" title="Client-side GeoTIFF DEM to 3D GLB Converter">DEM to GLB</a>
+      <a href="cv/WMO_2012.html" title="International Glossary of Hydrology (WMO-No. 385)">Hydrology WMO Glossary</a>
+      <a href="cv/layerflow-BERT.html" title="EmbeddingGemma-300M &amp; 3D UMAP Explorer">Layerflow UMAP</a>
+      <a href="cv/Neuron_Factors.html" title="Client-side Transformer Neuron Factor Decomposition">Neuron Factors</a>
+      <a href="desktop/desktop.html" title="3D Desktop Environment, Sun-Path &amp; Potree Point Clouds">Desktop</a>
+      <a href="soundcloud/index.html" title="SoundCloud Playback Rewind">SoundCloud</a>
+      <a href="experiments.html" title="Repository Timeline &amp; Live Demos">Experiments</a>
     </div>
-    <div>
-      <a href="cv/chat-app.html">Gemma Chat</a>
-      <a href="/graph-queen/index.html" style="margin-left: 10px;">Graph Queen</a>
-      <a href="/llm-consistency-vis/index.html" style="margin-left: 10px;">LLM Consistency</a>
-      <a href="/llm-wordgraph-exact/index.html" style="margin-left: 10px;">LLM Wordgraph</a>
-      <a href="cv/TextGraph.html" style="margin-left: 10px;">TextGraph</a>
-      <a href="/wordy/index.html" style="margin-left: 10px;">Wordy</a>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end;">
+      <a href="/gemma-chat-app/" title="Browser WebGPU Gemma Chat (github.com/1kaiser/gemma-chat-app)">Gemma Chat</a>
+      <a href="/graph-queen/" title="3D Knowledge Graph &amp; PDF OCR Workspace (github.com/1kaiser/graph-queen)">Graph Queen</a>
+      <a href="/llm-consistency-vis/" title="LLM Prompt Consistency Visualizer (github.com/1kaiser/llm-consistency-vis)">LLM Consistency</a>
+      <a href="/llm-wordgraph-exact/" title="Exact Token Wordgraph &amp; EmbeddingGemma (github.com/1kaiser/llm-wordgraph-exact)">LLM Wordgraph</a>
+      <a href="/TextGraph/" title="Interactive Graph Attention &amp; Token Similarity (github.com/1kaiser/TextGraph)">TextGraph</a>
+      <a href="/wordy/" title="WordNet Lexical Graph, MUVERA &amp; RAG Explorer (github.com/1kaiser/wordy)">Wordy</a>
     </div>
-  </div>
+  </nav>
   <div class="title-container">
     <h1>Space</h1>
   </div>
@@ -193,5 +184,17 @@
   <!-- Background scan carousel (Pi3X reconstructions, behind the gallery),
        live-rendered via model-viewer and lit by js/sun-lighting.js -->
   <script src="js/bg-carousel.js" defer></script>
+
+  <footer id="site-references" style="position: fixed; bottom: 10px; right: 12px; z-index: 1000; pointer-events: auto; font-size: 11px; color: #cbd5e1;">
+    <details style="background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); border: 1px solid rgba(148, 163, 184, 0.28); border-radius: 8px; padding: 6px 10px; max-width: 440px;">
+      <summary style="cursor: pointer; font-weight: 600; color: #f8fafc; outline: none;">References &amp; Attribution</summary>
+      <ul style="margin: 8px 0 2px; padding-left: 16px; line-height: 1.5; text-align: left;">
+        <li>3D Viewer &amp; Mesh Compression: <a href="https://modelviewer.dev/" target="_blank" rel="noopener">Google &lt;model-viewer&gt;</a>, <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a>, <a href="https://github.com/google/draco" target="_blank" rel="noopener">Google Draco</a></li>
+        <li>Reconstructions: <a href="https://huggingface.co/datasets/kaiser-1/pi3x" target="_blank" rel="noopener">Pi3X Point Cloud &amp; GLB Dataset</a> (solar lighting ephemeris via NOAA/Meeus)</li>
+        <li>UI &amp; Streaming Relay: <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue.js 3</a>, <a href="https://github.com/nwtgck/piping-server" target="_blank" rel="noopener">Piping Server (ppng.io)</a></li>
+        <li>Source: <a href="https://github.com/1kaiser/1kaiser.github.io" target="_blank" rel="noopener">1kaiser/1kaiser.github.io</a> &middot; <a href="cv/cv.html">Portfolio Index</a></li>
+      </ul>
+    </details>
+  </footer>
 </body>
 </html>

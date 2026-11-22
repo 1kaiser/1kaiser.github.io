@@ -15,6 +15,8 @@
         <select id="bg-scan-select" title="Pi3X scan shown in the room"></select>
         <button id="btn-measure-potree" title="Open this scan in Potree's real point-cloud measurement tools">📏 Measure</button>
         <button id="btn-models" title="Open model gallery">Models</button>
+        <button id="btn-references" title="References &amp; Attributions">References</button>
+        <a href="../index.html" id="btn-gallery" title="Back to Space 3D Gallery" style="color: #93c5fd; text-decoration: none; font-size: 13px; padding: 4px 10px; border: 1px solid rgba(147,197,253,0.35); border-radius: 6px; margin-left: 4px;">&larr; Gallery</a>
     </div>
 
     <!-- Three.js canvas goes here (appended by JS) -->
@@ -64,5 +66,32 @@
     </script>
     <script src="../models/models.js"></script>
     <script type="module" src="desktop.js?v=6"></script>
+    <div id="references-modal" hidden style="position: fixed; inset: 0; z-index: 9999; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 20px;">
+      <div style="background: #0f172a; color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 12px; max-width: 620px; width: 100%; padding: 20px 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.45);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h2 style="margin: 0; font-size: 18px; color: #f8fafc;">3D Desktop References &amp; Attributions</h2>
+          <button id="btn-references-close" type="button" style="background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 6px; padding: 4px 10px; cursor: pointer;">Close</button>
+        </div>
+        <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.65;">
+          <li><strong>Architectural Solar &amp; Environmental Tools (24 modules):</strong> Dr. Andrew Marsh (<a href="https://drajmarsh.bitbucket.io/" target="_blank" rel="noopener" style="color: #93c5fd;">drajmarsh.bitbucket.io</a>, <a href="https://andrewmarsh.com/" target="_blank" rel="noopener" style="color: #93c5fd;">andrewmarsh.com</a>).</li>
+          <li><strong>Browser GPU Array Kernels (6 demos):</strong> Eric Zhang, <a href="https://jax-js.com/" target="_blank" rel="noopener" style="color: #93c5fd;">jax-js</a> (<a href="https://github.com/ekzhang/jax-js" target="_blank" rel="noopener" style="color: #93c5fd;">github.com/ekzhang/jax-js</a>).</li>
+          <li><strong>Point Cloud Rendering:</strong> Markus Schütz (2016), <a href="https://github.com/potree/potree" target="_blank" rel="noopener" style="color: #93c5fd;">Potree</a> WebGL Point Cloud Viewer; <a href="https://huggingface.co/datasets/kaiser-1/pi3x" target="_blank" rel="noopener" style="color: #93c5fd;">Pi3X Reconstructions</a>.</li>
+          <li><strong>3D Engine &amp; Procedural Geometry:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener" style="color: #93c5fd;">Three.js</a>; Johan Gielis (2003), <em>A generic geometric transformation that unifies a wide range of natural and abstract shapes</em>, Am. J. Botany 90(3):333–338 (Superformula).</li>
+          <li><strong>Source:</strong> <a href="https://github.com/1kaiser/1kaiser.github.io/tree/main/desktop" target="_blank" rel="noopener" style="color: #93c5fd;">1kaiser/1kaiser.github.io/desktop</a> &middot; <a href="../index.html" style="color: #93c5fd;">Main Gallery</a></li>
+        </ul>
+      </div>
+    </div>
+    <script>
+      (function () {
+        const btn = document.getElementById('btn-references');
+        const modal = document.getElementById('references-modal');
+        const closeBtn = document.getElementById('btn-references-close');
+        if (!btn || !modal) return;
+        const close = () => { modal.hidden = true; modal.style.display = 'none'; };
+        btn.addEventListener('click', () => { modal.hidden = false; modal.style.display = 'flex'; });
+        if (closeBtn) closeBtn.addEventListener('click', close);
+        modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+      })();
+    </script>
 </body>
 </html>

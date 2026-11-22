@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LayerFlow Style UMAP</title>
+    <title>LayerFlow Style: EmbeddingGemma-300M &amp; 3D UMAP</title>
     
     <!-- Styles -->
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Noto+Sans|Castoro" rel="stylesheet">
@@ -81,7 +81,8 @@
 <section class="hero">
   <div class="hero-body">
     <div class="container">
-      <h1 class="title">LayerFlow Style: BERT & UMAP Analysis</h1>
+      <div style="margin-bottom: 8px; font-size: 13px;"><a href="../index.html">&larr; 1kaiser.github.io</a> &middot; <a href="https://github.com/1kaiser/1kaiser.github.io/blob/main/cv/layerflow-BERT.html" target="_blank" rel="noopener">Source</a></div>
+      <h1 class="title">LayerFlow Style: EmbeddingGemma-300M &amp; 3D UMAP</h1>
       <h2 class="subtitle">Interactive 3D exploration of document embeddings</h2>
     </div>
   </div>
@@ -393,6 +394,11 @@
             }
         };
 
+        worker.onerror = (err) => {
+            console.error('Worker runtime error:', err);
+            updateStatus(`❌ Worker Load Error: ${err?.message || 'Check network / WebAssembly support'}`, 'error');
+        };
+
         worker.postMessage({ type: 'load-model' });
     }
 
@@ -587,5 +593,12 @@
     loadDefaultData(); 
 
 </script>
+<footer class="container" style="margin: 24px auto 32px; padding: 16px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #475569; line-height: 1.6;">
+    <strong>References &amp; Attribution:</strong>
+    Uses <a href="https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX" target="_blank" rel="noopener">EmbeddingGemma-300M (ONNX)</a> via <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">Transformers.js</a>,
+    <a href="https://arxiv.org/abs/1802.03426" target="_blank" rel="noopener">UMAP</a> (McInnes et al., 2018, <code>umap-js</code>),
+    <a href="https://pair-code.github.io/scatter-gl/" target="_blank" rel="noopener">Scatter-GL</a>, Three.js, and Bulma CSS.
+    Inspired by LayerFlow / Embedding Atlas visualizations. Part of <a href="../index.html">1kaiser.github.io</a>.
+</footer>
 </body>
 </html>

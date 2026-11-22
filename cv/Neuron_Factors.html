@@ -4,8 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecco Client-Side Analysis</title>
-    <a href="https://colab.research.google.com/github/jalammar/ecco/blob/main/notebooks/Ecco_Neuron_Factors.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+    <title>Ecco Client-Side Analysis (NMF Neuron Factors)</title>
 
     <!-- Styles for Ecco -->
     <link rel="stylesheet" href="https://storage.googleapis.com/ml-intro/ecco/html/styles.css">
@@ -35,6 +34,10 @@
     </style>
 </head>
 <body>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 13px;">
+        <a href="../index.html" style="color: #2563eb; text-decoration: none; font-weight: 600;">&larr; 1kaiser.github.io</a>
+        <a href="https://colab.research.google.com/github/jalammar/ecco/blob/main/notebooks/Ecco_Neuron_Factors.ipynb" target="_blank" rel="noopener"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+    </div>
     <h1>Ecco Client-Side Pipeline</h1>
     
     <div id="controls">
@@ -44,7 +47,7 @@
             <label for="model-select">Select Model:</label>
             <select id="model-select">
                 <option value="Xenova/bert-base-uncased">Xenova/bert-base-uncased (Encoder, 30k+ output dims)</option>
-                <option value="Xenova/all-MiniLM-L6-v2">Xenova/all-MiniLM-L6-v2 (Embedding Model, 384 dims) - Recommended</option>
+                <option value="Xenova/all-MiniLM-L6-v2" selected>Xenova/all-MiniLM-L6-v2 (Embedding Model, 384 dims) - Recommended</option>
                 <option value="Xenova/distilgpt2">Xenova/distilgpt2 (Decoder, 50k+ output dims)</option>
             </select>
         </div>
@@ -249,5 +252,15 @@
             });
         }
     </script>
+
+    <footer id="references" style="margin-top: 24px; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px 20px; font-size: 13px; color: #444; line-height: 1.6;">
+        <h3 style="margin: 0 0 8px; font-size: 15px; color: #111;">References &amp; Attribution</h3>
+        <ul style="margin: 0; padding-left: 18px;">
+            <li><strong>Ecco Library:</strong> J. Alammar (2021), <em>Ecco: An Open Source Library for the Explainability of Transformer Language Models</em>, ACL-IJCNLP System Demonstrations (<a href="https://aclanthology.org/2021.acl-demo.30/" target="_blank" rel="noopener">aclanthology.org/2021.acl-demo.30</a>, <a href="https://github.com/jalammar/ecco" target="_blank" rel="noopener">github.com/jalammar/ecco</a>).</li>
+            <li><strong>Non-Negative Matrix Factorization (NMF):</strong> D. D. Lee &amp; H. S. Seung (1999), <em>Learning the parts of objects by non-negative matrix factorization</em>, Nature 401, 788–791 (<a href="https://doi.org/10.1038/44565" target="_blank" rel="noopener">doi:10.1038/44565</a>).</li>
+            <li><strong>Sample Literary Text:</strong> F. Dostoevsky (1864), <em>Notes from Underground</em>.</li>
+            <li><strong>Client-Side Stack:</strong> <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">Transformers.js</a>, <a href="https://mathjs.org/" target="_blank" rel="noopener">Math.js</a>, <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a>. Part of <a href="../index.html">1kaiser.github.io</a>.</li>
+        </ul>
+    </footer>
 </body>
 </html>
