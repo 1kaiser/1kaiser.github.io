@@ -18,6 +18,7 @@ async function supportsWebGPU() {
 // Main models configuration array
 window.modelsConfig = [
   {
+    id: "my-model",
     url: "./models/31_10_2024.glb",
     poster: "./models/31_10_2024.webp",
     title: "My Model",
@@ -25,6 +26,7 @@ window.modelsConfig = [
     alt: "Original 3D model"
   },
   {
+    id: "temple",
     url: "https://huggingface.co/datasets/1kaiser/models/resolve/main/20230204temple-transformed.glb",
     poster: "./models/20230204temple-transformed.webp",
     title: "Temple",
@@ -32,6 +34,7 @@ window.modelsConfig = [
     alt: "Temple"
   },
   {
+    id: "hibiscus",
     url: "https://huggingface.co/datasets/1kaiser/models/resolve/main/hibiscus.glb",
     poster: "./models/hibiscus.webp",
     title: "Hibiscus",
@@ -39,6 +42,7 @@ window.modelsConfig = [
     alt: "hibiscus"
   },
   {
+    id: "momos",
     url: "./models/momos.glb",
     poster: "./models/momos.webp",
     title: "Momos",
@@ -46,6 +50,7 @@ window.modelsConfig = [
     alt: "momos"
   },
   {
+    id: "idol",
     url: "https://huggingface.co/datasets/1kaiser/models/resolve/main/saraswati_flower.glb",
     poster: "./models/saraswati_flower.webp",
     title: "Idol",
@@ -53,6 +58,7 @@ window.modelsConfig = [
     alt: "Idol"
   },
   {
+    id: "bicycle",
     url: "./models/bycycle.glb",
     poster: "./models/bycycle.webp",
     title: "Bicycle",
@@ -60,6 +66,7 @@ window.modelsConfig = [
     alt: "Bicycle"
   },
   {
+    id: "bhatura-platter",
     url: "https://huggingface.co/datasets/1kaiser/models/resolve/main/bhatura_VegBiryani_EggNoodles_ChickenStrips.glb",
     poster: "./models/bhatura_VegBiryani_EggNoodles_ChickenStrips.webp",
     title: "bhatura VegBiryani EggNoodles ChickenStrips",
@@ -67,6 +74,7 @@ window.modelsConfig = [
     alt: "bhatura VegBiryani EggNoodles ChickenStrips"
   },
   {
+    id: "paneer-sabji",
     url: "https://huggingface.co/datasets/1kaiser/models/resolve/main/paneer%20sabji.glb",
     poster: "./models/paneer_sabji.webp",
     title: "paneer sabji",
@@ -74,6 +82,7 @@ window.modelsConfig = [
     alt: "paneer sabji"
   },
   {
+    id: "kaiser-roy",
     url: "https://huggingface.co/datasets/1kaiser/models/resolve/main/kaiser03032023.glb",
     poster: "./models/untitled-transformed.webp",
     title: "Kaiser Roy",
@@ -81,6 +90,7 @@ window.modelsConfig = [
     alt: "Kaiser Roy"
   },
   {
+    id: "chicken-biryani",
     url: "./models/Chicken_Biryani.glb",
     poster: "./models/Chicken_Biryani.webp",
     title: "chicken biryani",
@@ -88,6 +98,32 @@ window.modelsConfig = [
     alt: "chicken biryani with eggs and potatoes"
   }
 ];
+
+// Single source of truth for curated Pi3X reconstructions across index.html,
+// desktop/desktop.html, and desktop/potree/index.html.
+window.PI3X_HF_BASE = "https://huggingface.co/datasets/1kaiser/models/resolve/main/";
+window.PI3X_SCANS = [
+  { dir: "VID20230408092322",   file: "VID20230408092322", pts: 566905,  label: "VID20230408092322 · 566,905 pts" },
+  { dir: "VID20230408092500",   file: "VID20230408092500", pts: 906245,  label: "VID20230408092500 · 906,245 pts" },
+  { dir: "VID20230408095210",   file: "VID20230408095210", pts: 140899,  label: "VID20230408095210 · 140,899 pts" },
+  { dir: "VID20230408100423",   file: "VID20230408100423", pts: 117726,  label: "VID20230408100423 · 117,726 pts" },
+  { dir: "VID20230408111201",   file: "VID20230408111201", pts: 77622,   label: "VID20230408111201 · 77,622 pts" },
+  { dir: "VID20230408113045_1", file: "VID20230408113045", pts: 28408,   label: "VID20230408113045 · 28,408 pts" },
+  { dir: "VID20230408152015",   file: "VID20230408152015", pts: 1192779, label: "VID20230408152015 · 1,192,779 pts" },
+  { dir: "VID20230408163443_2", file: "VID20230408163443", pts: 871261,  label: "VID20230408163443 · 871,261 pts" }
+].map(function(s) {
+  return Object.assign({}, s, {
+    glbUrl: window.PI3X_HF_BASE + s.file + "_pi3x.glb",
+    poster: "./models/bg_scans/" + s.file + ".png"
+  });
+});
+
+window.resolveSiteAssetUrl = function(assetPath, rootPrefix) {
+  if (!assetPath) return "";
+  if (/^(https?:|blob:|data:)/i.test(assetPath)) return assetPath;
+  const clean = assetPath.startsWith("./") ? assetPath.slice(2) : assetPath;
+  return (rootPrefix || "") + clean;
+};
 
 // Utility functions for model management
 window.ModelManager = {
@@ -305,22 +341,22 @@ window.ModelViewerConfig = {
   }
 };
 
-// Auto-setup for all model viewers on page
+// Auto-setup for all model viewers on pages that actually render <model-viewer>
 document.addEventListener('DOMContentLoaded', () => {
-  // Setup existing model viewers
+  if (!window.customElements || (!document.querySelector('model-viewer') && !document.getElementById('gallery-root'))) {
+    return;
+  }
   document.querySelectorAll('model-viewer').forEach(mv => {
     window.ModelViewerConfig.setupModelViewer(mv);
   });
 
-  // Setup observer for dynamically added model viewers
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
-        if (node.nodeType === 1) { // Element node
+        if (node.nodeType === 1) {
           if (node.tagName === 'MODEL-VIEWER') {
             window.ModelViewerConfig.setupModelViewer(node);
           }
-          // Check children too
           node.querySelectorAll?.('model-viewer').forEach(mv => {
             window.ModelViewerConfig.setupModelViewer(mv);
           });

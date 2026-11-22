@@ -43,8 +43,8 @@ This project leverages several key technologies and AI assistance:
     *   A tool that converts Digital Elevation Models (TIF/TIFF) into 3D GLB models.
     *   Supports auto-fetching satellite imagery from Google Maps to texture the mesh.
     *   Runs entirely in the browser using `loam` (GDAL in WebAssembly).
-*   **3D Desktop Environment**:
-    *   An immersive 3D "desktop" experience built with Three.js.
+*   **3D Desktop Environment (`desktop/desktop.html`)**:
+    *   Unified Three.js `r152` inspection stage (`GLTFLoader` + `DRACOLoader` `1.5.6` + shared `ModelCache` API) loading both the 10 gallery GLBs and 8 Pi3X reconstructions (`?model=<id>`, `?scan=<dir>`, `?tool=sunpath|supershapes`), paired with fixed Spencer (1971) `3D Sun-Path` real-time shadow casting, Gielis (2003) `Supershapes` with `.glb` export, Potree 2.0 octree measurement (`desktop/potree/`), and 30 embedded Andrew Marsh / `jax-js` modules.
 *   **Deploy to Mobile (QR Code)**:
     *   Easily view 3D models on mobile devices in AR.
     *   Uses piping servers for peer-to-peer data transfer.
@@ -133,8 +133,8 @@ This project leverages several key technologies and AI assistance:
 
 ## References & Citations
 
-- **3D Rendering & Compression:** Google [`<model-viewer>`](https://modelviewer.dev/), [Three.js](https://threejs.org/), [Google Draco](https://github.com/google/draco), [Potree](https://github.com/potree/potree) (Schütz, 2016), [Pi3X Dataset](https://huggingface.co/datasets/kaiser-1/pi3x), [Piping Server](https://github.com/nwtgck/piping-server).
+- **3D Rendering & Compression:** Google [`<model-viewer>`](https://modelviewer.dev/), [Three.js](https://threejs.org/), [Google Draco 1.5.6](https://github.com/google/draco), [Potree 2.0](https://github.com/potree/potree) (Schütz, 2016), [Pi3X Dataset](https://huggingface.co/datasets/kaiser-1/pi3x), [Piping Server](https://github.com/nwtgck/piping-server).
 - **Browser ML & Explainability:** [Hugging Face Transformers.js](https://huggingface.co/docs/transformers.js), Google Gemma 3 ([arXiv:2503.19786](https://arxiv.org/abs/2503.19786)), EmbeddingGemma, IBM Granite 4.0, Ecco (Alammar, 2021, [ACL Demo](https://aclanthology.org/2021.acl-demo.30/)), NMF (Lee & Seung, 1999, *Nature* 401), UMAP (McInnes et al., 2018, [arXiv:1802.03426](https://arxiv.org/abs/1802.03426)), Scatter-GL.
 - **Graph & Retrieval Research:** Graph Attention Networks (Veličković et al., 2018, [arXiv:1710.10903](https://arxiv.org/abs/1710.10903)), *A Gentle Introduction to Graph Neural Networks* (Sanchez-Lengeling et al., 2021, [doi:10.23915/distill.00033](https://doi.org/10.23915/distill.00033)), LLM Consistency Wordgraph (Reif et al., [`EmilyReif/llm-consistency-vis`](https://github.com/EmilyReif/llm-consistency-vis)), WordNet 3.1 (Miller, 1995; Fellbaum, 1998), MUVERA (Jayaram et al., 2024, [arXiv:2405.19504](https://arxiv.org/abs/2405.19504)).
 - **Geospatial & Hydrology:** WMO & UNESCO (2012) *International Glossary of Hydrology* (WMO-No. 385), [GDAL](https://gdal.org/) / [Azavea Loam](https://github.com/azavea/loam), [Proj4js](https://proj4js.org/).
-- **Solar & Array Computing Tools:** Dr. Andrew Marsh ([andrewmarsh.com](https://andrewmarsh.com/), [drajmarsh.bitbucket.io](https://drajmarsh.bitbucket.io/)), Eric Zhang ([jax-js](https://jax-js.com/)), Johan Gielis (2003, Superformula, *Am. J. Bot.* 90(3)).
+- **Solar & Array Computing Tools:** Spencer (1971) solar declination & Equation of Time (*Search* 2(5):172), Dr. Andrew Marsh ([andrewmarsh.com](https://andrewmarsh.com/), [drajmarsh.bitbucket.io](https://drajmarsh.bitbucket.io/)), Eric Zhang ([jax-js](https://jax-js.com/)), Johan Gielis (2003, Superformula, *Am. J. Bot.* 90(3):333–338).

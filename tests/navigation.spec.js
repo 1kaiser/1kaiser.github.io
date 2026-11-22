@@ -24,6 +24,7 @@ function attachTrackers(page) {
   const pageErrors = [];
   const sameOrigin404s = [];
   const downloads404s = [];
+  const potreeErrors = [];
 
   page.on('pageerror', (err) => pageErrors.push(err.message));
   page.on('response', (res) => {
@@ -33,9 +34,12 @@ function attachTrackers(page) {
       if (url.includes('/downloads/')) downloads404s.push(url);
       if (url.startsWith(BASE_URL)) sameOrigin404s.push(url);
     }
+    if (status >= 400 && url.includes('/pointclouds/')) {
+      potreeErrors.push(`${status} ${url}`);
+    }
   });
 
-  return { pageErrors, sameOrigin404s, downloads404s };
+  return { pageErrors, sameOrigin404s, downloads404s, potreeErrors };
 }
 
 test('homepage navigation, CSP/Piping fixes, and References footer', async ({ page }) => {
@@ -74,6 +78,16 @@ test('homepage navigation, CSP/Piping fixes, and References footer', async ({ pa
   await expect(refsDetails).toBeVisible();
   await refsDetails.locator('summary').click();
   await expect(refsDetails.locator('li')).toHaveCount(4);
+
+  await expect(page.locator('#bg-scan-desktop')).toHaveAttribute('href', /desktop\/desktop\.html\?scan=/);
+  await expect(page.locator('#bg-scan-potree')).toHaveAttribute('href', /desktop\/potree\/index\.html\?scan=/);
+
+  await page.locator('.model-card').first().hover();
+  await page.locator('.model-card-expand').first().click();
+  await expect(page.locator('#modelOverlay')).toBeVisible();
+  await expect(page.locator('#modalDesktopBtn')).toHaveAttribute('href', /desktop\/desktop\.html\?model=my-model/);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#modelOverlay')).toBeHidden();
 
   expect(downloads404s).toEqual([]);
   expect(sameOrigin404s).toEqual([]);
@@ -117,6 +131,7 @@ test('cv/googlephotos.html loads cv/images.json, searches, and closes lightbox w
 });
 
 test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', async ({ page }) => {
+  test.setTimeout(90000);
   await stubHeavyWeights(page);
 
   const localPages = [
@@ -133,7 +148,7 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
   ];
 
   for (const item of localPages) {
-    const { pageErrors, sameOrigin404s, downloads404s } = attachTrackers(page);
+    const { pageErrors, sameOrigin404s, downloads404s, potreeErrors } = attachTrackers(page);
     const resp = await page.goto(BASE_URL + item.path);
     expect(resp.status(), `status for ${item.path}`).toBe(200);
 
@@ -150,8 +165,48 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
     if (item.path === '/desktop/desktop.html') {
       await page.locator('#btn-references').click();
       await expect(page.locator('#references-modal')).toBeVisible();
+      await expect(page.locator('#references-modal')).toContainText('Spencer');
+      await expect(page.locator('#references-modal')).toContainText('Gielis');
       await page.locator('#btn-references-close').click();
       await expect(page.locator('#references-modal')).toBeHidden();
+
+      // Verify Models & Scans drawer and dark navbar styling + white #tool-frame
+      const refBg = await page.locator('#btn-references').evaluate(el => getComputedStyle(el).backgroundColor);
+      expect(refBg).not.toBe('rgb(239, 239, 239)');
+      const frameBg = await page.locator('#tool-frame').evaluate(el => getComputedStyle(el).backgroundColor);
+      expect(frameBg).toBe('rgb(255, 255, 255)');
+      await page.locator('#btn-models').click();
+      await expect(page.locator('#models-drawer')).toBeVisible();
+      expect(await page.locator('#models-drawer .drawer-item').count()).toBe(18);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#models-drawer')).toBeHidden();
+
+      // Verify deep-linked Draco Gallery model + 3D Sun-Path + Supershapes Star preset
+      await page.goto(BASE_URL + '/desktop/desktop.html?model=bicycle&tool=sunpath');
+      await expect(page.locator('#stage-hud-meta')).toContainText('Draco/GLB', { timeout: 25000 });
+      await page.locator('#sp-preset-delhi').click();
+      const spTxt = await page.locator('#sp-info').innerText();
+      const altMatch = spTxt.match(/Alt:\s*([\d.]+)/);
+      expect(altMatch && parseFloat(altMatch[1])).toBeGreaterThan(75);
+
+      await page.locator('.cat-toggle', { hasText: '3D Geometry' }).click();
+      await page.locator('.tool-btn', { hasText: 'Supershapes' }).click();
+      await page.locator('.np-preset-btn', { hasText: 'Star' }).click();
+      expect(await page.locator('#ss-n1').inputValue()).toBe('0.3');
+      expect(await page.locator('#ss-n2').inputValue()).toBe('1.7');
+      expect(await page.locator('#ss-n3').inputValue()).toBe('1.7');
+    }
+
+    if (item.path.startsWith('/desktop/potree/')) {
+      await page.waitForTimeout(1500);
+      expect(potreeErrors, 'Potree HTTP >=400 responses').toEqual([]);
+      const noOverlap = await page.evaluate(() => {
+        const picker = document.getElementById('scan-picker')?.getBoundingClientRect();
+        const desc = document.getElementById('potree_description')?.getBoundingClientRect();
+        if (!picker || !desc) return true;
+        return picker.bottom <= desc.top || picker.right <= desc.left || desc.right <= picker.left;
+      });
+      expect(noOverlap).toBe(true);
     }
 
     if (item.path === '/experiments.html') {

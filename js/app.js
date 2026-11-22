@@ -156,12 +156,42 @@ if (galleryDisplay) {
 // delegation, which meant this whole modal (camera-controls, AR, the
 // built-in download button, blob caching) was unreachable from the
 // current gallery despite being fully built and wired.
-const openModalWithModel = (modelUrl, modelTitle, autoRotate) => {
+const modalLoadingBadge = document.getElementById('modalLoadingBadge');
+const modalDesktopBtn = document.getElementById('modalDesktopBtn');
+const modalPotreeBtn = document.getElementById('modalPotreeBtn');
+let modalLoadSeq = 0;
+
+if (modalViewer && modalLoadingBadge) {
+  modalViewer.addEventListener('load', () => { modalLoadingBadge.hidden = true; });
+  modalViewer.addEventListener('error', () => { modalLoadingBadge.hidden = true; });
+}
+
+const openModalWithModel = (modelUrl, modelTitle, autoRotate, opts = {}) => {
+  const reqSeq = ++modalLoadSeq;
   window.currentModelTitle = modelTitle;
   window.currentModelSrc = modelUrl;
 
   modalDownloadBtn.href = modelUrl;
   modalDownloadBtn.setAttribute('download', modelTitle + '.glb');
+
+  if (modalDesktopBtn) {
+    if (opts.scanDir) {
+      modalDesktopBtn.href = 'desktop/desktop.html?scan=' + encodeURIComponent(opts.scanDir);
+    } else if (opts.modelId) {
+      modalDesktopBtn.href = 'desktop/desktop.html?model=' + encodeURIComponent(opts.modelId);
+    } else {
+      modalDesktopBtn.href = 'desktop/desktop.html';
+    }
+  }
+  if (modalPotreeBtn) {
+    if (opts.scanDir) {
+      modalPotreeBtn.href = 'desktop/potree/index.html?scan=' + encodeURIComponent(opts.scanDir);
+      modalPotreeBtn.style.display = 'inline-block';
+    } else {
+      modalPotreeBtn.style.display = 'none';
+      modalPotreeBtn.href = '#';
+    }
+  }
 
   if (window.mobileDeployment && window.mobileDeployment.isDeployed) {
     window.mobileDeployment.contentHasChanged = true;
@@ -172,39 +202,26 @@ const openModalWithModel = (modelUrl, modelTitle, autoRotate) => {
   }
 
   if (modalViewer) {
-    // The model might be in the browser's cache thanks to the interactive viewer
-    // Fetching it again to be sure and to place it in our specific cache if not already.
-    //
-    // Real bug found while wiring this up to the new expand buttons (this
-    // modal was previously unreachable -- see the comment above
-    // openModalWithModel -- so this had never actually run in practice):
-    // the original code called `cache.put(url, response.clone())` WITHOUT
-    // awaiting it, then immediately read `.blob()` on the sibling
-    // (original) response. In this Chromium build that reliably hangs
-    // `.blob()` forever -- reproduced in isolation with a bare
-    // fetch+clone+put+blob sequence, and confirmed fixed by simply
-    // awaiting `cache.put()` before reading the blob, rather than racing
-    // the two reads of the tee'd stream against each other.
-    caches.open('models-cache').then(cache => {
-      cache.match(modelUrl).then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse.blob();
-        }
-        return fetch(modelUrl).then(networkResponse => {
-          return cache.put(modelUrl, networkResponse.clone()).then(() => networkResponse.blob());
-        });
-      }).then(blob => {
-        const objectURL = URL.createObjectURL(blob);
-        modalViewer.src = ''; // Clear previous model
-        modalViewer.cameraOrbit = '0deg 75deg 105%';
-        modalViewer.setAttribute('src', objectURL);
-        modalViewer.setAttribute('alt', modelTitle);
-        if (autoRotate) {
-          modalViewer.setAttribute('auto-rotate', '');
-        } else {
-          modalViewer.removeAttribute('auto-rotate');
-        }
-      });
+    modalViewer.src = '';
+    if (opts.poster) modalViewer.setAttribute('poster', opts.poster);
+    else modalViewer.removeAttribute('poster');
+    if (modalLoadingBadge) modalLoadingBadge.hidden = false;
+    modalViewer.cameraOrbit = '0deg 75deg 105%';
+    modalViewer.setAttribute('alt', modelTitle);
+    if (autoRotate) modalViewer.setAttribute('auto-rotate', '');
+    else modalViewer.removeAttribute('auto-rotate');
+
+    const loadPromise = window.ModelCache
+      ? window.ModelCache.getBlobUrl(modelUrl, true)
+      : caches.open('models-cache').then(cache =>
+          cache.match(modelUrl).then(cached =>
+            cached ? cached.blob() : fetch(modelUrl).then(r => cache.put(modelUrl, r.clone()).then(() => r.blob()))
+          ).then(blob => URL.createObjectURL(blob))
+        ).catch(() => modelUrl);
+
+    loadPromise.then(resolvedUrl => {
+      if (reqSeq !== modalLoadSeq) return;
+      modalViewer.setAttribute('src', resolvedUrl);
     });
   }
 
@@ -215,21 +232,24 @@ const openModalWithModel = (modelUrl, modelTitle, autoRotate) => {
 };
 window.openModelModal = openModalWithModel;
 
+function closeModelModal() {
+  modalLoadSeq++;
+  if (overlay) overlay.style.display = 'none';
+  document.body.style.overflow = 'auto';
+  if (modalLoadingBadge) modalLoadingBadge.hidden = true;
+  if (modalViewer) {
+    modalViewer.src = '';
+  }
+  if (modalViewer && window.ModelMeasure) {
+    window.ModelMeasure.detach(modalViewer);
+  }
+  const measureBtn = document.getElementById('modalMeasureBtn');
+  if (measureBtn) measureBtn.classList.remove('is-active');
+}
 
 // Close button functionality for modal
 if (closeButton) {
-  closeButton.addEventListener('click', () => {
-    if (overlay) overlay.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    if (modalViewer) {
-      modalViewer.src = ''; // Clear the source
-    }
-    if (modalViewer && window.ModelMeasure) {
-      window.ModelMeasure.detach(modalViewer);
-    }
-    const measureBtn = document.getElementById('modalMeasureBtn');
-    if (measureBtn) measureBtn.classList.remove('is-active');
-  });
+  closeButton.addEventListener('click', closeModelModal);
 }
 
 // Measure toggle: click two points on the model in the modal to see the
@@ -251,25 +271,15 @@ if (modalMeasureBtn && modalViewer) {
 if (overlay) {
   overlay.addEventListener('click', (event) => {
     if (event.target === overlay) {
-      overlay.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      if (modalViewer) {
-        modalViewer.src = ''; // Clear the source
-      }
+      closeModelModal();
     }
   });
 }
 
 // Close modal when pressing ESC key
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') {
-    if (overlay && overlay.style.display === 'flex') { // Check if overlay exists
-      overlay.style.display = 'none';
-      document.body.style.overflow = 'auto';
-      if (modalViewer) {
-        modalViewer.src = ''; // Clear the source
-      }
-    }
+  if (event.key === 'Escape' && overlay && overlay.style.display === 'flex') {
+    closeModelModal();
   }
 });
 

@@ -56,7 +56,10 @@ const GalleryApp = {
     // (see js/app.js) -- exposed as window.openModelModal for this.
     expand(model) {
       if (window.openModelModal) {
-        window.openModelModal(this.getModelUrl(model), model.title, true);
+        window.openModelModal(this.getModelUrl(model), model.title, true, {
+          poster: this.getPosterUrl(model),
+          modelId: model.id || model.title
+        });
       }
     },
     getPosterUrl(model) {

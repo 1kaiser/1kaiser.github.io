@@ -1,30 +1,24 @@
-// Background carousel: cycles the 10 Pi3X reconstruction scans behind the
-// existing gallery, rendered live via <model-viewer> (same element the
-// foreground cards use, already loaded -- no separate Three.js stack)
-// rather than static posters, so real sun-position math can actually
-// affect how they look via exposure + camera-orbit + a CSS tint, using
-// js/sun-lighting.js. The enlarge button reuses the exact same modal
-// (window.openModelModal, see js/app.js) the foreground gallery cards
-// use, rather than a second parallel interaction system -- same
-// camera-controls/AR/download/opaque-panel behavior in both places.
+// Background carousel: cycles the Pi3X reconstruction scans behind the
+// existing gallery, rendered live via <model-viewer> and lit by
+// js/sun-lighting.js. Loads scans lazily (current + next) via the shared
+// window.ModelCache so initial page load never wastes bandwidth on all 8 scans,
+// and wires direct handoffs to the modal viewer, 3D Desktop, and Potree.
 (function () {
   "use strict";
 
-  var HF_BASE = "https://huggingface.co/datasets/1kaiser/models/resolve/main/";
-
-  // VID20230408091040 and VID20230408100354 removed (the latter was the
-  // degenerate near-empty reconstruction, only 2,926 points -- flagged
-  // earlier this session) -- also removed from the Hugging Face dataset.
-  var scans = [
-    { file: "VID20230408092322", pts: 566905 },
-    { file: "VID20230408092500", pts: 906245 },
-    { file: "VID20230408095210", pts: 140899 },
-    { file: "VID20230408100423", pts: 117726 },
-    { file: "VID20230408111201", pts: 77622 },
-    { file: "VID20230408113045", pts: 28408 },
-    { file: "VID20230408152015", pts: 1192779 },
-    { file: "VID20230408163443", pts: 871261 }
-  ];
+  var HF_BASE = window.PI3X_HF_BASE || "https://huggingface.co/datasets/1kaiser/models/resolve/main/";
+  var scans = (window.PI3X_SCANS && window.PI3X_SCANS.length)
+    ? window.PI3X_SCANS
+    : [
+        { dir: "VID20230408092322",   file: "VID20230408092322", pts: 566905 },
+        { dir: "VID20230408092500",   file: "VID20230408092500", pts: 906245 },
+        { dir: "VID20230408095210",   file: "VID20230408095210", pts: 140899 },
+        { dir: "VID20230408100423",   file: "VID20230408100423", pts: 117726 },
+        { dir: "VID20230408111201",   file: "VID20230408111201", pts: 77622 },
+        { dir: "VID20230408113045_1", file: "VID20230408113045", pts: 28408 },
+        { dir: "VID20230408152015",   file: "VID20230408152015", pts: 1192779 },
+        { dir: "VID20230408163443_2", file: "VID20230408163443", pts: 871261 }
+      ];
 
   var root = document.createElement("div");
   root.id = "bg-carousel";
@@ -32,6 +26,27 @@
   var wraps = [];
   var viewers = [];
   var labels = [];
+  var loadedSet = new Set();
+
+  function scanGlbUrl(s) {
+    return s.glbUrl || (HF_BASE + s.file + "_pi3x.glb");
+  }
+
+  function scanPosterUrl(s) {
+    return "models/bg_scans/" + s.file + ".png";
+  }
+
+  function ensureLoaded(idx, priority) {
+    var s = scans[idx];
+    var mv = viewers[idx];
+    if (!s || !mv || loadedSet.has(idx)) return;
+    loadedSet.add(idx);
+    if (window.ModelCache) {
+      window.ModelCache.loadInto(mv, scanGlbUrl(s), !!priority);
+    } else {
+      mv.setAttribute("src", scanGlbUrl(s));
+    }
+  }
 
   scans.forEach(function (s, i) {
     var wrap = document.createElement("div");
@@ -39,20 +54,9 @@
 
     var mv = document.createElement("model-viewer");
     mv.className = "bg-scan";
-    // No src set here -- loaded via window.ModelCache below (queued,
-    // Cache-API-backed) instead of letting each of these 10 elements
-    // fire its own immediate fetch. With the 10 foreground gallery cards
-    // doing the same thing at the same time, ~20 simultaneous multi-MB
-    // GLB fetches split available bandwidth so many ways that most never
-    // finished loading at all (confirmed by isolating one: it loaded in
-    // ~14s alone vs. still stuck after 15s+ with everything competing).
-    mv.setAttribute("poster", "models/bg_scans/" + s.file + ".png");
+    mv.setAttribute("poster", scanPosterUrl(s));
     mv.setAttribute("reveal", "auto");
     mv.setAttribute("disable-zoom", "");
-    // Default auto-framing leaves a lot of margin around a compact point
-    // cloud -- barely visible on a 210px foreground card, very visible
-    // blown up near-fullscreen as a background. camera-orbit here is
-    // overwritten every tick by applySunLook() below (real sun azimuth).
     mv.setAttribute("camera-orbit", "0deg 75deg 60%");
     mv.setAttribute("field-of-view", "15deg");
     mv.setAttribute("interaction-prompt", "none");
@@ -69,34 +73,14 @@
     label.textContent = s.file + "_pi3x.glb · " + s.pts.toLocaleString("en-US") + " pts";
     root.appendChild(label);
     labels.push(label);
-
-    if (window.ModelCache) {
-      window.ModelCache.loadInto(mv, HF_BASE + s.file + "_pi3x.glb", i === 0);
-    }
   });
 
   document.body.insertBefore(root, document.body.firstChild);
 
-  // #bg-carousel sits at z-index:-1 (deliberately, to stay behind the
-  // bare non-positioned <h1>/status-window -- see bg-carousel.css) which
-  // means it establishes its own stacking context: no z-index set on a
-  // descendant, however high, can ever escape it to render above the
-  // rest of the page, and (separately) it puts the whole subtree in a
-  // lower hit-testing layer than normal static page content -- a button
-  // living in there is not reliably clickable no matter its own z-index,
-  // confirmed via elementFromPoint() while debugging this the first time
-  // (the bare <h1>'s invisible full-width box was swallowing the click).
-  // The controls frame below lives in its own top-level overlay instead.
   var overlayRoot = document.createElement("div");
   overlayRoot.id = "bg-scan-overlay-root";
   document.body.appendChild(overlayRoot);
 
-  // All three controls (enlarge, prev/next, download) live inside this
-  // one frame, positioned/sized to exactly match .bg-scan-wrap's own box
-  // (see the matching values in bg-carousel.css) -- rather than each
-  // being independently `position: fixed` at viewport-relative
-  // coordinates that merely happened to line up with the window's
-  // corner.
   var controls = document.createElement("div");
   controls.id = "bg-scan-controls";
   overlayRoot.appendChild(controls);
@@ -104,19 +88,21 @@
   var triggerBtn = document.createElement("button");
   triggerBtn.id = "bg-scan-trigger";
   triggerBtn.type = "button";
+  triggerBtn.title = "Enlarge current Pi3X scan";
   triggerBtn.setAttribute("aria-label", "Enlarge current background scan");
   triggerBtn.innerHTML =
     '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 3 3 3 3 9"></polyline><polyline points="15 3 21 3 21 9"></polyline><polyline points="3 15 3 21 9 21"></polyline><polyline points="21 15 21 21 15 21"></polyline></svg>';
   triggerBtn.addEventListener("click", function () {
     var s = scans[index];
     if (window.openModelModal) {
-      window.openModelModal(HF_BASE + s.file + "_pi3x.glb", s.file, true);
+      window.openModelModal(scanGlbUrl(s), s.file, true, {
+        poster: scanPosterUrl(s),
+        scanDir: s.dir
+      });
     }
   });
   controls.appendChild(triggerBtn);
 
-  // Manual prev/next, below the enlarge trigger, and a download button
-  // below that for whichever scan is currently showing.
   var navGroup = document.createElement("div");
   navGroup.id = "bg-scan-nav";
 
@@ -140,36 +126,42 @@
 
   var downloadBtn = document.createElement("a");
   downloadBtn.id = "bg-scan-download";
+  downloadBtn.title = "Download current Pi3X GLB";
   downloadBtn.setAttribute("aria-label", "Download current background scan");
   downloadBtn.setAttribute("download", "");
   downloadBtn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><polyline points="7 11 12 16 17 11"></polyline><line x1="4" y1="21" x2="20" y2="21"></line></svg>';
   controls.appendChild(downloadBtn);
 
-  function updateDownloadTarget() {
+  var desktopLink = document.createElement("a");
+  desktopLink.id = "bg-scan-desktop";
+  desktopLink.title = "Explore current scan in 3D Desktop";
+  desktopLink.setAttribute("aria-label", "Open current scan in 3D Desktop");
+  desktopLink.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>';
+  controls.appendChild(desktopLink);
+
+  var potreeLink = document.createElement("a");
+  potreeLink.id = "bg-scan-potree";
+  potreeLink.title = "Measure current scan in Potree";
+  potreeLink.setAttribute("aria-label", "Open current scan in Potree measurement viewer");
+  potreeLink.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 6H3v12h18V6z"></path><path d="M7 6v4"></path><path d="M11 6v2"></path><path d="M15 6v4"></path><path d="M19 6v2"></path></svg>';
+  controls.appendChild(potreeLink);
+
+  function updateScanLinks() {
     var s = scans[index];
-    downloadBtn.href = HF_BASE + s.file + "_pi3x.glb";
+    downloadBtn.href = scanGlbUrl(s);
     downloadBtn.setAttribute("download", s.file + "_pi3x.glb");
+    desktopLink.href = "desktop/desktop.html?scan=" + encodeURIComponent(s.dir);
+    potreeLink.href = "desktop/potree/index.html?scan=" + encodeURIComponent(s.dir);
   }
-  // Not called here: `index` (declared with the carousel-advance logic
-  // further down) is only hoisted at this point, not yet assigned 0 --
-  // scans[undefined].file threw "Cannot read properties of undefined"
-  // when this ran immediately. Called once index actually has a value.
 
   wraps[0].classList.add("is-current");
   labels[0].classList.add("is-current");
 
-  // ---- sun-driven exposure/tint/camera-orbit, recomputed every 60s
-  // (real sun position barely moves minute to minute) ----
   function applySunLook() {
     if (!window.SunLighting) return;
     var look = window.SunLighting.computeLook();
     viewers.forEach(function (mv) {
       mv.setAttribute("exposure", look.exposure);
-      // A custom property, not mv.style.filter directly: the crossfade's
-      // blur-in/out also lives on `filter` (see bg-carousel.css), and a
-      // plain inline style.filter here would silently clobber it since
-      // inline styles win outright. The CSS composes both into one
-      // filter: var(--sun-filter) blur(...).
       mv.style.setProperty("--sun-filter", look.filter);
       mv.setAttribute("camera-orbit", look.cameraOrbit);
     });
@@ -177,11 +169,12 @@
   applySunLook();
   setInterval(applySunLook, 60000);
 
-  // ---- carousel auto-advance + shared goTo (auto and manual both use this) ----
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var index = 0;
   var carouselTimer = null;
-  updateDownloadTarget();
+  updateScanLinks();
+  ensureLoaded(0, true);
+  if (scans.length > 1) ensureLoaded(1, false);
 
   function goTo(next) {
     wraps[index].classList.remove("is-current");
@@ -189,11 +182,11 @@
     wraps[next].classList.add("is-current");
     labels[next].classList.add("is-current");
     index = next;
-    updateDownloadTarget();
+    updateScanLinks();
+    ensureLoaded(next, true);
+    ensureLoaded((next + 1) % scans.length, false);
   }
 
-  // Prev/next buttons: jump immediately, then restart the auto-advance
-  // timer from zero so it doesn't fire again a moment later mid-navigation.
   function manualGoTo(next) {
     goTo(next);
     if (!reduceMotion) {

@@ -83,9 +83,10 @@
   top: 130px;
   font-family: ui-monospace, "SF Mono", "Roboto Mono", Consolas, monospace;
   font-size: 11px;
-  color: #4a5560;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 7px;
   padding: 6px 10px;
   opacity: 0;
@@ -129,7 +130,9 @@
 
 #bg-scan-trigger,
 #bg-scan-nav,
-#bg-scan-download {
+#bg-scan-download,
+#bg-scan-desktop,
+#bg-scan-potree {
   position: absolute;
   right: 8px;
   pointer-events: auto;
@@ -194,8 +197,30 @@
   transition: background 150ms ease, transform 150ms ease;
 }
 
-#bg-scan-download:hover { background: #fff; transform: scale(1.06); }
-#bg-scan-download:focus-visible { outline: 2px solid #2554d1; outline-offset: 2px; }
+#bg-scan-download:hover,
+#bg-scan-desktop:hover,
+#bg-scan-potree:hover { background: #fff; transform: scale(1.06); }
+#bg-scan-download:focus-visible,
+#bg-scan-desktop:focus-visible,
+#bg-scan-potree:focus-visible { outline: 2px solid #2554d1; outline-offset: 2px; }
+
+#bg-scan-desktop,
+#bg-scan-potree {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1e40af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 150ms ease, transform 150ms ease;
+}
+#bg-scan-desktop { top: 128px; }
+#bg-scan-potree { top: 168px; color: #0369a1; }
 
 @media (prefers-reduced-motion: reduce) {
   #bg-carousel .bg-scan-wrap,

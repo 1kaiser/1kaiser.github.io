@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <title>3D Desktop — Kaiser Roy</title>
-    <link rel="stylesheet" href="desktop.css">
+    <link rel="stylesheet" href="desktop.css?v=2">
 </head>
 <body>
 
@@ -12,14 +13,12 @@
     <div id="navbar">
         <button id="btn-sidebar-toggle" title="Toggle sidebar">☰</button>
         <span id="navbar-title">⬡ 3D Desktop</span>
-        <select id="bg-scan-select" title="Pi3X scan shown in the room"></select>
-        <button id="btn-measure-potree" title="Open this scan in Potree's real point-cloud measurement tools">📏 Measure</button>
-        <button id="btn-models" title="Open model gallery">Models</button>
+        <select id="bg-scan-select" title="Active Gallery 3D Model or Pi3X scan on stage"></select>
+        <button id="btn-measure-potree" title="Open Pi3X scan in Potree 2.0 real point-cloud measurement tools">📏 Measure</button>
+        <button id="btn-models" title="Browse all Gallery Models and Pi3X Scans on stage">Models</button>
         <button id="btn-references" title="References &amp; Attributions">References</button>
-        <a href="../index.html" id="btn-gallery" title="Back to Space 3D Gallery" style="color: #93c5fd; text-decoration: none; font-size: 13px; padding: 4px 10px; border: 1px solid rgba(147,197,253,0.35); border-radius: 6px; margin-left: 4px;">&larr; Gallery</a>
+        <a href="../index.html" id="btn-gallery" title="Back to Space 3D Gallery">&larr; Gallery</a>
     </div>
-
-    <!-- Three.js canvas goes here (appended by JS) -->
 
     <!-- Left sidebar -->
     <div id="sidebar">
@@ -30,19 +29,45 @@
         <div id="sidebar-cats"></div>
     </div>
 
+    <!-- Bottom-center stage telemetry HUD -->
+    <div id="stage-hud" aria-live="polite">
+        <span id="stage-hud-badge">STAGE</span>
+        <span id="stage-hud-title">Initializing…</span>
+        <span id="stage-hud-meta"></span>
+        <button id="btn-stage-reset" type="button" title="Reset camera view">Reset View</button>
+    </div>
+
+    <!-- In-room Model & Scan Drawer -->
+    <div id="models-drawer" class="hidden" aria-label="Models and Scans Drawer">
+        <div id="models-drawer-bar">
+            <span>Models &amp; Pi3X Scans</span>
+            <div style="display:flex; gap:8px; align-items:center;">
+                <a href="../index.html" id="btn-drawer-gallery">Full Gallery &nearr;</a>
+                <button id="btn-drawer-close" type="button" aria-label="Close models drawer">&times;</button>
+            </div>
+        </div>
+        <div id="models-drawer-search-wrap">
+            <input id="models-drawer-search" type="text" placeholder="Filter gallery models &amp; scans…" autocomplete="off">
+        </div>
+        <div id="models-drawer-grid"></div>
+    </div>
+
     <!-- Full-screen tool overlay -->
     <div id="tool-overlay" class="hidden">
         <div id="tool-overlay-bar">
-            <span id="tool-overlay-title"></span>
+            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                <span id="tool-overlay-title"></span>
+                <span id="tool-overlay-hint" class="hidden"></span>
+            </div>
             <div id="tool-overlay-actions">
                 <button id="btn-newtab" title="Open in new tab">⬡ New Tab</button>
-                <button id="btn-overlay-close">×</button>
+                <button id="btn-overlay-close" title="Close overlay (Esc)">&times;</button>
             </div>
         </div>
         <div id="tool-overlay-body">
             <iframe id="tool-frame"
                 src="about:blank"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                referrerpolicy="no-referrer"
                 allow="accelerometer; camera; fullscreen; geolocation; gyroscope; microphone; xr-spatial-tracking">
             </iframe>
             <div id="tool-blocked" class="hidden">
@@ -56,6 +81,24 @@
         </div>
     </div>
 
+    <div id="references-modal" hidden>
+      <div class="ref-card">
+        <div class="ref-header">
+          <h2>3D Desktop References &amp; Attributions</h2>
+          <button id="btn-references-close" type="button">Close</button>
+        </div>
+        <ul class="ref-list">
+          <li><strong>Architectural Solar &amp; Environmental Tools (24 modules):</strong> Dr. Andrew Marsh (<a href="https://drajmarsh.bitbucket.io/" target="_blank" rel="noopener">drajmarsh.bitbucket.io</a>, <a href="https://andrewmarsh.com/" target="_blank" rel="noopener">andrewmarsh.com</a>).</li>
+          <li><strong>Browser GPU Array Kernels (6 demos):</strong> Eric Zhang, <a href="https://jax-js.com/" target="_blank" rel="noopener">jax-js</a> (<a href="https://github.com/ekzhang/jax-js" target="_blank" rel="noopener">github.com/ekzhang/jax-js</a>). Open in a dedicated New Tab for full COOP/COEP WebGPU &amp; <code>SharedArrayBuffer</code> isolation.</li>
+          <li><strong>Solar Ephemeris (3D Sun-Path):</strong> Spencer, J. W. (1971), <em>Fourier series representation of the position of the Sun</em>, <em>Search</em> 2(5):172 (solar declination &amp; Equation of Time), shared via <code>js/sun-lighting.js</code>.</li>
+          <li><strong>Procedural Geometry (Supershapes):</strong> Gielis, J. (2003), <em>A generic geometric transformation that unifies a wide range of natural and abstract shapes</em>, <em>Am. J. Botany</em> 90(3):333–338 (Superformula).</li>
+          <li><strong>Point Cloud Measurement &amp; Reconstructions:</strong> Markus Sch&uuml;tz (2016), <a href="https://github.com/potree/potree" target="_blank" rel="noopener">Potree 2.0</a> WebGL Point Cloud Viewer (TU Wien); <a href="https://huggingface.co/datasets/kaiser-1/pi3x" target="_blank" rel="noopener">Pi3X Reconstructions</a> &amp; <a href="https://huggingface.co/datasets/1kaiser/models" target="_blank" rel="noopener">1kaiser/models</a>.</li>
+          <li><strong>3D Engine &amp; Compression:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js r152</a> (<code>GLTFLoader</code>, <code>DRACOLoader</code>, <code>GLTFExporter</code>), <a href="https://github.com/google/draco" target="_blank" rel="noopener">Google Draco 1.5.6</a>, <a href="https://modelviewer.dev/" target="_blank" rel="noopener">Google &lt;model-viewer&gt;</a>, and shared Cache API loader (<code>js/model-cache.js</code>).</li>
+          <li><strong>Source:</strong> <a href="https://github.com/1kaiser/1kaiser.github.io/tree/main/desktop" target="_blank" rel="noopener">1kaiser/1kaiser.github.io/desktop</a> &middot; <a href="../index.html">Main Gallery</a></li>
+        </ul>
+      </div>
+    </div>
+
     <script type="importmap">
         {
             "imports": {
@@ -65,33 +108,8 @@
         }
     </script>
     <script src="../models/models.js"></script>
-    <script type="module" src="desktop.js?v=6"></script>
-    <div id="references-modal" hidden style="position: fixed; inset: 0; z-index: 9999; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 20px;">
-      <div style="background: #0f172a; color: #e2e8f0; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 12px; max-width: 620px; width: 100%; padding: 20px 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.45);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <h2 style="margin: 0; font-size: 18px; color: #f8fafc;">3D Desktop References &amp; Attributions</h2>
-          <button id="btn-references-close" type="button" style="background: #1e293b; color: #f8fafc; border: 1px solid #475569; border-radius: 6px; padding: 4px 10px; cursor: pointer;">Close</button>
-        </div>
-        <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.65;">
-          <li><strong>Architectural Solar &amp; Environmental Tools (24 modules):</strong> Dr. Andrew Marsh (<a href="https://drajmarsh.bitbucket.io/" target="_blank" rel="noopener" style="color: #93c5fd;">drajmarsh.bitbucket.io</a>, <a href="https://andrewmarsh.com/" target="_blank" rel="noopener" style="color: #93c5fd;">andrewmarsh.com</a>).</li>
-          <li><strong>Browser GPU Array Kernels (6 demos):</strong> Eric Zhang, <a href="https://jax-js.com/" target="_blank" rel="noopener" style="color: #93c5fd;">jax-js</a> (<a href="https://github.com/ekzhang/jax-js" target="_blank" rel="noopener" style="color: #93c5fd;">github.com/ekzhang/jax-js</a>).</li>
-          <li><strong>Point Cloud Rendering:</strong> Markus Schütz (2016), <a href="https://github.com/potree/potree" target="_blank" rel="noopener" style="color: #93c5fd;">Potree</a> WebGL Point Cloud Viewer; <a href="https://huggingface.co/datasets/kaiser-1/pi3x" target="_blank" rel="noopener" style="color: #93c5fd;">Pi3X Reconstructions</a>.</li>
-          <li><strong>3D Engine &amp; Procedural Geometry:</strong> <a href="https://threejs.org/" target="_blank" rel="noopener" style="color: #93c5fd;">Three.js</a>; Johan Gielis (2003), <em>A generic geometric transformation that unifies a wide range of natural and abstract shapes</em>, Am. J. Botany 90(3):333–338 (Superformula).</li>
-          <li><strong>Source:</strong> <a href="https://github.com/1kaiser/1kaiser.github.io/tree/main/desktop" target="_blank" rel="noopener" style="color: #93c5fd;">1kaiser/1kaiser.github.io/desktop</a> &middot; <a href="../index.html" style="color: #93c5fd;">Main Gallery</a></li>
-        </ul>
-      </div>
-    </div>
-    <script>
-      (function () {
-        const btn = document.getElementById('btn-references');
-        const modal = document.getElementById('references-modal');
-        const closeBtn = document.getElementById('btn-references-close');
-        if (!btn || !modal) return;
-        const close = () => { modal.hidden = true; modal.style.display = 'none'; };
-        btn.addEventListener('click', () => { modal.hidden = false; modal.style.display = 'flex'; });
-        if (closeBtn) closeBtn.addEventListener('click', close);
-        modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-      })();
-    </script>
+    <script src="../js/model-cache.js"></script>
+    <script src="../js/sun-lighting.js"></script>
+    <script type="module" src="desktop.js?v=7"></script>
 </body>
 </html>

@@ -1,19 +1,8 @@
-// Shared GLB loading for both the foreground gallery cards and the
-// background scan carousel: caches each model via the Cache API (so a
-// repeat view -- navigating the carousel back to a scan already seen, or
-// just reloading the page -- is instant instead of re-fetching), and
-// queues loads through a small concurrency limit instead of letting
-// every model-viewer fire its own fetch at once.
-//
-// The concurrency limit matters more than the caching does for the
-// *first* page load: with ~20 model-viewers (10 gallery cards + 10
-// background scans) all firing simultaneously, real multi-MB GLB fetches
-// end up splitting available bandwidth so many ways that most of them
-// crawl at a fraction of their solo speed and never finish within any
-// reasonable wait -- confirmed by isolating a single stuck model (all
-// others' src removed): it loaded in ~14s alone, vs. still not loaded
-// after 15s+ with everything competing. Caching alone wouldn't have
-// fixed that first-load problem; it only helps on repeat visits.
+// Shared GLB loading and Cache API persistence across homepage gallery cards,
+// modal viewer, background scan carousel, and the Three.js 3D Desktop stage.
+// Buffers resp.arrayBuffer() first and returns a Blob URL immediately so heavy
+// meshes render right away, then persists Response(blob) into Cache API
+// asynchronously without tee-stream contention or synchronous disk-write stalls.
 window.ModelCache = (function () {
   "use strict";
 
@@ -21,55 +10,112 @@ window.ModelCache = (function () {
   var MAX_CONCURRENT = 4;
   var queue = [];
   var active = 0;
+  var inflight = new Map();
+  var blobUrls = new Map();
+
+  function normalizeKey(url) {
+    try {
+      return new URL(url, window.location.href).href;
+    } catch (e) {
+      return String(url || "");
+    }
+  }
 
   function pump() {
     while (active < MAX_CONCURRENT && queue.length > 0) {
       var job = queue.shift();
       active++;
-      runJob(job).then(function () {
-        active--;
-        pump();
-      });
+      fetchAndCache(job.key, job.url)
+        .then(function (resolvedUrl) {
+          job.resolve(resolvedUrl);
+        })
+        .catch(function (err) {
+          console.warn("ModelCache: falling back to direct src for", job.url, err);
+          job.resolve(job.url);
+        })
+        .finally(function () {
+          active--;
+          pump();
+        });
     }
   }
 
-  function runJob(job) {
-    return caches.open(CACHE_NAME).then(function (cache) {
-      return cache.match(job.url).then(function (cached) {
+  function persistInBackground(cache, key, blob) {
+    try {
+      var stored = new Response(blob, {
+        status: 200,
+        headers: { "Content-Type": blob.type || "model/gltf-binary" }
+      });
+      cache.put(key, stored).catch(function () {});
+    } catch (e) {}
+  }
+
+  function fetchAndCache(key, url) {
+    if (blobUrls.has(key)) {
+      return Promise.resolve(blobUrls.get(key));
+    }
+    var hasCache = typeof window.caches !== "undefined";
+    var cachePromise = hasCache
+      ? caches.open(CACHE_NAME).catch(function () { return null; })
+      : Promise.resolve(null);
+
+    return cachePromise.then(function (cache) {
+      var matchPromise = cache
+        ? cache.match(key).catch(function () { return null; })
+        : Promise.resolve(null);
+
+      return matchPromise.then(function (cached) {
         if (cached) return cached.blob();
-        return fetch(job.url).then(function (resp) {
-          // Awaited, not fire-and-forget: an unawaited cache.put() racing
-          // a .blob() read on the sibling clone reliably hangs .blob()
-          // forever in this Chromium build -- the exact bug found (and
-          // fixed the same way) in js/app.js's modal loader.
-          return cache.put(job.url, resp.clone()).then(function () {
-            return resp.blob();
+        return fetch(url).then(function (resp) {
+          if (!resp.ok) throw new Error("HTTP " + resp.status + " for " + url);
+          var ctype = resp.headers.get("Content-Type") || "model/gltf-binary";
+          return resp.arrayBuffer().then(function (buf) {
+            var blob = new Blob([buf], { type: ctype });
+            if (cache) persistInBackground(cache, key, blob);
+            return blob;
           });
         });
       });
     }).then(function (blob) {
       var objectUrl = URL.createObjectURL(blob);
-      job.mv.setAttribute("src", objectUrl);
-      job.resolve(objectUrl);
-    }).catch(function (err) {
-      console.warn("ModelCache: falling back to direct src for", job.url, err);
-      job.mv.setAttribute("src", job.url); // let model-viewer fetch it directly
-      job.resolve(job.url);
+      blobUrls.set(key, objectUrl);
+      return objectUrl;
     });
+  }
+
+  function getBlobUrl(url, priority) {
+    var key = normalizeKey(url);
+    if (blobUrls.has(key)) {
+      return Promise.resolve(blobUrls.get(key));
+    }
+    if (inflight.has(key)) {
+      return inflight.get(key);
+    }
+    var p = new Promise(function (resolve) {
+      var job = { key: key, url: url, resolve: resolve };
+      if (priority) queue.unshift(job);
+      else queue.push(job);
+      pump();
+    }).then(function (res) {
+      inflight.delete(key);
+      return res;
+    });
+    inflight.set(key, p);
+    return p;
   }
 
   function loadInto(mv, url, priority) {
-    return new Promise(function (resolve) {
-      var job = { mv: mv, url: url, resolve: resolve };
-      // The background carousel's first scan needs to load promptly --
-      // it's the one actually on screen -- but its script runs `defer`,
-      // after the 10 foreground cards have already queued themselves.
-      // Plain FIFO would leave it waiting behind all of them (confirmed:
-      // 0 background completions at 20s while tiles were progressing).
-      if (priority) queue.unshift(job); else queue.push(job);
-      pump();
+    return getBlobUrl(url, priority).then(function (resolvedUrl) {
+      if (mv && typeof mv.setAttribute === "function") {
+        mv.setAttribute("src", resolvedUrl);
+      }
+      return resolvedUrl;
     });
   }
 
-  return { loadInto: loadInto };
+  return {
+    getBlobUrl: getBlobUrl,
+    loadInto: loadInto,
+    prefetch: function (url, priority) { return getBlobUrl(url, priority); }
+  };
 })();

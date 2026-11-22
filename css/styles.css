@@ -139,9 +139,17 @@ body {
   transition: opacity 200ms ease, background 150ms ease;
 }
 
-.model-card:hover .model-card-expand {
+.model-card:hover .model-card-expand,
+.model-card:focus-within .model-card-expand {
   opacity: 1;
   pointer-events: auto;
+}
+
+@media (hover: none) {
+  .model-card-expand {
+    opacity: 0.92;
+    pointer-events: auto;
+  }
 }
 
 .model-card-expand:hover { background: #fff; }
@@ -241,23 +249,44 @@ body {
   top: 15px;
   left: 15px;
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: calc(100% - 80px);
+  align-items: center;
   z-index: 1010;
 }
 
-.modal-download-btn, .modal-deploy-btn, .modal-measure-btn {
+.modal-download-btn, .modal-deploy-btn, .modal-measure-btn, .modal-desktop-btn, .modal-potree-btn {
   background-color: #4CAF50;
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
+  padding: 9px 14px;
+  border-radius: 6px;
   cursor: pointer;
   text-decoration: none;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 500;
 }
 
-.modal-deploy-btn {
-  background-color: #2196F3;
+.modal-deploy-btn { background-color: #2196F3; }
+.modal-desktop-btn { background-color: #0f172a; }
+.modal-desktop-btn:hover { background-color: #1e293b; }
+.modal-potree-btn { background-color: #0284c7; }
+.modal-potree-btn:hover { background-color: #0369a1; }
+
+.modal-loading-badge {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.85);
+  color: #f8fafc;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 1010;
+  pointer-events: none;
 }
 
 .modal-download-btn:hover {
