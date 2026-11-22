@@ -198,7 +198,7 @@ test('all 6 linked sub-repository GitHub Pages deployments (live)', async ({ pag
     { path: '/TextGraph/', checkRef: async () => { await page.getByRole('button', { name: 'References' }).click(); await expect(page.getByText('Veličković')).toBeVisible(); } },
     { path: '/gemma-chat-app/', checkRef: async () => {
       const opts = await page.locator('#model-select option').count();
-      expect(opts).toBe(4);
+      expect(opts).toBeGreaterThanOrEqual(8);
       await page.locator('#refs-btn').click();
       await expect(page.getByText('arXiv:2503.19786')).toBeVisible();
     }},
