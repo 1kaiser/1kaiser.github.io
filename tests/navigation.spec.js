@@ -64,7 +64,8 @@ test('homepage navigation, CSP/Piping fixes, and References footer', async ({ pa
     '/llm-consistency-vis/',
     '/llm-wordgraph-exact/',
     '/TextGraph/',
-    '/wordy/'
+    '/wordy/',
+    '/proccessing_sketches/'
   ];
 
   for (const href of expectedHrefs) {
@@ -282,7 +283,7 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
   }
 });
 
-test('all 6 linked sub-repository GitHub Pages deployments (live)', async ({ page }) => {
+test('all 7 linked sub-repository GitHub Pages deployments (live)', async ({ page }) => {
   test.skip(!RUN_SUBREPOS, 'Skipped on local-only HTTP server unless BASE_URL=https://1kaiser.github.io');
   await stubHeavyWeights(page);
 
@@ -299,7 +300,17 @@ test('all 6 linked sub-repository GitHub Pages deployments (live)', async ({ pag
     { path: '/llm-wordgraph-exact/', checkRef: async () => { await page.locator('#refsToggleBtn').click(); await expect(page.locator('#refsModal')).toBeVisible(); await expect(page.locator('#refsModal')).toContainText('EmilyReif/llm-consistency-vis'); } },
     { path: '/wordy/', checkRef: async () => { await page.locator('#wordy-refs-btn').click(); await expect(page.locator('#wordy-refs-modal')).toBeVisible(); await expect(page.locator('#wordy-refs-modal')).toContainText('arXiv:2405.19504'); } },
     { path: '/wordy/muvera.html', checkRef: async () => { await expect(page.locator('footer')).toContainText('arXiv:2405.19504'); } },
-    { path: '/wordy/rag-demo.html', checkRef: async () => { await expect(page.locator('footer')).toContainText('WordNet 3.1'); } }
+    { path: '/wordy/rag-demo.html', checkRef: async () => { await expect(page.locator('footer')).toContainText('WordNet 3.1'); } },
+    { path: '/proccessing_sketches/', checkRef: async () => {
+      await page.locator('#stage-img').waitFor({ state: 'visible', timeout: 15000 });
+      await expect(page.locator('#slide-counter')).toContainText('/ 148');
+      await page.locator('#btn-next').click();
+      await expect(page.locator('#slide-counter')).toContainText('2 / 148');
+      await page.locator('#refs-btn').click();
+      await expect(page.locator('#refs-modal')).toBeVisible();
+      await expect(page.locator('#refs-modal')).toContainText('Processing');
+      await page.keyboard.press('Escape');
+    }}
   ];
 
   for (const sub of subRepos) {
