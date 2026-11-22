@@ -391,55 +391,28 @@
         }
 
         async function processImageFiles(imageFiles) {
-            const processedPhotos = [];
-            const concurrencyLimit = 50;
-            
-            for (let i = 0; i < imageFiles.length; i += concurrencyLimit) {
-                const chunk = imageFiles.slice(i, i + concurrencyLimit);
-                const chunkPromises = chunk.map((entry, index) => {
-                    return new Promise((resolve) => {
-                        const isObj = typeof entry === 'object' && entry !== null;
-                        const rawPath = isObj ? entry.src : String(entry);
-                        const url = /^(https?:|\.\.?\/|data:|blob:)/.test(rawPath)
-                            ? rawPath
-                            : `input_frames/${rawPath}`;
-                        const name = (isObj && entry.name) ? entry.name : rawPath.split('/').pop();
-                        const customDate = isObj && entry.date ? entry.date : null;
-                        const img = new Image();
-                        img.onload = () => {
-                            const globalIndex = i + index;
-                            const date = customDate || getDateForIndex(globalIndex);
-                            
-                            resolve({
-                                id: globalIndex,
-                                url: url,
-                                width: img.naturalWidth,
-                                height: img.naturalHeight,
-                                date: date,
-                                timestamp: Date.now() - globalIndex * 100000,
-                                name: name
-                            });
-                        };
-                        img.onerror = () => {
-                            console.warn(`Failed to load image: ${url}`);
-                            resolve(null);
-                        };
-                        img.src = url;
-                    });
-                });
-                
-                const results = await Promise.all(chunkPromises);
-                results.forEach(p => {
-                    if (p) processedPhotos.push(p);
-                });
-                
-                const gridContainer = document.getElementById('photo-grid');
-                if (gridContainer) {
-                    gridContainer.innerHTML = `<div style="text-align:center; padding: 20px;">Loaded ${processedPhotos.length} / ${imageFiles.length} photos...</div>`;
-                }
-            }
-            
-            return processedPhotos;
+            const now = Date.now();
+            return imageFiles.map((entry, globalIndex) => {
+                const isObj = typeof entry === 'object' && entry !== null;
+                const rawPath = isObj ? entry.src : String(entry);
+                const url = /^(https?:|\.\.?\/|data:|blob:)/.test(rawPath)
+                    ? rawPath
+                    : `input_frames/${rawPath}`;
+                const name = (isObj && entry.name) ? entry.name : rawPath.split('/').pop();
+                const date = (isObj && entry.date) ? entry.date : getDateForIndex(globalIndex);
+                const w = isObj && Number(entry.width) > 0 ? Number(entry.width) : 0;
+                const h = isObj && Number(entry.height) > 0 ? Number(entry.height) : 0;
+                return {
+                    id: globalIndex,
+                    url: url,
+                    width: w || 4,
+                    height: h || 3,
+                    hasDimensions: Boolean(w && h),
+                    date: date,
+                    timestamp: now - globalIndex * 100000,
+                    name: name
+                };
+            });
         }
 
         function getDateForIndex(index) {
@@ -575,20 +548,32 @@
                 groupedPhotos[date].forEach(photo => {
                     const photoItem = document.createElement('div');
                     photoItem.className = 'photo-item';
-                    // Set flex-grow proportional to aspect ratio for better justified layout
-                    // Aspect ratio = width / height
-                    // We want fixed height row, so width varies. 
-                    // Flex-grow roughly handles relative width sharing.
-                    const aspectRatio = photo.width / photo.height;
-                    photoItem.style.flexGrow = aspectRatio;
-                    photoItem.style.width = `${aspectRatio * 200}px`; // Base width calculation based on base height 200px
+                    const applyAspect = (w, h) => {
+                        const ratio = (w > 0 && h > 0) ? (w / h) : (4 / 3);
+                        photoItem.style.flexGrow = ratio;
+                        photoItem.style.width = `${ratio * 200}px`;
+                    };
+                    applyAspect(photo.width, photo.height);
 
                     const img = document.createElement('img');
                     img.src = photo.url;
-                    img.alt = `Photo ${photo.id}`;
-                    img.loading = 'lazy'; // Performance
+                    img.alt = photo.name || `Photo ${photo.id}`;
+                    img.loading = 'lazy';
+                    img.decoding = 'async';
+                    if (!photo.hasDimensions) {
+                        img.onload = () => {
+                            if (img.naturalWidth && img.naturalHeight) {
+                                photo.width = img.naturalWidth;
+                                photo.height = img.naturalHeight;
+                                photo.hasDimensions = true;
+                                applyAspect(photo.width, photo.height);
+                            }
+                        };
+                    }
+                    img.onerror = () => {
+                        console.warn(`Failed to load image: ${photo.url}`);
+                    };
 
-                    // Add click event for lightbox (will be implemented in next step, but adding hook now)
                     photoItem.onclick = () => openLightbox(photo);
 
                     photoItem.appendChild(img);
