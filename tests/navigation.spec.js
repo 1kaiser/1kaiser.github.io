@@ -213,31 +213,67 @@ test('local cv/ desktop/ soundcloud/ and experiments.html pages mount cleanly', 
     if (item.path === '/experiments.html') {
       await expect(page.locator('#featured-experiments')).toHaveCount(0);
       await page.locator('#timeline svg circle.repo-node').first().waitFor({ state: 'visible', timeout: 15000 });
-      await expect(page.locator('#timeline svg g.gap-badge').first()).toBeVisible();
+      await expect(page.locator('#timeline svg text.milestone-date').first()).toBeVisible();
+      await expect(page.locator('#timeline svg a.repo-link').first()).toBeVisible();
 
-      const getSvgWidth = () => page.locator('#timeline svg').evaluate((el) => parseFloat(el.getAttribute('width') || '0'));
-      const widthDefault = await getSvgWidth();
+      const getFitMetrics = () => page.evaluate(() => {
+        const wrap = document.getElementById('timeline-wrapper');
+        const svg = document.querySelector('#timeline svg');
+        const svgW = parseFloat(svg.getAttribute('width') || '0');
+        const rects = Array.from(document.querySelectorAll('#timeline svg rect.milestone-block-bg')).map(r => ({
+          x0: parseFloat(r.getAttribute('x') || '0'),
+          y0: parseFloat(r.getAttribute('y') || '0'),
+          w: parseFloat(r.getAttribute('width') || '0'),
+          h: parseFloat(r.getAttribute('height') || '0')
+        }));
+        let overlaps = 0;
+        let clipped = 0;
+        for (let i = 0; i < rects.length; i++) {
+          const a = rects[i];
+          if (a.x0 < -0.5 || a.x0 + a.w > svgW + 0.5) clipped++;
+          for (let j = i + 1; j < rects.length; j++) {
+            const b = rects[j];
+            if (a.x0 + 1 < b.x0 + b.w && a.x0 + a.w - 1 > b.x0 && a.y0 + 1 < b.y0 + b.h && a.y0 + a.h - 1 > b.y0) {
+              overlaps++;
+            }
+          }
+        }
+        return {
+          wrapClientW: wrap.clientWidth,
+          wrapScrollW: wrap.scrollWidth,
+          svgW,
+          overlaps,
+          clipped,
+          dotCount: document.querySelectorAll('#timeline svg circle.repo-node').length
+        };
+      });
 
-      await page.locator('#gap-compression').evaluate((el) => { el.value = '0'; el.dispatchEvent(new Event('input')); });
-      const widthLinear = await getSvgWidth();
-      expect(widthLinear).toBeGreaterThan(widthDefault);
+      const fitM = await getFitMetrics();
+      expect(fitM.svgW).toBeLessThanOrEqual(fitM.wrapClientW + 2);
+      expect(fitM.wrapScrollW).toBeLessThanOrEqual(fitM.wrapClientW + 2);
+      expect(fitM.overlaps).toBe(0);
+      expect(fitM.clipped).toBe(0);
 
-      await page.locator('#gap-compression').evaluate((el) => { el.value = '100'; el.dispatchEvent(new Event('input')); });
-      const widthUniform = await getSvgWidth();
-      expect(widthDefault).toBeGreaterThan(widthUniform);
+      await page.locator('[data-width-mode="wide"]').click();
+      const wideM = await getFitMetrics();
+      expect(wideM.svgW).toBeGreaterThanOrEqual(2400);
+      expect(wideM.svgW).toBeGreaterThan(fitM.svgW);
 
-      await page.locator('[data-preset="adaptive"]').click();
-      await page.waitForTimeout(400);
-      const widthBeforeGapClick = await getSvgWidth();
-      await page.locator('#timeline svg g.gap-badge').first().click();
-      await page.waitForTimeout(400);
-      const widthAfterGapExpand = await getSvgWidth();
-      expect(widthAfterGapExpand).toBeGreaterThan(widthBeforeGapClick);
+      await page.locator('[data-width-mode="fit"]').click();
+      const backM = await getFitMetrics();
+      expect(backM.svgW).toBeLessThanOrEqual(backM.wrapClientW + 2);
 
-      await page.locator('#timeline svg g.gap-badge').first().click();
-      await page.waitForTimeout(400);
-      const widthAfterGapShrink = await getSvgWidth();
-      expect(widthAfterGapShrink).toBeLessThan(widthAfterGapExpand);
+      await page.locator('[data-group-mode="month"]').click();
+      const monthM = await getFitMetrics();
+      expect(monthM.dotCount).toBeLessThan(fitM.dotCount);
+      await page.locator('[data-group-mode="day"]').click();
+
+      const getSecondDotCx = () => page.locator('#timeline svg circle.repo-node').nth(1).getAttribute('cx').then(Number);
+      const cxBalanced = await getSecondDotCx();
+      await page.locator('[data-scale-mode="linear"]').click();
+      const cxLinear = await getSecondDotCx();
+      expect(Math.abs(cxLinear - cxBalanced)).toBeGreaterThan(5);
+      await page.locator('[data-scale-mode="balanced"]').click();
     }
 
     expect(downloads404s, `downloads 404s on ${item.path}`).toEqual([]);

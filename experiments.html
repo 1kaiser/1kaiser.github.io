@@ -7,293 +7,286 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         * { box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0;
-            padding: 18px 20px 32px;
-            background-color: #f4f6f9;
-            color: #1f2937;
+            padding: 10px 14px;
+            background-color: #f4f4f9;
+            color: #111111;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow: hidden;
         }
-        .page-shell {
-            max-width: 1380px;
-            margin: 0 auto;
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px 14px;
+            flex-shrink: 0;
+            padding: 0 2px;
+        }
+        .title-group {
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #111111;
+        }
+        #timeline-stats {
+            font-size: 12px;
+            color: #555555;
         }
         .top-nav {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 14px;
-            font-size: 14px;
+            gap: 12px;
+            font-size: 12.5px;
         }
         .top-nav a {
             color: #0366d6;
             text-decoration: none;
             font-weight: 600;
         }
-        .top-nav .nav-right {
-            display: flex;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-        .top-nav .nav-right a {
+        .top-nav a.muted {
             color: #4b5563;
             font-weight: 500;
         }
-        .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        h1 {
-            margin: 0;
-            font-size: 26px;
-            color: #111827;
-        }
-        .subtitle {
-            margin: 4px 0 0;
-            font-size: 13px;
-            color: #4b5563;
-        }
-        #legend {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            align-items: center;
-            font-size: 13px;
-            background: #ffffff;
-            border: 1px solid #d1d5db;
-            padding: 6px 12px;
-            border-radius: 8px;
-        }
-        .controls-bar {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            background: #ffffff;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            padding: 10px 14px;
-            margin-bottom: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        }
-        .presets {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .preset-btn, .action-btn {
-            padding: 6px 11px;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 6px;
-            border: 1px solid #cbd5e1;
-            background: #f8fafc;
-            color: #1e293b;
-            cursor: pointer;
-        }
-        .preset-btn:hover, .action-btn:hover { background: #e2e8f0; }
-        .preset-btn.active {
-            background: #0366d6;
-            color: #ffffff;
-            border-color: #0366d6;
-        }
-        .action-btn.primary {
-            background: #0366d6;
-            color: #ffffff;
-            border-color: #0366d6;
-        }
-        .action-btn.primary:hover { background: #0256b9; }
-        .sliders {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 16px;
-            font-size: 12px;
-            color: #374151;
-        }
-        .slider-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .slider-group input[type="range"] {
-            width: 130px;
-            cursor: pointer;
-        }
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-            font-size: 12px;
-            color: #4b5563;
-        }
+        .top-nav a:hover { text-decoration: underline; }
+
         .timeline-wrapper {
+            flex: 1;
+            min-height: 0;
             width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
             background-color: #ffffff;
-            padding: 8px 0;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            border: 1px solid #dddddd;
+            overflow-x: auto;
+            overflow-y: auto;
+            position: relative;
             scrollbar-width: thin;
             scrollbar-color: #94a3b8 #f1f5f9;
         }
-        .timeline-wrapper::-webkit-scrollbar { height: 10px; }
+        .timeline-wrapper::-webkit-scrollbar { height: 10px; width: 10px; }
         .timeline-wrapper::-webkit-scrollbar-track { background: #f1f5f9; }
-        .timeline-wrapper::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 6px; }
+        .timeline-wrapper::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 5px; }
+
         #timeline {
-            min-width: 100%;
-            height: 460px;
             position: relative;
+            min-height: 100%;
         }
-        #timeline svg { display: block; }
-        .gap-badge { cursor: pointer; }
-        .gap-badge rect { transition: fill 0.15s ease, stroke 0.15s ease; }
-        .gap-badge:hover rect { fill: #dbeafe; stroke: #2563eb; }
-        .repo-item { cursor: pointer; }
-        .repo-item:hover circle.repo-node { r: 6.5; stroke: #111827; stroke-width: 2px; }
-        .repo-label {
-            font-size: 11.5px;
+        #timeline svg {
+            display: block;
+        }
+
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            flex-shrink: 0;
+            padding: 0 2px;
+        }
+        .bottom-left {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        #legend {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #e2e8f0;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12.5px;
+        }
+        details#references {
+            position: relative;
+            font-size: 12px;
+            color: #4b5563;
+        }
+        details#references summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #374151;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            list-style: none;
             user-select: none;
         }
-        .year-label {
-            font-size: 11px;
-            font-weight: 700;
-            fill: #64748b;
+        details#references summary::-webkit-details-marker { display: none; }
+        details#references .ref-popover {
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 0;
+            width: min(460px, 90vw);
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 10px 12px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+            z-index: 1200;
+            line-height: 1.5;
         }
+        details#references a { color: #0366d6; text-decoration: none; }
+        details#references a:hover { text-decoration: underline; }
+
+        .controls-right {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .pill-group {
+            display: inline-flex;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .pill {
+            border: none;
+            background: transparent;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 5px 9px;
+            cursor: pointer;
+            border-right: 1px solid #e2e8f0;
+        }
+        .pill:last-child { border-right: none; }
+        .pill:hover { background: #f1f5f9; }
+        .pill.active {
+            background: #1e293b;
+            color: #ffffff;
+        }
+        .download-btn {
+            padding: 6px 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+        }
+        .download-btn:hover { background-color: #0056b3; }
+
+        /* SVG interactive accents */
+        g.gap-break { cursor: pointer; }
+        g.gap-break:hover line { stroke: #0366d6; }
+        g.gap-break:hover text { fill: #0366d6; }
+        a.repo-link text { text-decoration: underline; }
+        a.repo-link:hover text { opacity: 0.72; }
+        circle.repo-node { cursor: pointer; }
+        circle.repo-node:hover { stroke-width: 2.8; }
+
         .tooltip {
             position: fixed;
             background: rgba(15, 23, 42, 0.94);
             color: #f8fafc;
             padding: 8px 10px;
-            border-radius: 6px;
+            border-radius: 5px;
             font-size: 12px;
             line-height: 1.45;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.15s;
+            transition: opacity 0.12s;
             z-index: 1500;
-            max-width: 280px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            max-width: 300px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
         }
-        footer#references {
-            margin-top: 18px;
-            padding-top: 12px;
-            border-top: 1px solid #d1d5db;
-            font-size: 12px;
-            color: #4b5563;
-            line-height: 1.6;
-        }
-        footer#references a { color: #0366d6; text-decoration: none; }
-        footer#references a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <div class="page-shell">
+    <header class="top-bar">
+        <div class="title-group">
+            <h1>⛰️ Repository Timeline</h1>
+            <span id="timeline-stats">Loading repositories…</span>
+        </div>
         <nav class="top-nav" aria-label="Site navigation">
             <a href="index.html">&larr; 1kaiser.github.io</a>
-            <div class="nav-right">
-                <a href="cv/cv.html">CV</a>
-                <a href="desktop/desktop.html">3D Desktop</a>
-                <a href="https://github.com/1kaiser?tab=repositories" target="_blank" rel="noopener">GitHub Repos</a>
-            </div>
+            <a href="cv/cv.html" class="muted">CV</a>
+            <a href="desktop/desktop.html" class="muted">3D Desktop</a>
+            <a href="https://github.com/1kaiser?tab=repositories" class="muted" target="_blank" rel="noopener">GitHub Repos</a>
         </nav>
+    </header>
 
-        <div class="header-row">
-            <div>
-                <h1>Repository Timeline</h1>
-                <p class="subtitle">Dense bursts stretch apart automatically; idle calendar gaps shrink cleanly and expand on click.</p>
-            </div>
-            <div id="legend">
-                <span style="color: #008000; font-weight: 700;">&#9679; Source Repositories</span>
-                <span style="color: #FF2400; font-style: italic; font-weight: 600;">&#9679; Forked Repositories</span>
-                <span style="color: #2563eb;">&#9889; Click a gap pill to stretch/shrink</span>
-            </div>
-        </div>
-
-        <div class="controls-bar">
-            <div class="presets">
-                <button type="button" class="preset-btn active" data-preset="adaptive">Adaptive</button>
-                <button type="button" class="preset-btn" data-preset="compact">Compact</button>
-                <button type="button" class="preset-btn" data-preset="linear">Linear Time</button>
-                <button type="button" id="reset-gaps-btn" class="action-btn">Reset Gaps</button>
-            </div>
-
-            <div class="sliders">
-                <label class="slider-group" for="gap-compression">
-                    <span>Gap Shrink: <strong id="gap-compression-val">72%</strong></span>
-                    <input id="gap-compression" type="range" min="0" max="100" step="1" value="72">
-                </label>
-                <label class="slider-group" for="burst-stretch">
-                    <span>Burst Stretch: <strong id="burst-stretch-val">36px</strong></span>
-                    <input id="burst-stretch" type="range" min="18" max="80" step="2" value="36">
-                </label>
-            </div>
-
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button id="download-svg-btn" class="action-btn primary" type="button">Download SVG</button>
-                <button id="download-png-btn" class="action-btn primary" type="button">Download PNG</button>
-            </div>
-        </div>
-
-        <div class="stats-bar">
-            <span id="timeline-stats">Loading repositories...</span>
-            <span>Scroll horizontally to inspect &bull; Click any repository label or dot to open on GitHub</span>
-        </div>
-
-        <div class="timeline-wrapper" id="timeline-wrapper">
-            <div id="timeline"></div>
-        </div>
-
-        <footer id="references">
-            <details>
-                <summary style="cursor: pointer; font-weight: 600; color: #1f2937;">References &amp; Libraries</summary>
-                <p style="margin: 6px 0 0;">
-                    Gap-adaptive logarithmic/power timeline built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js v7</a>
-                    and <a href="https://docs.github.com/en/rest/repos/repos" target="_blank" rel="noopener">GitHub REST API v3</a>
-                    with native vector SVG &amp; Canvas PNG export. Back to <a href="index.html">1kaiser.github.io</a>.
-                </p>
-            </details>
-        </footer>
+    <div class="timeline-wrapper" id="timeline-wrapper">
+        <div id="timeline"></div>
     </div>
+
+    <footer class="bottom-bar">
+        <div class="bottom-left">
+            <div id="legend">
+                <span style="color: #008000; font-weight: 700;">● Source Repositories</span>
+                <span style="color: #94a3b8;">|</span>
+                <span style="color: #FF2400; font-style: italic;">● Forked Repositories</span>
+            </div>
+            <details id="references">
+                <summary>References</summary>
+                <div class="ref-popover">
+                    Editorial milestone timeline modeled on the original
+                    <a href="https://github.com/walterra/d3-milestones" target="_blank" rel="noopener">d3-milestones</a>
+                    aesthetic, implemented with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js v7</a>
+                    and <a href="https://docs.github.com/en/rest/repos/repos" target="_blank" rel="noopener">GitHub REST API v3</a>
+                    with nonlinear 100vw gap normalization, collision-free 2D rectangle packing, and crisp vector SVG / HiDPI PNG export.
+                    Click any <code>//</code> break marker on the black centerline to stretch/shrink that idle span.
+                </div>
+            </details>
+        </div>
+
+        <div class="controls-right">
+            <div class="pill-group" role="group" aria-label="Timeline width mode">
+                <button type="button" class="pill active" data-width-mode="fit">Fit 100%</button>
+                <button type="button" class="pill" data-width-mode="wide">Wide 2&times;</button>
+            </div>
+            <div class="pill-group" role="group" aria-label="Grouping granularity">
+                <button type="button" class="pill active" data-group-mode="day">Day</button>
+                <button type="button" class="pill" data-group-mode="month">Month</button>
+            </div>
+            <div class="pill-group" role="group" aria-label="Spacing scale">
+                <button type="button" class="pill active" data-scale-mode="balanced">Balanced</button>
+                <button type="button" class="pill" data-scale-mode="linear">Linear</button>
+            </div>
+            <button id="download-svg-btn" class="download-btn" type="button">Download SVG</button>
+            <button id="download-png-btn" class="download-btn" type="button">Download PNG</button>
+        </div>
+    </footer>
 
     <div id="tooltip" class="tooltip"></div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const containerEl = document.getElementById('timeline');
             const wrapperEl = document.getElementById('timeline-wrapper');
+            const containerEl = document.getElementById('timeline');
             const statsEl = document.getElementById('timeline-stats');
             const tooltip = d3.select('#tooltip');
-            const compressionSlider = document.getElementById('gap-compression');
-            const compressionValEl = document.getElementById('gap-compression-val');
-            const burstSlider = document.getElementById('burst-stretch');
-            const burstValEl = document.getElementById('burst-stretch-val');
-            const resetGapsBtn = document.getElementById('reset-gaps-btn');
-            const presetBtns = Array.from(document.querySelectorAll('.preset-btn'));
 
-            const SVG_HEIGHT = 460;
-            const SPINE_Y = 235;
-            const LEFT_PAD = 72;
-            const RIGHT_PAD = 110;
-            const COMPRESS_THRESHOLD_DAYS = 30;
+            const FONT_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            const PAD_L = 18;
+            const PAD_R = 18;
             const expandedGaps = new Set();
 
             const state = {
-                compressionPct: 72,
-                burstStretchPx: 36,
+                widthMode: 'fit',       // 'fit' | 'wide'
+                groupMode: 'day',       // 'day' | 'month'
+                scaleMode: 'balanced',  // 'balanced' | 'linear'
                 items: [],
                 sourceLabel: 'GitHub API'
             };
@@ -301,10 +294,11 @@
             const FALLBACK_TIMELINE = [
                 { created_at: '2017-03-13T10:52:06Z', name: 'lineage', html_url: 'https://github.com/1kaiser/lineage', fork: true, description: 'Fallback timeline snapshot' },
                 { created_at: '2017-03-13T11:30:00Z', name: 'family-tree', html_url: 'https://github.com/1kaiser/family-tree', fork: true },
-                { created_at: '2017-12-27T00:00:00Z', name: 'capsule-networks', html_url: 'https://github.com/1kaiser/capsule-networks', fork: false },
+                { created_at: '2017-12-27T00:00:00Z', name: 'capsule-networks', html_url: 'https://github.com/1kaiser/capsule-networks', fork: true },
                 { created_at: '2018-10-06T00:00:00Z', name: 'md-page', html_url: 'https://github.com/1kaiser/md-page', fork: true },
                 { created_at: '2019-08-13T00:00:00Z', name: 'SETSM', html_url: 'https://github.com/1kaiser/SETSM', fork: true },
                 { created_at: '2021-01-25T00:00:00Z', name: 'colmap-Google-colab', html_url: 'https://github.com/1kaiser/colmap-Google-colab', fork: false },
+                { created_at: '2021-11-15T16:07:51Z', name: 'proccessing_sketches', html_url: 'https://github.com/1kaiser/proccessing_sketches', fork: false, description: 'Generative Processing 3 & p5.js Colab sketches' },
                 { created_at: '2022-07-22T00:00:00Z', name: 'instant-ngp', html_url: 'https://github.com/1kaiser/instant-ngp', fork: true },
                 { created_at: '2023-06-04T00:00:00Z', name: 'Parvati_track_analysis', html_url: 'https://github.com/1kaiser/Parvati_track_analysis', fork: false },
                 { created_at: '2024-03-05T00:00:00Z', name: 'nerf-keras-jax', html_url: 'https://github.com/1kaiser/nerf-keras-jax', fork: false },
@@ -319,321 +313,569 @@
                 { created_at: '2026-11-21T19:21:15Z', name: 'DrinkLog', html_url: 'https://github.com/1kaiser/DrinkLog', fork: false }
             ];
 
+            // Offscreen canvas for exact pixel measurement of bold & italic sans-serif labels
+            const measureCanvas = document.createElement('canvas');
+            const measureCtx = measureCanvas.getContext('2d');
+            function measureTextPx(text, fontSpec) {
+                measureCtx.font = fontSpec;
+                return Math.ceil(measureCtx.measureText(text).width) + 2;
+            }
+
             function formatGapLabel(days) {
                 if (days >= 365) return `${(days / 365.25).toFixed(1)} yr`;
                 if (days >= 45) return `${Math.round(days / 30.4375)} mo`;
                 return `${Math.round(days)} d`;
             }
 
-            function computeLayout(items) {
-                const compression = state.compressionPct / 100;
-                const minStep = state.burstStretchPx;
+            function truncateLabel(name, maxChars) {
+                if (!name || name.length <= maxChars) return name || '';
+                return name.slice(0, maxChars - 1) + '…';
+            }
+
+            function buildGroups(items, groupMode) {
                 const sorted = [...items]
-                    .map(r => ({
-                        ...r,
-                        dateObj: new Date(r.created_at),
-                        dateStr: (r.created_at || '').slice(0, 10)
-                    }))
-                    .sort((a, b) => a.dateObj - b.dateObj);
+                    .filter(r => r && r.created_at)
+                    .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
-                const nodes = [];
-                const segments = [];
-                const tierRightTop = new Array(6).fill(-Infinity);
-                const tierRightBottom = new Array(6).fill(-Infinity);
-                let x = LEFT_PAD;
-
-                sorted.forEach((repo, i) => {
-                    let gapDays = 0;
-                    let isCompressed = false;
-                    let isExpanded = false;
-                    let isBigGap = false;
-
-                    if (i > 0) {
-                        gapDays = Math.max(0, (repo.dateObj - sorted[i - 1].dateObj) / 86400000);
-                        isBigGap = gapDays >= COMPRESS_THRESHOLD_DAYS;
-                        const linearDx = isBigGap
-                            ? Math.max(minStep + 86, Math.min(920, gapDays * 2.4))
-                            : Math.max(minStep, gapDays * 2.4);
-                        const logFactor = Math.log1p(gapDays) / Math.log1p(400);
-
-                        let dx;
-                        if (expandedGaps.has(i) || compression === 0) {
-                            dx = linearDx;
-                            isExpanded = isBigGap && expandedGaps.has(i);
-                        } else if (compression >= 0.995) {
-                            dx = minStep;
-                        } else if (isBigGap && compression >= 0.25) {
-                            isCompressed = true;
-                            const shrunkDx = minStep + 40 + (1 - compression) * 110 * logFactor;
-                            dx = Math.min(linearDx * 0.92, shrunkDx);
-                        } else {
-                            dx = Math.max(minStep, minStep + (1 - compression) * Math.min(110, gapDays * 1.9));
-                        }
-
-                        const prevX = x;
-                        x += dx;
-                        segments.push({
-                            gapIndex: i,
-                            x1: prevX,
-                            x2: x,
-                            gapDays,
-                            isCompressed,
-                            isExpanded,
-                            hasBadge: isBigGap && (isCompressed || isExpanded),
-                            label: formatGapLabel(gapDays)
+                const map = new Map();
+                for (const repo of sorted) {
+                    const dayStr = repo.created_at.slice(0, 10);
+                    const key = groupMode === 'month' ? dayStr.slice(0, 7) : dayStr;
+                    if (!map.has(key)) {
+                        const dateMs = groupMode === 'month'
+                            ? Date.parse(`${dayStr}T00:00:00Z`)
+                            : Date.parse(`${key}T00:00:00Z`);
+                        map.set(key, {
+                            key,
+                            dateLabel: key,
+                            dateMs,
+                            year: Number(key.slice(0, 4)),
+                            repos: []
                         });
                     }
-
-                    // Alternate side (above/below spine) and choose lowest collision-free tier
-                    const side = i % 2 === 0 ? -1 : 1;
-                    const tierRights = side === -1 ? tierRightTop : tierRightBottom;
-                    const estWidth = Math.max(54, repo.name.length * 6.8 + 18);
-                    const boxLeft = x - 6;
-                    let chosenTier = 0;
-                    for (let t = 0; t < tierRights.length; t++) {
-                        if (boxLeft > tierRights[t] + 10) {
-                            chosenTier = t;
-                            break;
-                        }
-                        if (t === tierRights.length - 1) {
-                            // Fallback to tier with smallest rightmost extent
-                            chosenTier = tierRights.indexOf(Math.min(...tierRights));
-                        }
-                    }
-                    tierRights[chosenTier] = Math.max(tierRights[chosenTier], boxLeft + estWidth);
-
-                    const stemOffset = 34 + chosenTier * 29;
-                    const yLabel = SPINE_Y + side * stemOffset;
-
-                    nodes.push({
-                        ...repo,
-                        idx: i,
-                        x,
-                        yLabel,
-                        side,
-                        gapDays,
-                        year: repo.dateObj.getUTCFullYear()
+                    map.get(key).repos.push({
+                        name: repo.name,
+                        url: repo.html_url || repo.url || '',
+                        fork: Boolean(repo.fork),
+                        dateStr: dayStr,
+                        description: repo.description || ''
                     });
-                });
+                }
+                return Array.from(map.values());
+            }
 
-                const yearTicks = [];
-                let lastYear = null;
-                nodes.forEach((n) => {
-                    if (n.year !== lastYear) {
-                        lastYear = n.year;
-                        yearTicks.push({ year: n.year, x: n.x });
+            function rectsOverlap(a, b) {
+                return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+            }
+
+            function computeLayout(items) {
+                const groups = buildGroups(items, state.groupMode);
+                const clientW = Math.max(360, Math.floor(wrapperEl.clientWidth || window.innerWidth - 32));
+                const clientH = Math.max(360, Math.floor(wrapperEl.clientHeight || window.innerHeight - 108));
+                const svgWidth = state.widthMode === 'fit'
+                    ? clientW
+                    : Math.max(2800, clientW * 2);
+
+                const isCompact = (state.widthMode === 'fit' && state.groupMode === 'day');
+                const fontSize = isCompact ? 9.5 : 11;
+                const lineH = isCompact ? 11.5 : 13.5;
+                const maxChars = state.widthMode === 'wide' ? 999 : (state.groupMode === 'day' ? 22 : 34);
+
+                const dateFont = `700 ${fontSize}px ${FONT_STACK}`;
+                const srcFont = `700 ${fontSize}px ${FONT_STACK}`;
+                const forkFont = `italic 400 ${fontSize}px ${FONT_STACK}`;
+
+                const N = groups.length;
+                const innerW = Math.max(120, svgWidth - PAD_L - PAD_R);
+
+                // Compute normalized x positions
+                const xs = new Array(N).fill(PAD_L + innerW / 2);
+                const segments = [];
+                if (N > 1) {
+                    if (state.scaleMode === 'linear') {
+                        const t0 = groups[0].dateMs;
+                        const span = Math.max(1, groups[N - 1].dateMs - t0);
+                        for (let i = 0; i < N; i++) {
+                            xs[i] = PAD_L + ((groups[i].dateMs - t0) / span) * innerW;
+                        }
+                    } else {
+                        const cumW = new Array(N).fill(0);
+                        for (let i = 1; i < N; i++) {
+                            const gapDays = Math.max(0, (groups[i].dateMs - groups[i - 1].dateMs) / 86400000);
+                            let w = Math.pow(Math.max(gapDays, 0.5), 0.32) + 0.9;
+                            if (expandedGaps.has(i)) w *= 2.6;
+                            cumW[i] = cumW[i - 1] + w;
+                        }
+                        const totalW = cumW[N - 1] || 1;
+                        for (let i = 0; i < N; i++) {
+                            xs[i] = PAD_L + (cumW[i] / totalW) * innerW;
+                        }
                     }
+                }
+
+                // Gap break records
+                for (let i = 1; i < N; i++) {
+                    const gapDays = Math.max(0, (groups[i].dateMs - groups[i - 1].dateMs) / 86400000);
+                    const isExpanded = expandedGaps.has(i);
+                    const hasBreak = (state.scaleMode === 'balanced') && (gapDays >= 120 || isExpanded) && (xs[i] - xs[i - 1] >= 26);
+                    segments.push({
+                        gapIndex: i,
+                        x1: xs[i - 1],
+                        x2: xs[i],
+                        gapDays,
+                        isExpanded,
+                        hasBreak,
+                        label: formatGapLabel(gapDays)
+                    });
+                }
+
+                // Working centerline for packing, adjusted cleanly after extent check
+                const initSpineY = Math.round(clientH / 2);
+                const halfAvail = Math.max(110, initSpineY - 24);
+                const placedTop = [];
+                const placedBottom = [];
+
+                // Reserve small exclusion boxes around gap-break labels near spine so labels never sit on '//'
+                const breakBoxes = [];
+                for (const seg of segments) {
+                    if (!seg.hasBreak) continue;
+                    const mx = (seg.x1 + seg.x2) / 2;
+                    breakBoxes.push({ x0: mx - 18, x1: mx + 18, y0: initSpineY - 14, y1: initSpineY + 14 });
+                }
+
+                const milestones = groups.map((g, idx) => {
+                    const x = xs[idx];
+                    const gapDays = idx > 0 ? Math.max(0, (g.dateMs - groups[idx - 1].dateMs) / 86400000) : 0;
+                    const displayRepos = g.repos.map(r => {
+                        const display = truncateLabel(r.name, maxChars);
+                        return { ...r, displayName: display, font: r.fork ? forkFont : srcFont };
+                    });
+
+                    let maxTextW = measureTextPx(g.dateLabel, dateFont);
+                    for (const r of displayRepos) {
+                        maxTextW = Math.max(maxTextW, measureTextPx(r.displayName, r.font));
+                    }
+                    const padX = 3.5;
+                    const padY = 2;
+                    const blockW = maxTextW + padX * 2;
+                    const lineCount = 1 + displayRepos.length;
+                    const blockH = lineCount * lineH + padY * 2;
+
+                    // Horizontal block placement without clipping left or right edge
+                    let anchor = 'start';
+                    let x0, x1, textX;
+                    if (x + 5 + blockW <= svgWidth - 4) {
+                        anchor = 'start';
+                        x0 = x + 5;
+                        x1 = x0 + blockW;
+                        textX = x0 + padX;
+                    } else if (x - 5 - blockW >= 4) {
+                        anchor = 'end';
+                        x1 = x - 5;
+                        x0 = x1 - blockW;
+                        textX = x1 - padX;
+                    } else {
+                        x0 = Math.max(4, Math.min(svgWidth - 4 - blockW, x - blockW / 2));
+                        x1 = x0 + blockW;
+                        anchor = 'start';
+                        textX = x0 + padX;
+                    }
+
+                    const findTopY1 = () => {
+                        let y1 = initSpineY - 16;
+                        const testPadded = (yt0, yt1) => ({ x0: x0 - 2.5, x1: x1 + 2.5, y0: yt0 - 2.5, y1: yt1 + 2 });
+                        let guard = 0;
+                        while (guard++ < 250) {
+                            const y0 = y1 - blockH;
+                            const probe = testPadded(y0, y1);
+                            let hit = null;
+                            for (const b of placedTop) {
+                                if (rectsOverlap(probe, b)) {
+                                    if (!hit || b.y0 < hit.y0) hit = b;
+                                }
+                            }
+                            for (const bb of breakBoxes) {
+                                if (rectsOverlap(probe, bb)) {
+                                    if (!hit || bb.y0 < hit.y0) hit = bb;
+                                }
+                            }
+                            if (!hit) return { y0, y1 };
+                            y1 = hit.y0 - 3;
+                        }
+                        return { y0: y1 - blockH, y1 };
+                    };
+
+                    const findBotY0 = () => {
+                        let y0 = initSpineY + 16;
+                        const testPadded = (yb0, yb1) => ({ x0: x0 - 2.5, x1: x1 + 2.5, y0: yb0 - 2, y1: yb1 + 2.5 });
+                        let guard = 0;
+                        while (guard++ < 250) {
+                            const y1 = y0 + blockH;
+                            const probe = testPadded(y0, y1);
+                            let hit = null;
+                            for (const b of placedBottom) {
+                                if (rectsOverlap(probe, b)) {
+                                    if (!hit || b.y1 > hit.y1) hit = b;
+                                }
+                            }
+                            for (const bb of breakBoxes) {
+                                if (rectsOverlap(probe, bb)) {
+                                    if (!hit || bb.y1 > hit.y1) hit = bb;
+                                }
+                            }
+                            if (!hit) return { y0, y1 };
+                            y0 = hit.y1 + 3;
+                        }
+                        return { y0, y1: y0 + blockH };
+                    };
+
+                    const candTop = findTopY1();
+                    const candBot = findBotY0();
+                    const distTop = initSpineY - candTop.y0;
+                    const distBot = candBot.y1 - initSpineY;
+
+                    const prefSide = idx % 2 === 0 ? -1 : 1;
+                    const prefDist = prefSide === -1 ? distTop : distBot;
+                    const oppDist = prefSide === -1 ? distBot : distTop;
+
+                    let side = prefSide;
+                    if (prefDist > oppDist + 34 || (prefDist > halfAvail && oppDist < prefDist)) {
+                        side = -prefSide;
+                    }
+
+                    const chosen = side === -1 ? candTop : candBot;
+                    const box = { x0, x1, y0: chosen.y0, y1: chosen.y1 };
+                    if (side === -1) placedTop.push(box);
+                    else placedBottom.push(box);
+
+                    return {
+                        idx,
+                        key: g.key,
+                        dateLabel: g.dateLabel,
+                        year: g.year,
+                        x,
+                        gapDays,
+                        repos: displayRepos,
+                        side,
+                        anchor,
+                        textX,
+                        padY,
+                        lineH,
+                        fontSize,
+                        x0: box.x0,
+                        x1: box.x1,
+                        y0: box.y0,
+                        y1: box.y1,
+                        blockW,
+                        blockH
+                    };
                 });
 
-                const totalWidth = Math.max(520, Math.ceil(x + RIGHT_PAD));
-                return { nodes, segments, yearTicks, totalWidth };
+                // Fit vertical canvas height strictly without clipping any box
+                let maxTopExtent = 60;
+                let maxBotExtent = 60;
+                for (const m of milestones) {
+                    if (m.side === -1) maxTopExtent = Math.max(maxTopExtent, initSpineY - m.y0);
+                    else maxBotExtent = Math.max(maxBotExtent, m.y1 - initSpineY);
+                }
+
+                let spineY = initSpineY;
+                let svgHeight = clientH;
+                if (maxTopExtent + 28 > initSpineY || maxBotExtent + 24 > (clientH - initSpineY)) {
+                    spineY = Math.ceil(maxTopExtent + 30);
+                    svgHeight = Math.ceil(spineY + maxBotExtent + 28);
+                    const dy = spineY - initSpineY;
+                    if (dy !== 0) {
+                        for (const m of milestones) {
+                            m.y0 += dy;
+                            m.y1 += dy;
+                        }
+                    }
+                }
+
+                // Year guide ticks (suppress labels closer than 30px to avoid collisions)
+                const rawYears = [];
+                let lastYear = null;
+                for (const m of milestones) {
+                    if (m.year !== lastYear) {
+                        lastYear = m.year;
+                        rawYears.push({ year: m.year, x: m.x });
+                    }
+                }
+                const yearTicks = [];
+                let lastLabelX = -Infinity;
+                for (const yt of rawYears) {
+                    const showLabel = (yt.x - lastLabelX) >= 32;
+                    if (showLabel) lastLabelX = yt.x;
+                    yearTicks.push({ year: yt.year, x: yt.x, showLabel });
+                }
+
+                return {
+                    milestones,
+                    segments,
+                    yearTicks,
+                    svgWidth,
+                    svgHeight,
+                    spineY,
+                    fontSize
+                };
             }
 
             const svg = d3.select(containerEl)
                 .append('svg')
-                .attr('height', SVG_HEIGHT)
-                .style('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+                .style('font-family', FONT_STACK);
 
             const gYears = svg.append('g').attr('class', 'year-guides');
-            const gSpine = svg.append('g').attr('class', 'spine-segments');
-            const gBadges = svg.append('g').attr('class', 'gap-badges');
-            const gNodes = svg.append('g').attr('class', 'repo-nodes');
+            const gAxis = svg.append('g').attr('class', 'axis-layer');
+            const gStems = svg.append('g').attr('class', 'milestone-stems');
+            const gDots = svg.append('g').attr('class', 'milestone-dots');
+            const gBlocks = svg.append('g').attr('class', 'milestone-blocks');
 
-            function zigzagPath(x1, x2, y) {
-                const mid = (x1 + x2) / 2;
-                const z = 8;
-                return `M${x1},${y} L${mid - z * 1.5},${y} L${mid - z * 0.75},${y - 7} L${mid},${y + 7} L${mid + z * 0.75},${y - 7} L${mid + z * 1.5},${y} L${x2},${y}`;
-            }
-
-            function renderTimeline(animate = true) {
+            function renderTimeline() {
                 if (!state.items.length) return;
-                const { nodes, segments, yearTicks, totalWidth } = computeLayout(state.items);
-                const dur = animate ? 320 : 0;
+                const layout = computeLayout(state.items);
+                const { milestones, segments, yearTicks, svgWidth, svgHeight, spineY } = layout;
 
-                svg.interrupt().attr('width', totalWidth);
+                containerEl.style.width = `${svgWidth}px`;
+                containerEl.style.height = `${svgHeight}px`;
+                svg.attr('width', svgWidth).attr('height', svgHeight).attr('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
 
-                // Year vertical ticks
-                const yearsSel = gYears.selectAll('g.year-tick').data(yearTicks, d => d.year);
-                yearsSel.exit().remove();
-                const yearsEnter = yearsSel.enter().append('g').attr('class', 'year-tick');
-                yearsEnter.append('line').attr('stroke', '#e2e8f0').attr('stroke-dasharray', '3,4').attr('y1', 26).attr('y2', SVG_HEIGHT - 24);
-                yearsEnter.append('text').attr('class', 'year-label').attr('y', 18).attr('text-anchor', 'middle');
-                const yearsMerge = yearsEnter.merge(yearsSel);
-                yearsMerge.transition().duration(dur).attr('transform', d => `translate(${d.x},0)`);
-                yearsMerge.select('text').text(d => d.year);
-
-                // Spine segments
-                const spineSel = gSpine.selectAll('path.spine-seg').data(segments, d => d.gapIndex);
-                spineSel.exit().remove();
-                spineSel.enter().append('path')
-                    .attr('class', 'spine-seg')
-                    .attr('fill', 'none')
-                    .attr('stroke-width', 2)
-                    .merge(spineSel)
-                    .transition().duration(dur)
-                    .attr('stroke', d => d.isExpanded ? '#2563eb' : (d.isCompressed ? '#f59e0b' : '#cbd5e1'))
-                    .attr('stroke-dasharray', d => d.isExpanded ? '6,4' : null)
-                    .attr('d', d => d.isCompressed ? zigzagPath(d.x1, d.x2, SPINE_Y) : `M${d.x1},${SPINE_Y} L${d.x2},${SPINE_Y}`);
-
-                // Interactive Gap Badges (for gaps >= 30d)
-                const badgeData = segments.filter(s => s.hasBadge);
-                const badgeSel = gBadges.selectAll('g.gap-badge').data(badgeData, d => d.gapIndex);
-                badgeSel.exit().remove();
-                const badgeEnter = badgeSel.enter().append('g').attr('class', 'gap-badge');
-                badgeEnter.append('rect')
-                    .attr('x', -24).attr('y', -11)
-                    .attr('width', 48).attr('height', 20)
-                    .attr('rx', 10);
-                badgeEnter.append('text')
-                    .attr('y', 2.5)
+                // 1. Subtle Year Vertical Guides
+                gYears.selectAll('*').remove();
+                const yrG = gYears.selectAll('g.year-tick')
+                    .data(yearTicks)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'year-tick')
+                    .attr('transform', d => `translate(${d.x},0)`);
+                yrG.append('line')
+                    .attr('x1', 0).attr('x2', 0)
+                    .attr('y1', 20).attr('y2', svgHeight - 10)
+                    .attr('stroke', '#edf0f4')
+                    .attr('stroke-dasharray', '3,4');
+                yrG.filter(d => d.showLabel)
+                    .append('text')
+                    .attr('class', 'year-label')
+                    .attr('x', 0).attr('y', 14)
                     .attr('text-anchor', 'middle')
+                    .attr('fill', '#94a3b8')
                     .style('font-size', '10px')
-                    .style('font-weight', '700');
+                    .style('font-weight', '700')
+                    .text(d => d.year);
 
-                const badgeMerge = badgeEnter.merge(badgeSel);
-                badgeMerge.transition().duration(dur)
-                    .attr('transform', d => `translate(${(d.x1 + d.x2) / 2},${SPINE_Y + (d.isExpanded ? -20 : 20)})`);
-                badgeMerge.select('rect')
-                    .attr('fill', d => d.isExpanded ? '#eff6ff' : '#fffbeb')
-                    .attr('stroke', d => d.isExpanded ? '#2563eb' : '#d97706');
-                badgeMerge.select('text')
-                    .attr('fill', d => d.isExpanded ? '#1d4ed8' : '#b45309')
-                    .text(d => d.isExpanded ? `↔ ${d.label}` : `⚡ ${d.label}`);
-                badgeMerge.on('click', (event, d) => {
+                // 2. Solid Black Spine + Architectural '//' Gap Breaks
+                gAxis.selectAll('*').remove();
+                gAxis.append('line')
+                    .attr('class', 'axis-line')
+                    .attr('x1', PAD_L).attr('x2', svgWidth - PAD_R)
+                    .attr('y1', spineY).attr('y2', spineY)
+                    .attr('stroke', '#000000')
+                    .attr('stroke-width', 2.4);
+
+                const breakSegs = segments.filter(s => s.hasBreak);
+                const brG = gAxis.selectAll('g.gap-break')
+                    .data(breakSegs)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'gap-break')
+                    .attr('transform', d => `translate(${(d.x1 + d.x2) / 2}, ${spineY})`);
+
+                // Generous transparent click target
+                brG.append('rect')
+                    .attr('x', -16).attr('y', -13)
+                    .attr('width', 32).attr('height', 26)
+                    .attr('fill', 'transparent');
+                // White knockout gap on the black centerline
+                brG.append('rect')
+                    .attr('x', -5).attr('y', -4)
+                    .attr('width', 10).attr('height', 8)
+                    .attr('fill', '#ffffff');
+                // Architectural double-slash marks (//)
+                brG.append('line')
+                    .attr('x1', -4.5).attr('y1', 5.5).attr('x2', -0.5).attr('y2', -5.5)
+                    .attr('stroke', d => d.isExpanded ? '#0366d6' : '#000000')
+                    .attr('stroke-width', 1.6);
+                brG.append('line')
+                    .attr('x1', 0.5).attr('y1', 5.5).attr('x2', 4.5).attr('y2', -5.5)
+                    .attr('stroke', d => d.isExpanded ? '#0366d6' : '#000000')
+                    .attr('stroke-width', 1.6);
+                brG.append('text')
+                    .attr('x', 0).attr('y', 14.5)
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', d => d.isExpanded ? '#0366d6' : '#64748b')
+                    .style('font-size', '8.5px')
+                    .style('font-weight', '600')
+                    .text(d => d.isExpanded ? `↔ ${d.label}` : d.label);
+
+                brG.on('click', (event, d) => {
                     event.stopPropagation();
-                    if (expandedGaps.has(d.gapIndex)) {
-                        expandedGaps.delete(d.gapIndex);
-                    } else {
-                        expandedGaps.add(d.gapIndex);
-                    }
-                    renderTimeline(true);
+                    if (expandedGaps.has(d.gapIndex)) expandedGaps.delete(d.gapIndex);
+                    else expandedGaps.add(d.gapIndex);
+                    renderTimeline();
                 }).on('mouseover', (event, d) => {
                     tooltip.style('opacity', 1).html(
                         `<strong>${Math.round(d.gapDays)} days gap</strong><br>` +
-                        (d.isExpanded ? 'Click to shrink this gap back' : 'Click to stretch this gap to calendar scale')
+                        (d.isExpanded ? 'Click to shrink back' : 'Click to stretch this gap')
                     );
                 }).on('mousemove', (event) => {
-                    tooltip.style('left', `${Math.min(window.innerWidth - 290, event.clientX + 14)}px`)
+                    tooltip.style('left', `${Math.min(window.innerWidth - 310, event.clientX + 14)}px`)
                            .style('top', `${Math.max(8, event.clientY - 24)}px`);
                 }).on('mouseout', () => tooltip.style('opacity', 0));
 
-                // Nodes + stems + labels
-                const nodeSel = gNodes.selectAll('g.repo-item').data(nodes, d => d.name + d.created_at);
-                nodeSel.exit().remove();
-                const nodeEnter = nodeSel.enter().append('g').attr('class', 'repo-item');
-                nodeEnter.append('line').attr('class', 'repo-stem').attr('stroke', '#cbd5e1').attr('stroke-width', 1.2);
-                nodeEnter.append('circle').attr('class', 'repo-node').attr('r', 4.8).attr('cy', SPINE_Y);
-                nodeEnter.append('text').attr('class', 'repo-label').attr('text-anchor', 'start');
-
-                const nodeMerge = nodeEnter.merge(nodeSel);
-                nodeMerge.select('line.repo-stem')
-                    .transition().duration(dur)
+                // 3. Sharp Vertical Black Leader Stems
+                gStems.selectAll('*').remove();
+                gStems.selectAll('line.milestone-stem')
+                    .data(milestones)
+                    .enter()
+                    .append('line')
+                    .attr('class', 'milestone-stem')
                     .attr('x1', d => d.x).attr('x2', d => d.x)
-                    .attr('y1', SPINE_Y).attr('y2', d => d.yLabel + (d.side === -1 ? 4 : -4));
+                    .attr('y1', spineY)
+                    .attr('y2', d => d.side === -1 ? (d.y0 + 3) : (d.y1 - 3))
+                    .attr('stroke', '#111111')
+                    .attr('stroke-width', 1.05);
 
-                nodeMerge.select('circle.repo-node')
-                    .transition().duration(dur)
+                // 4. Hollow Ring Dots on the Centerline
+                gDots.selectAll('*').remove();
+                const dots = gDots.selectAll('circle.repo-node')
+                    .data(milestones)
+                    .enter()
+                    .append('circle')
+                    .attr('class', 'repo-node')
                     .attr('cx', d => d.x)
-                    .attr('fill', d => d.fork ? '#FF2400' : '#008000')
-                    .attr('stroke', '#ffffff')
-                    .attr('stroke-width', 1.4);
+                    .attr('cy', spineY)
+                    .attr('r', 3.8)
+                    .attr('fill', '#ffffff')
+                    .attr('stroke', '#000000')
+                    .attr('stroke-width', 2);
 
-                nodeMerge.select('text.repo-label')
-                    .text(d => d.name)
-                    .transition().duration(dur)
-                    .attr('x', d => d.x - 4)
-                    .attr('y', d => d.yLabel + (d.side === -1 ? -4 : 11))
-                    .attr('fill', d => d.fork ? '#FF2400' : '#008000')
-                    .style('font-style', d => d.fork ? 'italic' : 'normal')
-                    .style('font-weight', d => d.fork ? '500' : '700');
-
-                nodeMerge.on('mouseover', (event, d) => {
+                dots.on('mouseover', (event, d) => {
                     const gapInfo = d.idx > 0 ? `<br>Gap from previous: ${formatGapLabel(d.gapDays)}` : '';
-                    const desc = d.description ? `<br><span style="color:#cbd5e1;">${d.description}</span>` : '';
-                    tooltip.style('opacity', 1).html(
-                        `<strong>${d.name}</strong> (${d.fork ? 'Fork' : 'Source'})<br>${d.dateStr}${gapInfo}${desc}<br><em>Click to open GitHub</em>`
-                    );
+                    const repoList = d.repos.map(r => `• ${r.name} (${r.fork ? 'Fork' : 'Source'})`).join('<br>');
+                    tooltip.style('opacity', 1).html(`<strong>${d.dateLabel}</strong>${gapInfo}<br>${repoList}`);
                 }).on('mousemove', (event) => {
-                    tooltip.style('left', `${Math.min(window.innerWidth - 290, event.clientX + 14)}px`)
+                    tooltip.style('left', `${Math.min(window.innerWidth - 310, event.clientX + 14)}px`)
                            .style('top', `${Math.max(8, event.clientY - 24)}px`);
-                }).on('mouseout', () => {
-                    tooltip.style('opacity', 0);
-                }).on('click', (event, d) => {
-                    if (d.html_url || d.url) {
-                        window.open(d.html_url || d.url, '_blank', 'noopener');
-                    }
+                }).on('mouseout', () => tooltip.style('opacity', 0));
+
+                // 5. Milestone Date + Stacked Clickable Links (on top of stems with white backing rect)
+                gBlocks.selectAll('*').remove();
+                const blkG = gBlocks.selectAll('g.milestone-block')
+                    .data(milestones)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'milestone-block');
+
+                blkG.append('rect')
+                    .attr('class', 'milestone-block-bg')
+                    .attr('x', d => d.x0)
+                    .attr('y', d => d.y0)
+                    .attr('width', d => d.blockW)
+                    .attr('height', d => d.blockH)
+                    .attr('rx', 2)
+                    .attr('fill', 'rgba(255, 255, 255, 0.92)');
+
+                blkG.each(function(d) {
+                    const gSel = d3.select(this);
+                    // Mirror original d3-milestones row order:
+                    // Above axis: repo rows on top, bold date at the bottom closest to axis.
+                    // Below axis: bold date at the top closest to axis, repo rows below it.
+                    const dateRowIdx = d.side === -1 ? d.repos.length : 0;
+                    const dateBaselineY = d.y0 + d.padY + (dateRowIdx + 0.82) * d.lineH;
+
+                    gSel.append('text')
+                        .attr('class', 'milestone-date')
+                        .attr('x', d.textX)
+                        .attr('y', dateBaselineY)
+                        .attr('text-anchor', d.anchor)
+                        .attr('fill', '#000000')
+                        .style('font-size', `${d.fontSize}px`)
+                        .style('font-weight', '700')
+                        .text(d.dateLabel);
+
+                    d.repos.forEach((repo, rIdx) => {
+                        const rowIdx = d.side === -1 ? rIdx : (rIdx + 1);
+                        const baselineY = d.y0 + d.padY + (rowIdx + 0.82) * d.lineH;
+
+                        const a = gSel.append('a')
+                            .attr('class', 'repo-link')
+                            .attr('href', repo.url || '#')
+                            .attr('target', '_blank')
+                            .attr('rel', 'noopener');
+
+                        a.append('text')
+                            .attr('x', d.textX)
+                            .attr('y', baselineY)
+                            .attr('text-anchor', d.anchor)
+                            .attr('fill', repo.fork ? '#FF2400' : '#008000')
+                            .style('font-size', `${d.fontSize}px`)
+                            .style('font-weight', repo.fork ? '400' : '700')
+                            .style('font-style', repo.fork ? 'italic' : 'normal')
+                            .style('text-decoration', 'underline')
+                            .text(repo.displayName);
+
+                        a.on('mouseover', (event) => {
+                            const desc = repo.description ? `<br><span style="color:#cbd5e1;">${repo.description}</span>` : '';
+                            const gapInfo = d.idx > 0 && rIdx === 0 ? `<br>Gap from previous: ${formatGapLabel(d.gapDays)}` : '';
+                            tooltip.style('opacity', 1).html(
+                                `<strong>${repo.name}</strong> (${repo.fork ? 'Fork' : 'Source'})<br>` +
+                                `${repo.dateStr}${gapInfo}${desc}<br><em>Click to open on GitHub</em>`
+                            );
+                        }).on('mousemove', (event) => {
+                            tooltip.style('left', `${Math.min(window.innerWidth - 310, event.clientX + 14)}px`)
+                                   .style('top', `${Math.max(8, event.clientY - 24)}px`);
+                        }).on('mouseout', () => tooltip.style('opacity', 0));
+                    });
                 });
 
-                const compressedCount = badgeData.filter(b => b.isCompressed).length;
-                statsEl.textContent = `${nodes.length} repos (${state.sourceLabel}) · Timeline width: ${totalWidth}px · ${compressedCount} compressed gaps (${expandedGaps.size} expanded)`;
+                const srcCount = state.items.filter(r => !r.fork).length;
+                const forkCount = state.items.length - srcCount;
+                const yMin = milestones[0]?.year || '';
+                const yMax = milestones[milestones.length - 1]?.year || '';
+                const spanLabel = yMin === yMax ? `${yMin}` : `${yMin}–${yMax}`;
+                statsEl.textContent = `${state.items.length} repos (${srcCount} sources · ${forkCount} forks) · ${milestones.length} ${state.groupMode}s · ${spanLabel} · ${svgWidth}px (${state.sourceLabel})`;
             }
 
-            function syncPresetHighlight() {
-                presetBtns.forEach(b => b.classList.remove('active'));
-                if (state.compressionPct === 72 && state.burstStretchPx === 36) {
-                    document.querySelector('[data-preset="adaptive"]')?.classList.add('active');
-                } else if (state.compressionPct === 92 && state.burstStretchPx === 24) {
-                    document.querySelector('[data-preset="compact"]')?.classList.add('active');
-                } else if (state.compressionPct === 0) {
-                    document.querySelector('[data-preset="linear"]')?.classList.add('active');
-                }
-            }
-
-            compressionSlider.addEventListener('input', () => {
-                state.compressionPct = parseInt(compressionSlider.value, 10);
-                compressionValEl.textContent = `${state.compressionPct}%`;
-                syncPresetHighlight();
-                renderTimeline(false);
-            });
-
-            burstSlider.addEventListener('input', () => {
-                state.burstStretchPx = parseInt(burstSlider.value, 10);
-                burstValEl.textContent = `${state.burstStretchPx}px`;
-                syncPresetHighlight();
-                renderTimeline(false);
-            });
-
-            presetBtns.forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const preset = btn.dataset.preset;
-                    expandedGaps.clear();
-                    if (preset === 'adaptive') {
-                        state.compressionPct = 72;
-                        state.burstStretchPx = 36;
-                    } else if (preset === 'compact') {
-                        state.compressionPct = 92;
-                        state.burstStretchPx = 24;
-                    } else if (preset === 'linear') {
-                        state.compressionPct = 0;
-                        state.burstStretchPx = 28;
-                    }
-                    compressionSlider.value = String(state.compressionPct);
-                    compressionValEl.textContent = `${state.compressionPct}%`;
-                    burstSlider.value = String(state.burstStretchPx);
-                    burstValEl.textContent = `${state.burstStretchPx}px`;
-                    syncPresetHighlight();
-                    renderTimeline(true);
+            // Wire segmented control pills
+            function wirePillGroup(attr, stateKey) {
+                const btns = Array.from(document.querySelectorAll(`[${attr}]`));
+                btns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        state[stateKey] = btn.getAttribute(attr);
+                        btns.forEach(b => b.classList.toggle('active', b === btn));
+                        renderTimeline();
+                    });
                 });
-            });
+            }
+            wirePillGroup('data-width-mode', 'widthMode');
+            wirePillGroup('data-group-mode', 'groupMode');
+            wirePillGroup('data-scale-mode', 'scaleMode');
 
-            resetGapsBtn.addEventListener('click', () => {
-                expandedGaps.clear();
-                renderTimeline(true);
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (state.widthMode === 'fit') renderTimeline();
+                }, 120);
             });
 
             function serializeSvg() {
                 const svgEl = containerEl.querySelector('svg');
                 const clone = svgEl.cloneNode(true);
                 clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                style.textContent = `text { font-family: ${FONT_STACK}; } a.repo-link text { text-decoration: underline; }`;
+                clone.insertBefore(style, clone.firstChild);
                 const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                 rect.setAttribute('width', '100%');
                 rect.setAttribute('height', '100%');
                 rect.setAttribute('fill', '#ffffff');
-                clone.insertBefore(rect, clone.firstChild);
+                clone.insertBefore(rect, style.nextSibling);
                 return new XMLSerializer().serializeToString(clone);
             }
 
             document.getElementById('download-svg-btn').addEventListener('click', () => {
+                if (!containerEl.querySelector('svg')) return;
                 const blob = new Blob([serializeSvg()], { type: 'image/svg+xml;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -645,8 +887,9 @@
 
             document.getElementById('download-png-btn').addEventListener('click', () => {
                 const svgEl = containerEl.querySelector('svg');
+                if (!svgEl) return;
                 const w = Number(svgEl.getAttribute('width')) || wrapperEl.clientWidth;
-                const h = Number(svgEl.getAttribute('height')) || SVG_HEIGHT;
+                const h = Number(svgEl.getAttribute('height')) || wrapperEl.clientHeight;
                 const svgBlob = new Blob([serializeSvg()], { type: 'image/svg+xml;charset=utf-8' });
                 const url = URL.createObjectURL(svgBlob);
                 const img = new Image();
@@ -684,13 +927,13 @@
                 .then((repos) => {
                     state.items = repos.length ? repos : FALLBACK_TIMELINE;
                     state.sourceLabel = repos.length ? 'Live GitHub API' : 'Curated Fallback';
-                    renderTimeline(false);
+                    renderTimeline();
                 })
                 .catch((err) => {
                     console.warn('Using curated fallback timeline:', err);
                     state.items = FALLBACK_TIMELINE;
                     state.sourceLabel = 'Curated Fallback';
-                    renderTimeline(false);
+                    renderTimeline();
                 });
         });
     </script>
