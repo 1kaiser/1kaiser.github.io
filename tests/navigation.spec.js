@@ -195,7 +195,7 @@ test('all 6 linked sub-repository GitHub Pages deployments (live)', async ({ pag
   await stubHeavyWeights(page);
 
   const subRepos = [
-    { path: '/TextGraph/', checkRef: async () => { await page.getByRole('button', { name: 'References' }).click(); await expect(page.getByText('Veličković')).toBeVisible(); } },
+    { path: '/TextGraph/', checkRef: async () => { await page.getByRole('button', { name: 'References' }).click(); await expect(page.getByText('Veličković, P.')).toBeVisible(); } },
     { path: '/gemma-chat-app/', checkRef: async () => {
       const opts = await page.locator('#model-select option').count();
       expect(opts).toBeGreaterThanOrEqual(8);
