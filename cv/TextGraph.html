@@ -3,2036 +3,1610 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text as Graph - Exact Distill Implementation (Vue Single File)</title>
-    
-    <!-- D3.js -->
-    <script src="https://d3js.org/d3.v5.min.js"></script>
-    
-    <!-- Vue.js -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-
-    <!-- MathJax -->
-    <script type="text/x-mathjax-config">
-      MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
-    </script>
-    <script async src="https://cdn.jsdelivr.net/npm/mathjax@2/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
+    <title>TextGraph — Dual Graph Attention &amp; Token Embeddings</title>
+    <link rel="icon" href="data:,">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
     <style>
-        /* Global Styles */
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --muted: #64748b;
+            --blue: #2563eb;
+            --crimson: #dc2626;
+            --amber: #f59e0b;
+        }
+        * { box-sizing: border-box; }
         body {
             margin: 0;
-            padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
         }
-
-        .app-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-        }
-
-        /* Control Panel Styles */
-        .text-input-section {
-            position: fixed;
-            width: 350px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: box-shadow 0.2s ease;
-            user-select: none;
-        }
-
-        .text-input-section:hover {
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-        }
-
-        .drag-handle {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 16px;
-            height: 16px;
-            background: #dc3545;
-            border-radius: 50%;
-            cursor: grab;
-            z-index: 1001;
-            transition: background 0.2s ease;
-        }
-
-        .text-input-section:hover .drag-handle {
-            background: #ff4757;
-        }
-
-        .paragraph-section {
-            margin-bottom: 15px;
-        }
-
-        .section-header {
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 40;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
         }
-
-        .section-title {
-            font-size: 12px;
-            font-weight: 500;
-            color: #555;
-        }
-
-        .toggle-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            color: #666;
-            padding: 0;
-        }
-
-        .paragraph-container textarea {
-            width: 100%;
-            height: 80px;
-            padding: 8px;
-            font-size: 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            resize: vertical;
-            font-family: monospace;
-            box-sizing: border-box;
-        }
-
-        .char-count {
-            font-size: 10px;
-            color: #888;
-            text-align: right;
-            margin-top: 2px;
-        }
-
-        .query-section-title {
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .query-input {
-            width: 100%;
-            padding: 8px;
-            font-size: 14px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            text-align: center;
-            box-sizing: border-box;
-            margin-bottom: 8px;
-        }
-
-        .embedding-section {
-            margin-bottom: 8px;
-            font-size: 11px;
-        }
-
-        .radio-label {
+        .topbar-left, .topbar-right {
             display: flex;
             align-items: center;
-            gap: 4px;
-            margin-bottom: 4px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .topbar a {
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .topbar a.muted-link { color: #475569; font-weight: 500; }
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+        .badge-status.ready { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+        .badge-status.error { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+        .btn {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            padding: 6px 12px;
+            border-radius: 7px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        .btn-primary {
+            background: var(--blue);
+            border-color: var(--blue);
+            color: #ffffff;
+        }
+        .btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+        .btn-chip {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #334155;
             cursor: pointer;
         }
+        .btn-chip:hover { background: #e2e8f0; }
 
-        .radio-label.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .page {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 16px 20px 36px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .card-title {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .card-sub {
+            font-size: 12px;
+            color: var(--muted);
         }
 
-        .button-container {
-            text-align: center;
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 900px) {
+            .controls-grid { grid-template-columns: 1fr; }
+        }
+        .field-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+        textarea.ctrl, input.ctrl, select.ctrl {
+            width: 100%;
+            padding: 8px 10px;
+            font-size: 13px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-family: inherit;
+            color: var(--text);
+            background: #fff;
+        }
+        textarea.ctrl {
+            min-height: 76px;
+            resize: vertical;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 12px;
+        }
+        .param-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 999px;
+            overflow: hidden;
             margin-top: 8px;
         }
-
-        .update-btn {
-            background: #4285f4;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2563eb, #0ea5e9);
+            transition: width 0.2s ease;
         }
 
-        .update-btn:hover {
-            background: #3367d6;
-        }
-
-        /* Text As Graph Styles */
-        #text-as-graph {
-            position: relative;
-            width: 100%;
-            min-height: 400px;
-        }
-
-        #text-as-graph input {
-            font-family: monospace;
-            word-spacing: 30px;
-            background-color: transparent;
-            border: none;
-            outline: none;
-            width: 100%;
-            max-width: none;
-        }
-
-        #text-as-graph rect {
-            cursor: pointer;
-        }
-
-        #text-as-graph text {
-            user-select: none;
-            cursor: default;
-        }
-
-        #text-as-graph svg text.top,
-        #text-as-graph svg text.side {
-            font-size: 12px;
-            fill: gray;
-        }
-
-        #text-as-graph svg rect {
-            shape-rendering: crispEdges;
-        }
-
-        /* Calculation Breakdown Styles */
-        .calculation-container {
-            position: fixed;
-            top: 450px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: auto;
-            min-width: 800px;
-            max-width: 98vw;
-            height: auto;
-            min-height: 200px;
-            background: rgba(255, 255, 255, 0.98);
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px 30px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            justify-content: center;
-            z-index: 900;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.05);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-
-        .calculation-container.placeholder {
-            justify-content: center;
-            align-items: center;
-            color: #6b7280;
-            font-size: 1.1em;
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        .calc-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: nowrap;
+        .token-graph-wrap {
             width: 100%;
             overflow-x: auto;
-            padding: 5px 0;
         }
-
-        .path-label {
-            min-width: 200px;
-            font-weight: bold;
-            color: #333;
+        #token-graph-svg {
+            display: block;
+            margin: 0 auto;
+        }
+        .token-node-group { cursor: pointer; }
+        .matrices-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 960px) {
+            .matrices-grid { grid-template-columns: 1fr; }
+        }
+        .matrix-box {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            background: #fcfdff;
+            overflow-x: auto;
+        }
+        .matrix-box h3 {
+            margin: 0 0 4px 0;
+            font-size: 14px;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .path-label .emoji {
-            font-size: 1.2em;
-            margin-right: 5px;
-        }
-
-        .paper-link a {
-            font-size: 0.8em;
-            color: #4285f4;
-            text-decoration: none;
-            font-weight: normal;
-        }
-
-        .paper-link a:hover {
-            text-decoration: underline;
-        }
-
-        .step-box {
-            background: #fff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 8px 12px;
-            min-width: 120px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .matrix-eq {
+            font-size: 12px;
+            color: #475569;
+            margin-bottom: 10px;
+            min-height: 22px;
+        }
+        .matrix-svg {
+            display: block;
+            margin: 0 auto;
+            overflow: visible;
+        }
+        .adj-mat-square {
+            shape-rendering: crispEdges;
+            cursor: pointer;
+            transition: opacity 0.1s;
         }
 
-        .step-box:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        .calc-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
-
+        .calc-row {
+            display: flex;
+            align-items: stretch;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .path-tag {
+            min-width: 175px;
+            max-width: 175px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .path-tag.edu { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        .path-tag.orig { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .step-box {
+            min-width: 148px;
+            flex: 1 0 148px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 4px;
+        }
         .step-title {
-            font-size: 0.7em;
-            color: #6c757d;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
+            color: var(--muted);
         }
-
-        .math-formula {
-            font-size: 0.9em;
-        }
-
         .step-value {
-            font-weight: bold;
-            font-family: monospace;
-            color: #333;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
         }
-
-        .step-value.highlight {
-            color: #2563eb;
-            font-size: 1.1em;
+        .step-value.edu { color: var(--blue); font-size: 15px; }
+        .step-value.orig { color: var(--crimson); font-size: 15px; }
+        .step-sub {
+            font-size: 11px;
+            color: #475569;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         }
-
-        .original .step-value.highlight {
-            color: #dc2626;
-        }
-
-        .arrow {
-            color: #cbd5e1;
-            font-weight: 300;
-            margin: 0 15px;
-            font-size: 1.5em;
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            color: #94a3b8;
+            font-size: 18px;
             user-select: none;
         }
+        canvas.heatmap {
+            border: 1px solid #cbd5e1;
+            border-radius: 3px;
+            image-rendering: pixelated;
+        }
 
-        .interaction-info {
-            position: absolute;
-            top: 5px;
-            right: 20px;
-            font-size: 0.8em;
-            color: #666;
-            background: rgba(255,255,255,0.9);
-            padding: 2px 5px;
-            border-radius: 4px;
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(15, 23, 42, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-card {
+            background: #fff;
+            border-radius: 12px;
+            max-width: 620px;
+            width: 100%;
+            padding: 20px 24px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+            font-size: 13px;
+            color: #334155;
+        }
+        .modal-card h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            color: var(--text);
         }
     </style>
 </head>
 <body>
-    <div id="app">
-        <!-- App content will be mounted here -->
+<div id="app">
+    <header class="topbar">
+        <div class="topbar-left">
+            <a href="https://1kaiser.github.io/">&larr; 1kaiser.github.io</a>
+            <span style="color:#cbd5e1;">|</span>
+            <span class="topbar-title">TextGraph: Dual Attention &amp; Token Embeddings</span>
+            <a class="muted-link" href="/TextGraph/" v-if="isCvCopy">Canonical App</a>
+        </div>
+        <div class="topbar-right">
+            <span id="embedding-status" :class="['badge-status', statusKind]">{{ statusLabel }}</span>
+            <a class="muted-link" href="https://github.com/1kaiser/TextGraph" target="_blank" rel="noopener">GitHub</a>
+            <button id="refs-btn" class="btn" type="button" @click="showRefs = true">References</button>
+        </div>
+    </header>
+
+    <div v-if="showRefs" id="refs-modal" class="modal-backdrop" @click.self="showRefs = false">
+        <div class="modal-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+                <h2>References &amp; Attribution</h2>
+                <button id="refs-close-btn" class="btn" type="button" @click="showRefs = false">Close</button>
+            </div>
+            <ul style="margin:0; padding-left:18px; line-height:1.7;">
+                <li><strong>Graph Attention Networks (Original GAT):</strong> Veličković, P., Cucurull, G., Casanova, A., Romero, A., Liò, P., &amp; Bengio, Y. (2018). <em>Graph Attention Networks</em>, ICLR (<a href="https://arxiv.org/abs/1710.10903" target="_blank" rel="noopener">arXiv:1710.10903</a>).</li>
+                <li><strong>Text-as-Graph &amp; Educational GNN:</strong> Sanchez-Lengeling, B., Reif, E., Pearce, A., &amp; Wiltschko, A. B. (2021). <em>A Gentle Introduction to Graph Neural Networks</em>, Distill (<a href="https://doi.org/10.23915/distill.00033" target="_blank" rel="noopener">doi:10.23915/distill.00033</a>).</li>
+                <li><strong>Scaled Dot-Product Attention:</strong> Vaswani, A. et al. (2017). <em>Attention Is All You Need</em>, NeurIPS (<a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">arXiv:1706.03762</a>).</li>
+                <li><strong>In-Browser Token Embeddings:</strong> <a href="https://huggingface.co/Xenova/all-MiniLM-L6-v2" target="_blank" rel="noopener">all-MiniLM-L6-v2</a>, <a href="https://huggingface.co/Xenova/bge-small-en-v1.5" target="_blank" rel="noopener">bge-small-en-v1.5</a>, <a href="https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX" target="_blank" rel="noopener">EmbeddingGemma-300M</a> via <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">Transformers.js v4.3.2</a>.</li>
+                <li><strong>UI &amp; Math:</strong> <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a>, <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js v7</a>, and <a href="https://katex.org/" target="_blank" rel="noopener">KaTeX</a>.</li>
+            </ul>
+        </div>
     </div>
 
-    <script type="module">
-        // Import transformers from CDN as requested for "single file" structure
-        // Using latest alpha version from huggingface to ensure support for latest ONNX IR versions
-        import { AutoModel, AutoTokenizer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.1';
-        const { createApp, ref, reactive, watch, onMounted } = Vue;
+    <main class="page">
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">Input Sequence, Context &amp; Attention Hyperparameters</h2>
+                    <div class="card-sub">Contextualized transformer embeddings are computed non-blockingly in a Web Worker; synthetic vectors run immediately until neural weights finish loading.</div>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                    <span style="font-size:11px; color:#64748b; font-weight:600;">Presets:</span>
+                    <button v-for="p in presets" :key="p.name" type="button" class="btn-chip" @click="applyPreset(p)">{{ p.name }}</button>
+                </div>
+            </div>
 
-        // --- D3 Conventions ---
-        function applyD3Conventions() {
-            if (!d3.selection.prototype.st) {
-                d3.selection.prototype.st = function(styles) {
-                    for (let key in styles) {
-                        this.style(key, styles[key]);
-                    }
-                    return this;
-                };
+            <div class="controls-grid">
+                <div>
+                    <div class="field-label">
+                        <label for="paragraph-input">Context Paragraph (encoded before query for contextualized token vectors)</label>
+                        <span>{{ paragraphText.length }} chars</span>
+                    </div>
+                    <textarea id="paragraph-input" class="ctrl" v-model="paragraphText" placeholder="Optional surrounding paragraph context..."></textarea>
+                </div>
+                <div style="display:flex; flex-direction:column; justify-content:space-between; gap:8px;">
+                    <div>
+                        <div class="field-label">
+                            <label for="query-input">Query Sentence (up to 14 words)</label>
+                            <span>{{ queryTokensPreview.length }} tokens</span>
+                        </div>
+                        <input id="query-input" class="ctrl" type="text" v-model="queryText" @keydown.enter="recomputeFromModel" placeholder="Enter sentence to visualize as graph...">
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <button id="compute-btn" class="btn btn-primary" type="button" @click="recomputeFromModel">Compute Graph Attention</button>
+                        <button id="clear-pin-btn" class="btn" type="button" v-if="pinnedCell" @click="pinnedCell = null">Unpin Cell [{{ pinnedCell.i }},{{ pinnedCell.j }}]</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="param-row">
+                <div>
+                    <label class="field-label" for="model-select">Embedding Backend</label>
+                    <select id="model-select" class="ctrl" v-model="selectedModelId" @change="onModelChange">
+                        <option value="Xenova/all-MiniLM-L6-v2">all-MiniLM-L6-v2 (384D, ~23 MB WASM)</option>
+                        <option value="Xenova/bge-small-en-v1.5">bge-small-en-v1.5 (384D, ~34 MB WASM)</option>
+                        <option value="onnx-community/embeddinggemma-300m-ONNX">EmbeddingGemma-300M (768D, ~195 MB)</option>
+                        <option value="synthetic">Synthetic Lexical Baseline (64D, Instant)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label" for="topology-select">Neighborhood Mask &Nu;<sub>i</sub></label>
+                    <select id="topology-select" class="ctrl" v-model="topology" @change="recomputeMathOnly">
+                        <option value="full">Fully Connected (All pairs)</option>
+                        <option value="window1">Distill Sequence Window (|i - j| &le; 1)</option>
+                        <option value="window2">Local Window (|i - j| &le; 2)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label" for="heads-select">Original GAT Heads (K)</label>
+                    <select id="heads-select" class="ctrl" v-model.number="numHeads" @change="recomputeMathOnly">
+                        <option :value="1">K = 1 head</option>
+                        <option :value="2">K = 2 heads (averaged)</option>
+                        <option :value="4">K = 4 heads (averaged)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label" for="seed-select">GAT Weight Seed (W, a)</label>
+                    <select id="seed-select" class="ctrl" v-model.number="gatSeed" @change="recomputeMathOnly">
+                        <option :value="42">Seed 42 (Xavier)</option>
+                        <option :value="7">Seed 7 (Xavier)</option>
+                        <option :value="1337">Seed 1337 (Xavier)</option>
+                    </select>
+                </div>
+                <div>
+                    <div class="field-label">
+                        <label for="temp-range">Dot-Product Temp &tau;</label>
+                        <span>{{ temperature.toFixed(2) }}</span>
+                    </div>
+                    <input id="temp-range" type="range" min="0.10" max="1.50" step="0.05" v-model.number="temperature" @input="recomputeMathOnly" style="width:100%;">
+                </div>
+                <div style="display:flex; align-items:flex-end; padding-bottom:4px;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#334155; cursor:pointer;">
+                        <input id="self-loop-checkbox" type="checkbox" v-model="eduSelfLoops" @change="recomputeMathOnly">
+                        <span>Edu Dot-Product Self-Loops</span>
+                    </label>
+                </div>
+            </div>
+
+            <div v-if="workerLoading" class="progress-track">
+                <div class="progress-fill" :style="{ width: workerProgress + '%' }"></div>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">1. Text-as-Graph Representation &amp; Token Embeddings</h2>
+                    <div class="card-sub">Nodes display incoming GAT attention strength (opacity), top attention flow arcs, and compressed embedding feature barcodes below each word. Hover a node or click any matrix cell below.</div>
+                </div>
+                <span class="card-sub" v-if="embInfo">{{ embInfo }}</span>
+            </div>
+            <div class="token-graph-wrap">
+                <svg id="token-graph-svg"></svg>
+            </div>
+        </section>
+
+        <section class="matrices-grid">
+            <div class="matrix-box">
+                <h3>
+                    <span style="color: var(--blue);">2A. Educational Dot-Product Attention</span>
+                    <span class="card-sub">{{ eduSelfLoops ? 'With Self-Loops' : 'Off-Diagonal Only' }} &middot; &tau;={{ temperature.toFixed(2) }}</span>
+                </h3>
+                <div class="matrix-eq" v-html="texDot"></div>
+                <svg id="edu-matrix-svg" class="matrix-svg"></svg>
+            </div>
+
+            <div class="matrix-box">
+                <h3>
+                    <span style="color: var(--crimson);">2B. Original GAT Attention (Veličković et al., 2018)</span>
+                    <span class="card-sub">K={{ numHeads }} head{{ numHeads > 1 ? 's' : '' }} &middot; F'=32 &middot; &alpha;<sub>LeakyReLU</sub>=0.2</span>
+                </h3>
+                <div class="matrix-eq" v-html="texGat"></div>
+                <svg id="gat-matrix-svg" class="matrix-svg"></svg>
+            </div>
+        </section>
+
+        <section id="calc-breakdown" class="card calc-panel">
+            <div class="card-header">
+                <div>
+                    <h2 class="card-title">3. Exact Cell-Level Mathematical Walkthrough (Shared Token Vectors &#8477;<sup>{{ activeDim }}</sup>)</h2>
+                    <div class="card-sub" v-if="activeCell">
+                        Inspecting edge <strong style="color:#0f172a;">[{{ activeCell.i }}, {{ activeCell.j }}]</strong>:
+                        &ldquo;<strong>{{ activeCell.sourceWord }}</strong>&rdquo; &rarr; &ldquo;<strong>{{ activeCell.targetWord }}</strong>&rdquo;
+                        <span v-if="activeCell.isPinned">(pinned &mdash; click cell again or Unpin to resume hover)</span>
+                        <span v-else>(hover matrix cells to preview, click to pin)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="activeCell" style="display:flex; flex-direction:column; gap:12px;">
+                <div class="calc-row">
+                    <div class="path-tag edu">
+                        <span>Dot-Product Path</span>
+                        <span style="font-weight:500; font-size:11px; margin-top:2px;">Same <em>h<sub>i</sub></em>, <em>h<sub>j</sub></em> vectors</span>
+                    </div>
+                    <div class="step-box">
+                        <div class="step-title">Normalized Vectors</div>
+                        <div v-html="katexInline('\\vec{h}_i, \\vec{h}_j \\in \\mathbb{R}^{' + activeDim + '}')"></div>
+                        <canvas ref="canvasHSource" width="64" height="16" class="heatmap"></canvas>
+                        <canvas ref="canvasHTarget" width="64" height="16" class="heatmap"></canvas>
+                    </div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="step-box">
+                        <div class="step-title">Cosine Similarity</div>
+                        <div v-html="katexInline('\\vec{h}_i \\cdot \\vec{h}_j')"></div>
+                        <div class="step-value">{{ activeCell.dotCos.toFixed(4) }}</div>
+                    </div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="step-box">
+                        <div class="step-title">Scaled Logit (s/&tau;)</div>
+                        <div v-html="katexInline('s_{ij}/' + temperature.toFixed(2))"></div>
+                        <div class="step-value">{{ activeCell.dotMasked ? '-inf (masked)' : activeCell.dotLogit.toFixed(4) }}</div>
+                    </div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="step-box">
+                        <div class="step-title">Softmax Weight &alpha;<sub>ij</sub></div>
+                        <div class="step-value edu">{{ activeCell.dotAlpha.toFixed(4) }}</div>
+                        <div class="step-sub">row &Sigma; = {{ activeCell.dotRowSum.toFixed(3) }}</div>
+                    </div>
+                </div>
+
+                <div class="calc-row">
+                    <div class="path-tag orig">
+                        <span>Original GAT (Head 1)</span>
+                        <span style="font-weight:500; font-size:11px; margin-top:2px;">Seed {{ gatSeed }} &middot; Xavier</span>
+                    </div>
+                    <div class="step-box">
+                        <div class="step-title">Linear Projection W</div>
+                        <div v-html="katexInline('\\vec{h}\'_i = \\mathbf{W}\\vec{h}_i \\in \\mathbb{R}^{32}')"></div>
+                        <canvas ref="canvasW" width="64" height="32" class="heatmap"></canvas>
+                        <div class="step-sub">W[0,0..2]=[{{ activeCell.whiSample }}]</div>
+                    </div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="step-box">
+                        <div class="step-title">Concatenation [h'<sub>i</sub> || h'<sub>j</sub>]</div>
+                        <div v-html="katexInline('[\\vec{h}\'_i \\,\\|\\, \\vec{h}\'_j] \\in \\mathbb{R}^{64}')"></div>
+                        <canvas ref="canvasConcat" width="64" height="16" class="heatmap"></canvas>
+                        <div class="step-sub">64D vector</div>
+                    </div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="step-box">
+                        <div class="step-title">Attention Vector a<sup>T</sup></div>
+                        <div v-html="katexInline('z_{ij} = \\vec{a}^T [\\vec{h}\'_i \\,\\|\\, \\vec{h}\'_j]')"></div>
+                        <canvas ref="canvasA" width="64" height="16" class="heatmap"></canvas>
+                        <div class="step-value">{{ activeCell.gatPreLeaky.toFixed(4) }}</div>
+                    </div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="step-box">
+                        <div class="step-title">LeakyReLU (0.2)</div>
+                        <div v-html="katexInline('e_{ij} = \\text{Leaky}(z_{ij})')"></div>
+                        <div class="step-value">{{ activeCell.gatMasked ? '-inf (masked)' : activeCell.gatE.toFixed(4) }}</div>
+                    </div>
+                    <div class="flow-arrow">&rarr;</div>
+                    <div class="step-box">
+                        <div class="step-title">Softmax &alpha;<sub>ij</sub> ({{ numHeads }}H mean)</div>
+                        <div class="step-value orig">{{ activeCell.gatAlpha.toFixed(4) }}</div>
+                        <div class="step-sub">H1: {{ activeCell.gatHead0Alpha.toFixed(4) }} &middot; &Sigma;={{ activeCell.gatRowSum.toFixed(3) }}</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<script type="module">
+    const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+
+    const MODEL_META = {
+        'Xenova/all-MiniLM-L6-v2': { label: 'all-MiniLM-L6-v2', dim: 384, sizeLabel: '~23 MB', preferredDevice: 'wasm', dtype: 'q8' },
+        'Xenova/bge-small-en-v1.5': { label: 'bge-small-en-v1.5', dim: 384, sizeLabel: '~34 MB', preferredDevice: 'wasm', dtype: 'q8' },
+        'onnx-community/embeddinggemma-300m-ONNX': { label: 'EmbeddingGemma-300M', dim: 768, sizeLabel: '~195 MB', preferredDevice: 'auto', dtype: 'q4' },
+        'synthetic': { label: 'Synthetic Baseline', dim: 64, sizeLabel: '0 MB', preferredDevice: 'js', dtype: 'fp64' }
+    };
+
+    const PRESETS = [
+        {
+            name: 'Graph Attention',
+            paragraph: 'Neural networks learn rich representations across structured data. Graph attention mechanisms capture asymmetric syntactic and semantic relationships between words in a sequence.',
+            query: 'Graph attention mechanisms capture relationships'
+        },
+        {
+            name: 'River Bank',
+            paragraph: 'Heavy monsoon rains swelled the muddy river overnight, eroding trees along the steep grassy embankment.',
+            query: 'The muddy boat reached the river bank'
+        },
+        {
+            name: 'Bank Account',
+            paragraph: 'Financial institutions verify customer identity before approving wire transfers or updating checking balances.',
+            query: 'The customer checked the bank balance'
+        },
+        {
+            name: 'Quantum Optics',
+            paragraph: 'Entangled photons propagate through nonlinear crystals inside precision laser interferometers.',
+            query: 'Entangled photons interfere cleanly inside lasers'
+        }
+    ];
+
+    function tokenizeWords(text) {
+        return String(text || '')
+            .trim()
+            .split(/\s+/)
+            .map(w => w.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9'-]+$/g, ''))
+            .filter(Boolean)
+            .slice(0, 14);
+    }
+
+    function normalizeVec(arr) {
+        let norm = 0;
+        for (let i = 0; i < arr.length; i++) norm += arr[i] * arr[i];
+        norm = Math.sqrt(norm);
+        const out = new Float64Array(arr.length);
+        if (norm > 1e-12) {
+            for (let i = 0; i < arr.length; i++) out[i] = arr[i] / norm;
+        } else if (arr.length) {
+            out[0] = 1;
+        }
+        return out;
+    }
+
+    function computeSyntheticEmbeddings(paragraphText, queryWords) {
+        const pWords = new Set(tokenizeWords(paragraphText).map(w => w.toLowerCase()));
+        return queryWords.map((word, pos) => {
+            const lower = word.toLowerCase();
+            let seed = 0;
+            for (let c = 0; c < lower.length; c++) seed += lower.charCodeAt(c) * (c + 1);
+            const v = new Float64Array(64);
+            for (let d = 0; d < 64; d++) {
+                v[d] = Math.sin(seed * (d + 1) * 0.017) * 0.5
+                    + Math.cos(seed * (d + 2) * 0.031) * 0.3
+                    + Math.sin((pos + 1) * (d + 1) * 0.07) * 0.12
+                    + (pWords.has(lower) ? 0.22 * Math.cos(d * 0.13) : 0);
             }
-            if (!d3.selection.prototype.at) {
-                d3.selection.prototype.at = function(attrs) {
-                    for (let key in attrs) {
-                        this.attr(key, attrs[key]);
-                    }
-                    return this;
-                };
+            return normalizeVec(v);
+        });
+    }
+
+    function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function() {
+            a |= 0;
+            a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function softmaxMasked(logits, maskRow) {
+        const n = logits.length;
+        let maxVal = -Infinity;
+        for (let j = 0; j < n; j++) {
+            if (maskRow[j] && logits[j] > maxVal) maxVal = logits[j];
+        }
+        const exps = new Float64Array(n);
+        let sum = 0;
+        for (let j = 0; j < n; j++) {
+            if (!maskRow[j]) continue;
+            const e = Math.exp(logits[j] - maxVal);
+            exps[j] = e;
+            sum += e;
+        }
+        const probs = Array.from(exps, v => (sum > 0 ? v / sum : 0));
+        return probs;
+    }
+
+    function computeDualAttention(embeddings, opts) {
+        const n = embeddings.length;
+        const dim = embeddings[0]?.length || 64;
+        const { topology, temperature, eduSelfLoops, numHeads, seed } = opts;
+
+        const gatMask = Array.from({ length: n }, (_, i) =>
+            Array.from({ length: n }, (_, j) => {
+                if (topology === 'window1') return Math.abs(i - j) <= 1;
+                if (topology === 'window2') return Math.abs(i - j) <= 2;
+                return true;
+            })
+        );
+        const eduMask = Array.from({ length: n }, (_, i) =>
+            Array.from({ length: n }, (_, j) => {
+                if (!gatMask[i][j]) return false;
+                if (!eduSelfLoops && n > 1 && i === j) return false;
+                return true;
+            })
+        );
+
+        // 1. Educational Dot-Product / Cosine Attention
+        const dotCos = Array.from({ length: n }, () => new Array(n).fill(0));
+        const dotLogits = Array.from({ length: n }, () => new Array(n).fill(0));
+        const dotAlpha = Array.from({ length: n }, () => new Array(n).fill(0));
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                let s = 0;
+                for (let d = 0; d < dim; d++) s += embeddings[i][d] * embeddings[j][d];
+                dotCos[i][j] = s;
+                dotLogits[i][j] = s / Math.max(0.05, temperature);
             }
-            if (!d3.selection.prototype.parent) {
-                d3.selection.prototype.parent = function() {
-                    return d3.select(this.node().parentNode);
-                };
-            }
-            if (!d3.selection.prototype.appendMany) {
-                d3.selection.prototype.appendMany = function(name, data) {
-                    return this.selectAll(name)
-                        .data(data)
-                        .enter()
-                        .append(name.split('.')[0]);
-                };
-            }
-            if (!d3.selection.prototype.translate) {
-                d3.selection.prototype.translate = function(x, y) {
-                    return this.attr('transform', `translate(${x}, ${y || 0})`);
-                };
-            }
+            dotAlpha[i] = softmaxMasked(dotLogits[i], eduMask[i]);
         }
 
-        function conventions(opts) {
-            opts = opts || {};
-            const sel = opts.sel || d3.select('body');
-            const margin = opts.margin || { top: 0, right: 0, bottom: 0, left: 0 };
-            const height = opts.height || 250;
-            const width = opts.width || sel.node().getBoundingClientRect().width;
-            const layers = opts.layers || 'sv';
+        // 2. Original Multi-Head GAT (Velickovic et al., ICLR 2018)
+        const Fprime = 32;
+        const gatAlpha = Array.from({ length: n }, () => new Array(n).fill(0));
+        let head0W = null;
+        let head0A = null;
+        let head0Wh = null;
+        let head0PreLeaky = null;
+        let head0E = null;
+        let head0Alpha = null;
 
-            const result = {
-                sel: sel,
-                margin: margin,
-                height: height,
-                width: width,
-                layers: []
-            };
+        for (let h = 0; h < numHeads; h++) {
+            const rng = mulberry32(seed * 1009 + h * 97 + dim * 13);
+            const limitW = Math.sqrt(6 / (dim + Fprime));
+            const W = Array.from({ length: Fprime }, () => {
+                const row = new Float64Array(dim);
+                for (let d = 0; d < dim; d++) row[d] = (rng() * 2 - 1) * limitW;
+                return row;
+            });
+            const limitA = Math.sqrt(6 / (2 * Fprime + 1));
+            const aVec = new Float64Array(2 * Fprime);
+            for (let k = 0; k < 2 * Fprime; k++) aVec[k] = (rng() * 2 - 1) * limitA * 2.0;
 
-            for (let layer of layers) {
-                switch(layer) {
-                case 's': // SVG layer
-                    const svg = sel.append('svg')
-                    .attr('width', width)
-                    .attr('height', height);
-                    result.layers.push(svg);
-                    break;
-                case 'd': // DIV layer
-                    const div = sel.append('div')
-                    .style('position', 'absolute');
-                    result.layers.push(div);
-                    break;
+            const Wh = embeddings.map(vec => {
+                const proj = new Float64Array(Fprime);
+                for (let r = 0; r < Fprime; r++) {
+                    let sum = 0;
+                    const rowW = W[r];
+                    for (let d = 0; d < dim; d++) sum += rowW[d] * vec[d];
+                    proj[r] = sum;
+                }
+                return proj;
+            });
+
+            const preLeaky = Array.from({ length: n }, () => new Array(n).fill(0));
+            const eMat = Array.from({ length: n }, () => new Array(n).fill(0));
+            const headAlpha = Array.from({ length: n }, () => new Array(n).fill(0));
+
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    let z = 0;
+                    for (let k = 0; k < Fprime; k++) {
+                        z += aVec[k] * Wh[i][k] + aVec[Fprime + k] * Wh[j][k];
+                    }
+                    preLeaky[i][j] = z;
+                    eMat[i][j] = z >= 0 ? z : 0.2 * z;
+                }
+                headAlpha[i] = softmaxMasked(eMat[i], gatMask[i]);
+                for (let j = 0; j < n; j++) {
+                    gatAlpha[i][j] += headAlpha[i][j] / numHeads;
                 }
             }
 
-            return result;
+            if (h === 0) {
+                head0W = W;
+                head0A = aVec;
+                head0Wh = Wh;
+                head0PreLeaky = preLeaky;
+                head0E = eMat;
+                head0Alpha = headAlpha;
+            }
         }
 
-        applyD3Conventions();
+        const eduRowSums = dotAlpha.map(r => r.reduce((s, v) => s + v, 0));
+        const gatRowSums = gatAlpha.map(r => r.reduce((s, v) => s + v, 0));
 
-        // --- EmbeddingGemma (Real Implementation via @huggingface/transformers in Main Thread) ---
-        class EmbeddingGemmaManager {
-            constructor() {
-                this.model = null;
-                this.tokenizer = null;
-                this.isLoading = false;
-                this.isReady = false;
-                this.modelName = "onnx-community/embeddinggemma-300m-ONNX";
+        return {
+            dim,
+            embeddings,
+            eduMask,
+            gatMask,
+            dotCos,
+            dotLogits,
+            dotAlpha,
+            eduRowSums,
+            gatAlpha,
+            gatRowSums,
+            head0W,
+            head0A,
+            head0Wh,
+            head0PreLeaky,
+            head0E,
+            head0Alpha
+        };
+    }
+
+    const workerCode = `
+    import { AutoModel, AutoTokenizer, env } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/transformers.min.js';
+    env.allowLocalModels = false;
+    env.allowRemoteModels = true;
+    env.useBrowserCache = true;
+
+    let cachedModelId = null;
+    let cachedBackend = null;
+    let tokenizer = null;
+    let model = null;
+
+    const cleanAlpha = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    async function ensureLoaded(modelId, meta) {
+        if (cachedModelId === modelId && model && tokenizer) {
+            return { backend: cachedBackend };
+        }
+        const fileProgress = new Map();
+        const progressCb = (p) => {
+            if (!p || !p.file) return;
+            if (p.status === 'progress') {
+                fileProgress.set(p.file, { loaded: p.loaded || 0, total: p.total || 0 });
+            } else if (p.status === 'done') {
+                const prev = fileProgress.get(p.file);
+                if (prev && prev.total) fileProgress.set(p.file, { loaded: prev.total, total: prev.total });
+            } else {
+                return;
+            }
+            let loaded = 0, total = 0;
+            for (const v of fileProgress.values()) { loaded += v.loaded; total += v.total; }
+            const percent = total > 0 ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
+            self.postMessage({ type: 'progress', data: { percent, file: p.file } });
+        };
+
+        tokenizer = await AutoTokenizer.from_pretrained(modelId);
+        let backend = meta.preferredDevice || 'wasm';
+        if (backend === 'auto') {
+            let hasGpu = false;
+            try { hasGpu = !!('gpu' in navigator && await navigator.gpu.requestAdapter()); } catch {}
+            backend = hasGpu ? 'webgpu' : 'wasm';
+        }
+
+        const opts = { device: backend, progress_callback: progressCb };
+        if (modelId.includes('embeddinggemma')) {
+            opts.dtype = 'q4';
+            if (backend === 'webgpu') opts.model_file_name = 'model_no_gather';
+        } else {
+            opts.dtype = backend === 'wasm' ? 'q8' : 'fp32';
+        }
+
+        try {
+            model = await AutoModel.from_pretrained(modelId, opts);
+        } catch (err) {
+            if (backend === 'webgpu') {
+                backend = 'wasm';
+                model = await AutoModel.from_pretrained(modelId, {
+                    device: 'wasm',
+                    dtype: 'q8',
+                    progress_callback: progressCb
+                });
+            } else {
+                throw err;
+            }
+        }
+        cachedModelId = modelId;
+        cachedBackend = backend;
+        return { backend };
+    }
+
+    function l2norm(arr) {
+        let s = 0;
+        for (let i = 0; i < arr.length; i++) s += arr[i] * arr[i];
+        s = Math.sqrt(s);
+        const out = new Array(arr.length);
+        if (s > 1e-12) {
+            for (let i = 0; i < arr.length; i++) out[i] = arr[i] / s;
+        } else if (arr.length) {
+            out[0] = 1;
+            for (let i = 1; i < arr.length; i++) out[i] = 0;
+        }
+        return out;
+    }
+
+    function alignWordsToTokenIndices(queryWords, decodedTokens) {
+        const cleanTokens = decodedTokens.map(cleanAlpha);
+        const wordTargets = queryWords.map(cleanAlpha).filter(Boolean);
+        if (!wordTargets.length || wordTargets.length !== queryWords.length) return null;
+
+        // Walk backward from the end of decodedTokens to locate the query sequence inside [paragraph + query]
+        const totalTokens = cleanTokens.length;
+        for (let start = Math.max(0, totalTokens - wordTargets.length * 6); start < totalTokens; start++) {
+            let ti = start;
+            const spans = [];
+            let matched = true;
+            for (let wi = 0; wi < wordTargets.length; wi++) {
+                const target = wordTargets[wi];
+                let built = '';
+                const indices = [];
+                while (ti < totalTokens && built.length < target.length) {
+                    if (cleanTokens[ti]) {
+                        built += cleanTokens[ti];
+                        indices.push(ti);
+                    }
+                    ti++;
+                }
+                if (built !== target || !indices.length) {
+                    matched = false;
+                    break;
+                }
+                spans.push(indices);
+            }
+            if (matched) return spans;
+        }
+        return null;
+    }
+
+    self.addEventListener('message', async (e) => {
+        const { type, data } = e.data;
+        if (type !== 'encode') return;
+        const { requestId, modelId, meta, paragraphText, queryWords } = data;
+        try {
+            const { backend } = await ensureLoaded(modelId, meta);
+            const pWords = String(paragraphText || '').trim().split(/\\s+/).filter(Boolean).slice(-120).join(' ');
+            const qStr = queryWords.join(' ');
+            const fullText = pWords ? (pWords + ' ' + qStr) : qStr;
+
+            let inputs = tokenizer(fullText, { padding: false, truncation: true, max_length: 256 });
+            let ids = Array.from(inputs.input_ids.data, Number);
+            let decoded = ids.map(id => tokenizer.decode([id], { skip_special_tokens: true }));
+            let spans = alignWordsToTokenIndices(queryWords, decoded);
+
+            if (!spans) {
+                inputs = tokenizer(qStr, { padding: false, truncation: true, max_length: 128 });
+                ids = Array.from(inputs.input_ids.data, Number);
+                decoded = ids.map(id => tokenizer.decode([id], { skip_special_tokens: true }));
+                spans = alignWordsToTokenIndices(queryWords, decoded);
             }
 
-            async initialize() {
-                if (this.model) return;
-                console.log('🚀 TextGraph: Initializing EmbeddingGemma (Main Thread)...');
-
-                this.isLoading = true;
-                window.dispatchEvent(new CustomEvent('embedding-progress', {
-                    detail: { progress: 0, status: "Checking device...", isLoading: true }
-                }));
-                // Yield to UI to allow render
-                await new Promise(r => setTimeout(r, 50));
-
-                let isWebGPUAvailable = false;
-                if (navigator.gpu) {
-                    try {
-                        isWebGPUAvailable = !!(await navigator.gpu.requestAdapter());
-                    } catch (e) {
-                        console.warn("WebGPU not available:", e);
+            let wordVectors = null;
+            if (spans && spans.length === queryWords.length) {
+                const outputs = await model(inputs);
+                const hidden = outputs.last_hidden_state;
+                const [, seqLen, dim] = hidden.dims.map(Number);
+                const raw = hidden.data;
+                wordVectors = spans.map(indices => {
+                    const acc = new Float64Array(dim);
+                    for (const idx of indices) {
+                        const base = idx * dim;
+                        for (let d = 0; d < dim; d++) acc[d] += Number(raw[base + d]);
                     }
-                }
-                const device = isWebGPUAvailable ? "webgpu" : "wasm";
-                console.log(`Using device: ${device}`);
-
-                try {
-                    window.dispatchEvent(new CustomEvent('embedding-progress', {
-                        detail: { progress: 10, status: `Device: ${device}. Loading tokenizer...`, isLoading: true }
-                    }));
-
-                    this.tokenizer = await AutoTokenizer.from_pretrained(this.modelName);
-
-                    // Verify tokenizer works
-                    const testToken = this.tokenizer(['test'], { padding: true, truncation: true });
-                    console.log('✅ Tokenizer loaded and tested.', testToken);
-
-                    window.dispatchEvent(new CustomEvent('embedding-progress', {
-                        detail: { progress: 30, status: `Device: ${device}. Loading model...`, isLoading: true }
-                    }));
-
-                    this.model = await AutoModel.from_pretrained(this.modelName, {
-                        device,
-                        dtype: "q4",
-                        model_file_name: isWebGPUAvailable ? "model_no_gather" : "model",
-                        progress_callback: (progress) => {
-                            if (progress.status === 'progress') {
-                                const p = Math.round(progress.loaded / progress.total * 100);
-                                const status = `Loading: ${p}% (${progress.file})`;
-                                console.log(status);
-                                window.dispatchEvent(new CustomEvent('embedding-progress', {
-                                    detail: { progress: p, status: status, isLoading: true }
-                                }));
-                            } else {
-                                console.log(`Model loading status: ${progress.status}`);
-                                window.dispatchEvent(new CustomEvent('embedding-progress', {
-                                    detail: { progress: 0, status: progress.status, isLoading: true }
-                                }));
-                            }
+                    for (let d = 0; d < dim; d++) acc[d] /= indices.length;
+                    return l2norm(acc);
+                });
+            } else {
+                const batchInputs = tokenizer(queryWords, { padding: true, truncation: true });
+                const outputs = await model(batchInputs);
+                const hidden = outputs.last_hidden_state;
+                const [batchN, seqLen, dim] = hidden.dims.map(Number);
+                const raw = hidden.data;
+                const mask = batchInputs.attention_mask ? batchInputs.attention_mask.data : null;
+                wordVectors = [];
+                for (let b = 0; b < batchN; b++) {
+                    const acc = new Float64Array(dim);
+                    let cnt = 0;
+                    for (let s = 0; s < seqLen; s++) {
+                        const mVal = mask ? Number(mask[b * seqLen + s]) : 1;
+                        if (mVal > 0) {
+                            const base = (b * seqLen + s) * dim;
+                            for (let d = 0; d < dim; d++) acc[d] += Number(raw[base + d]);
+                            cnt++;
                         }
+                    }
+                    if (cnt > 0) for (let d = 0; d < dim; d++) acc[d] /= cnt;
+                    wordVectors.push(l2norm(acc));
+                }
+            }
+
+            self.postMessage({
+                type: 'encoded',
+                data: {
+                    requestId,
+                    modelId,
+                    backend,
+                    dim: wordVectors[0]?.length || meta.dim,
+                    embeddings: wordVectors
+                }
+            });
+        } catch (err) {
+            self.postMessage({
+                type: 'error',
+                data: { requestId, message: (err && err.message) || String(err) }
+            });
+        }
+    });
+    `;
+
+    createApp({
+        setup() {
+            const isCvCopy = location.pathname.includes('/cv/');
+            const showRefs = ref(false);
+            const presets = PRESETS;
+
+            const paragraphText = ref(PRESETS[0].paragraph);
+            const queryText = ref(PRESETS[0].query);
+            const selectedModelId = ref('Xenova/all-MiniLM-L6-v2');
+            const topology = ref('full');
+            const numHeads = ref(1);
+            const gatSeed = ref(42);
+            const temperature = ref(0.25);
+            const eduSelfLoops = ref(false);
+
+            const workerLoading = ref(false);
+            const workerProgress = ref(0);
+            const statusKind = ref('');
+            const statusLabel = ref('Loading all-MiniLM-L6-v2...');
+            const embInfo = ref('');
+            const activeDim = ref(64);
+            const hoveredCell = ref(null);
+            const pinnedCell = ref(null);
+
+            const canvasHSource = ref(null);
+            const canvasHTarget = ref(null);
+            const canvasW = ref(null);
+            const canvasConcat = ref(null);
+            const canvasA = ref(null);
+
+            let plainState = {
+                queryWords: [],
+                embeddings: [],
+                attention: null
+            };
+            let worker = null;
+            let requestSeq = 0;
+
+            const queryTokensPreview = computed(() => tokenizeWords(queryText.value));
+
+            const katexInline = (tex) => {
+                if (window.katex) {
+                    return window.katex.renderToString(tex, { throwOnError: false, displayMode: false });
+                }
+                return tex;
+            };
+            const texDot = computed(() =>
+                katexInline('\\alpha_{ij}^{\\text{dot}} = \\text{softmax}_{j \\in \\mathcal{N}_i}\\!\\left(\\frac{\\vec{h}_i \\cdot \\vec{h}_j}{\\tau}\\right)')
+            );
+            const texGat = computed(() =>
+                katexInline('\\alpha_{ij}^{(k)} = \\text{softmax}_{j \\in \\mathcal{N}_i}\\!\\left(\\text{LeakyReLU}_{0.2}\\!\\left(\\vec{a}^{(k)T}[\\mathbf{W}^{(k)}\\vec{h}_i \\,\\|\\, \\mathbf{W}^{(k)}\\vec{h}_j]\\right)\\right)')
+            );
+
+            const activeCell = computed(() => {
+                const target = pinnedCell.value || hoveredCell.value;
+                const att = plainState.attention;
+                const words = plainState.queryWords;
+                if (!target || !att || target.i >= words.length || target.j >= words.length) return null;
+                const { i, j } = target;
+                const Whi = att.head0Wh[i];
+                const Whj = att.head0Wh[j];
+                const concat = new Float64Array(Whi.length + Whj.length);
+                concat.set(Whi, 0);
+                concat.set(Whj, Whi.length);
+                return {
+                    i,
+                    j,
+                    isPinned: !!pinnedCell.value && pinnedCell.value.i === i && pinnedCell.value.j === j,
+                    sourceWord: words[i],
+                    targetWord: words[j],
+                    embSource: att.embeddings[i],
+                    embTarget: att.embeddings[j],
+                    dotCos: att.dotCos[i][j],
+                    dotLogit: att.dotLogits[i][j],
+                    dotAlpha: att.dotAlpha[i][j],
+                    dotMasked: !att.eduMask[i][j],
+                    dotRowSum: att.eduRowSums[i],
+                    W: att.head0W,
+                    a: att.head0A,
+                    whiSample: Array.from(Whi.slice(0, 3)).map(v => v.toFixed(2)).join(', '),
+                    concat,
+                    gatPreLeaky: att.head0PreLeaky[i][j],
+                    gatE: att.head0E[i][j],
+                    gatMasked: !att.gatMask[i][j],
+                    gatAlpha: att.gatAlpha[i][j],
+                    gatHead0Alpha: att.head0Alpha[i][j],
+                    gatRowSum: att.gatRowSums[i]
+                };
+            });
+
+            function drawHeatmap(canvas, data, rows, cols, isVector) {
+                if (!canvas || !data) return;
+                const ctx = canvas.getContext('2d');
+                const img = ctx.createImageData(cols, rows);
+                let minV = Infinity, maxV = -Infinity;
+                if (isVector) {
+                    for (let k = 0; k < cols && k < data.length; k++) {
+                        if (data[k] < minV) minV = data[k];
+                        if (data[k] > maxV) maxV = data[k];
+                    }
+                } else {
+                    for (let r = 0; r < rows && r < data.length; r++) {
+                        for (let c = 0; c < cols && c < data[r].length; c++) {
+                            if (data[r][c] < minV) minV = data[r][c];
+                            if (data[r][c] > maxV) maxV = data[r][c];
+                        }
+                    }
+                }
+                const range = maxV - minV || 1;
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        const v = isVector ? (data[x] ?? 0) : ((data[y] && data[y][x]) ?? 0);
+                        const norm = (v - minV) / range;
+                        const idx = (y * cols + x) * 4;
+                        img.data[idx] = Math.round(240 * (1 - norm));
+                        img.data[idx + 1] = Math.round(90 + 130 * norm);
+                        img.data[idx + 2] = 245;
+                        img.data[idx + 3] = 255;
+                    }
+                }
+                ctx.putImageData(img, 0, 0);
+            }
+
+            watch(activeCell, async (cell) => {
+                if (!cell) return;
+                await nextTick();
+                drawHeatmap(canvasHSource.value, cell.embSource, 16, Math.min(64, cell.embSource.length), true);
+                drawHeatmap(canvasHTarget.value, cell.embTarget, 16, Math.min(64, cell.embTarget.length), true);
+                drawHeatmap(canvasW.value, cell.W, 32, Math.min(64, cell.W[0]?.length || 64), false);
+                drawHeatmap(canvasConcat.value, cell.concat, 16, Math.min(64, cell.concat.length), true);
+                drawHeatmap(canvasA.value, cell.a, 16, Math.min(64, cell.a.length), true);
+            });
+
+            function applyHighlights(focusI, focusJ, pinnedMode) {
+                const svgGraph = d3.select('#token-graph-svg');
+                const activeSet = new Set();
+                if (focusI != null) activeSet.add(focusI);
+                if (focusJ != null) activeSet.add(focusJ);
+
+                svgGraph.selectAll('g.token-node-group rect.token-pill')
+                    .attr('stroke', d => activeSet.has(d.i) ? (pinnedMode ? '#dc2626' : '#0f172a') : '#2563eb')
+                    .attr('stroke-width', d => activeSet.has(d.i) ? 3 : 1.5);
+
+                svgGraph.selectAll('path.attn-arc')
+                    .attr('stroke-opacity', d => {
+                        if (focusI == null) return Math.max(0.18, d.weight * 0.9);
+                        if (focusJ != null && focusJ !== focusI) {
+                            return (d.source === focusI && d.target === focusJ) ? 0.95 : 0.08;
+                        }
+                        return d.source === focusI ? Math.max(0.35, d.weight) : 0.08;
+                    })
+                    .attr('stroke-width', d => {
+                        if (focusI != null && focusJ != null && d.source === focusI && d.target === focusJ) return 3.5;
+                        return 1 + d.weight * 4;
                     });
 
-                    this.isReady = true;
-                    this.isLoading = false;
-                    window.dispatchEvent(new CustomEvent('embedding-progress', {
-                        detail: { progress: 100, status: "Ready", isLoading: false }
-                    }));
-                    console.log('✅ TextGraph: Model loaded.');
-                } catch (e) {
-                    const msg = (e && e.message) || String(e);
-                    console.error("Model load failed", e);
-                    this.isLoading = false;
-                    window.dispatchEvent(new CustomEvent('embedding-progress', {
-                        detail: { progress: 0, status: `Model error (using synthetic fallback): ${msg}`, isLoading: false }
-                    }));
-                    throw e;
+                d3.selectAll('.matrix-svg rect.adj-mat-square')
+                    .attr('stroke', d => (d.row === focusI && d.col === focusJ) ? '#0f172a' : (d.row === focusI ? '#334155' : '#cbd5e1'))
+                    .attr('stroke-width', d => (d.row === focusI && d.col === focusJ) ? 2.6 : 0.6);
+
+                d3.selectAll('.matrix-svg text.col-label')
+                    .style('fill', d => d.i === focusJ ? '#0f172a' : '#475569')
+                    .style('font-weight', d => d.i === focusJ ? '700' : '500');
+                d3.selectAll('.matrix-svg text.row-label')
+                    .style('fill', d => d.i === focusI ? '#0f172a' : '#475569')
+                    .style('font-weight', d => d.i === focusI ? '700' : '500');
+            }
+
+            function renderMatrix(selector, words, matrix, rowSums, colorHex) {
+                const svg = d3.select(selector);
+                svg.selectAll('*').remove();
+                const n = words.length;
+                if (!n) return;
+
+                const cell = Math.max(30, Math.min(44, Math.floor(320 / n)));
+                const margin = { top: 82, right: 64, bottom: 16, left: 96 };
+                const gridSize = n * cell;
+                svg.attr('width', margin.left + gridSize + margin.right)
+                   .attr('height', margin.top + gridSize + margin.bottom);
+
+                const g = svg.append('g').attr('transform', `translate(${margin.left}, ${margin.top})`);
+
+                const flat = [];
+                let maxNonZero = 0;
+                for (let i = 0; i < n; i++) {
+                    for (let j = 0; j < n; j++) {
+                        const val = matrix[i][j];
+                        if (val > maxNonZero) maxNonZero = val;
+                        flat.push({ row: i, col: j, val });
+                    }
                 }
-            }
+                const normMax = maxNonZero || 1;
 
-            async generateEmbeddings(texts, taskType = 'document') {
-                if (!this.model) await this.initialize();
-
-                console.log(`🔄 Generating embeddings for ${texts.length} texts...`);
-                window.dispatchEvent(new CustomEvent('embedding-progress', {
-                    detail: { progress: 50, status: `Generating embeddings for ${texts.length} tokens...`, isLoading: true }
-                }));
-                // Yield to UI
-                await new Promise(r => setTimeout(r, 20));
-
-                // Run inference
-                // inputs: dict of tensors
-                const inputs = await this.tokenizer(texts, { padding: true, truncation: true });
-                const { sentence_embedding } = await this.model(inputs);
-
-                window.dispatchEvent(new CustomEvent('embedding-progress', {
-                    detail: { progress: 100, status: "Ready", isLoading: false }
-                }));
-                return sentence_embedding.tolist();
-            }
-
-            calculateCosineSimilarity(embeddingA, embeddingB) {
-                let dotProduct = 0;
-                let magnitudeA = 0;
-                let magnitudeB = 0;
-                for (let i = 0; i < embeddingA.length; i++) {
-                    dotProduct += embeddingA[i] * embeddingB[i];
-                    magnitudeA += embeddingA[i] * embeddingA[i];
-                    magnitudeB += embeddingB[i] * embeddingB[i];
-                }
-                magnitudeA = Math.sqrt(magnitudeA);
-                magnitudeB = Math.sqrt(magnitudeB);
-                if (magnitudeA === 0 || magnitudeB === 0) return 0;
-                return dotProduct / (magnitudeA * magnitudeB);
-            }
-
-            async createEmbeddingAttentionMatrix(tokens, context = 'document') {
-                // Generate embeddings for all tokens
-                const embeddings = await this.generateEmbeddings(tokens, context);
-
-                const attentionMatrix = [];
-                let minAttention = 1.0;
-                let maxAttention = -1.0;
-
-                for (let i = 0; i < tokens.length; i++) {
-                    const row = [];
-                    for (let j = 0; j < tokens.length; j++) {
-                        if (i === j) {
-                            row.push(0);
+                g.selectAll('rect.adj-mat-square')
+                    .data(flat)
+                    .enter()
+                    .append('rect')
+                    .attr('class', 'adj-mat-square')
+                    .attr('x', d => d.col * cell)
+                    .attr('y', d => d.row * cell)
+                    .attr('width', cell)
+                    .attr('height', cell)
+                    .attr('fill', d => d.val === 0 ? '#f1f5f9' : colorHex)
+                    .attr('fill-opacity', d => d.val === 0 ? 1 : (0.15 + 0.85 * (d.val / normMax)))
+                    .attr('stroke', '#cbd5e1')
+                    .attr('stroke-width', 0.6)
+                    .on('mouseenter', (_, d) => {
+                        if (!pinnedCell.value) {
+                            hoveredCell.value = { i: d.row, j: d.col };
+                            applyHighlights(d.row, d.col, false);
+                        }
+                    })
+                    .on('mouseleave', () => {
+                        if (!pinnedCell.value) {
+                            const fallback = pickDefaultCell(plainState.attention);
+                            hoveredCell.value = fallback;
+                            applyHighlights(fallback.i, fallback.j, false);
+                        }
+                    })
+                    .on('click', (_, d) => {
+                        if (pinnedCell.value && pinnedCell.value.i === d.row && pinnedCell.value.j === d.col) {
+                            pinnedCell.value = null;
+                            hoveredCell.value = { i: d.row, j: d.col };
+                            applyHighlights(d.row, d.col, false);
                         } else {
-                            const similarity = this.calculateCosineSimilarity(embeddings[i], embeddings[j]);
-                            const attention = (similarity + 1) / 2;
-                            row.push(attention);
-                            if (attention > maxAttention) maxAttention = attention;
-                            if (attention < minAttention && attention > 0) minAttention = attention;
-                        }
-                    }
-                    attentionMatrix.push(row);
-                }
-
-                return {
-                    queryTokens: tokens,
-                    embeddings: embeddings,
-                    attentionMatrix: attentionMatrix,
-                    minAttention: minAttention,
-                    maxAttention: maxAttention,
-                    computationDetails: {
-                        model: this.modelName,
-                        method: 'Transformers.js (AutoModel)'
-                    }
-                };
-            }
-        }
-
-        const embeddingGemmaManager = new EmbeddingGemmaManager();
-        window.EmbeddingGemmaManager = embeddingGemmaManager;
-
-        // --- GAT Logic ---
-        function tokenizeText(text) {
-            return text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w);
-        }
-
-        async function computeEmbeddingGATAttention(paragraphText, queryText, type = 'educational') {
-            console.log(`🔬 Computing ${type} GAT with EmbeddingGemma...`);
-
-            if (!window.EmbeddingGemmaManager) {
-                throw new Error('EmbeddingGemmaManager not available');
-            }
-
-            const tokens = tokenizeText(queryText);
-            const context = paragraphText ? 'document' : 'query';
-
-            // Use EmbeddingGemma to create attention matrix
-            const embeddingResult = await window.EmbeddingGemmaManager.createEmbeddingAttentionMatrix(tokens, context);
-
-            if (type === 'educational') {
-                // Educational: exclude self-attention (set diagonal to 0)
-                for (let i = 0; i < tokens.length; i++) {
-                    embeddingResult.attentionMatrix[i][i] = 0;
-                }
-
-                // Recalculate min/max after removing self-attention
-                let minAttention = 1.0;
-                let maxAttention = 0.0;
-
-                for (let i = 0; i < tokens.length; i++) {
-                    for (let j = 0; j < tokens.length; j++) {
-                        const attention = embeddingResult.attentionMatrix[i][j];
-                        if (attention > 0) {
-                            if (attention < minAttention) minAttention = attention;
-                            if (attention > maxAttention) maxAttention = attention;
-                        }
-                    }
-                }
-                embeddingResult.minAttention = minAttention;
-                embeddingResult.maxAttention = maxAttention;
-            }
-
-            return embeddingResult;
-        }
-
-        function computeGATAttention(paragraphText, queryText) {
-            console.log('🧮 Computing GAT attention with MathJax...');
-            const paragraphTokens = paragraphText ? paragraphText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w) : [];
-            const queryTokens = queryText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w);
-            const mathResults = computeAttentionMathematically(paragraphTokens, queryTokens);
-            return {
-                queryTokens,
-                attentionMatrix: mathResults.attentionMatrix,
-                minAttention: mathResults.minAttention,
-                maxAttention: mathResults.maxAttention,
-                computationDetails: mathResults.details,
-                paragraphTokens: paragraphTokens.slice(0, 20)
-            };
-        }
-
-        function computeAttentionMathematically(paragraphTokens, queryTokens) {
-            const n = queryTokens.length;
-            const embeddings = createEmbeddingMatrix(paragraphTokens, queryTokens);
-            const attentionScores = createAttentionScoreMatrix(embeddings, queryTokens);
-            const attentionMatrix = applySoftmaxNormalization(attentionScores);
-            let minAttention = 1.0;
-            let maxAttention = 0.0;
-            attentionMatrix.forEach(row => {
-                row.forEach(val => {
-                    if (val > 0) {
-                        minAttention = Math.min(minAttention, val);
-                        maxAttention = Math.max(maxAttention, val);
-                    }
-                });
-            });
-            return {
-                embeddings,
-                attentionMatrix,
-                minAttention,
-                maxAttention,
-                details: {
-                    embeddings: embeddings.length,
-                    matrixSize: `${n}x${n}`,
-                    nonZeroElements: attentionMatrix.flat().filter(v => v > 0).length
-                }
-            };
-        }
-
-        function createEmbeddingMatrix(paragraphTokens, queryTokens) {
-            const embeddings = [];
-            queryTokens.forEach((token, i) => {
-                const embedding = [];
-                let seed = 0;
-                for (let c = 0; c < token.length; c++) {
-                    seed += token.charCodeAt(c);
-                }
-                for (let d = 0; d < 64; d++) {
-                    const value = Math.sin(seed * (d + 1) * 0.01) * 0.5 +
-                                Math.cos(seed * (d + 1) * 0.02) * 0.3 +
-                                (paragraphTokens.includes(token) ? 0.2 : 0);
-                    embedding.push(value);
-                }
-                embeddings.push(embedding);
-            });
-            return embeddings;
-        }
-
-        function createAttentionScoreMatrix(embeddings, queryTokens) {
-            const n = queryTokens.length;
-            const scores = [];
-            for (let i = 0; i < n; i++) {
-                const row = [];
-                for (let j = 0; j < n; j++) {
-                    if (i === j) {
-                        row.push(0);
-                    } else {
-                        let dotProduct = 0;
-                        for (let d = 0; d < embeddings[i].length; d++) {
-                            dotProduct += embeddings[i][d] * embeddings[j][d];
-                        }
-                        const score = Math.max(0.1 * dotProduct, dotProduct);
-                        const positionBias = Math.abs(i - j) === 1 ? 0.3 : 0;
-                        row.push(Math.max(0, score + positionBias));
-                    }
-                }
-                scores.push(row);
-            }
-            return scores;
-        }
-
-        function applySoftmaxNormalization(scores) {
-            const normalized = [];
-            scores.forEach(row => {
-                const exp_scores = row.map(score => Math.exp(score));
-                const sum = exp_scores.reduce((a, b) => a + b, 0);
-                const normalizedRow = sum > 0 ?
-                    exp_scores.map(exp_score => parseFloat((exp_score / sum).toFixed(1))) :
-                    row.map(val => parseFloat(val.toFixed(1)));
-                normalized.push(normalizedRow);
-            });
-            return normalized;
-        }
-
-        function computeOriginalGATAttention(paragraphText, queryText) {
-            console.log('🔬 Computing Original GAT attention (Veličković et al.)...');
-            const paragraphTokens = paragraphText ? paragraphText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w) : [];
-            const queryTokens = queryText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w);
-            const mathResults = computeOriginalGATMathematically(paragraphTokens, queryTokens);
-            return {
-                queryTokens,
-                attentionMatrix: mathResults.attentionMatrix,
-                minAttention: mathResults.minAttention,
-                maxAttention: mathResults.maxAttention,
-                computationDetails: mathResults.details,
-                paragraphTokens: paragraphTokens.slice(0, 20)
-            };
-        }
-
-        // Global storage for GAT parameters to ensure consistency in visualization
-        let currentOriginalGATParams = {
-            W: null,
-            a: null
-        };
-
-        function computeOriginalGATMathematically(paragraphTokens, queryTokens) {
-            const n = queryTokens.length;
-
-            // Re-use or generate parameters (simulating learnable weights)
-            // Ideally we'd keep them per session, but for now generating deterministic-ish ones is fine.
-            // However, to show the math, we need to access the EXACT W and a used.
-            // Let's generate them fresh but store them.
-            const W = createLearnableWeightMatrix(64, 32);
-            const a = createAttentionVector(64);
-
-            // Store for visualization access
-            currentOriginalGATParams.W = W;
-            currentOriginalGATParams.a = a;
-
-            const nodeFeatures = createOriginalNodeFeatures(paragraphTokens, queryTokens);
-            const transformedFeatures = nodeFeatures.map(h => matrixVectorMultiply(W, h));
-            const attentionScores = createOriginalAttentionScores(transformedFeatures, a);
-            const attentionMatrix = applySoftmaxNormalization(attentionScores);
-            let minAttention = 1.0;
-            let maxAttention = 0.0;
-            attentionMatrix.forEach(row => {
-                row.forEach(val => {
-                    minAttention = Math.min(minAttention, val);
-                    maxAttention = Math.max(maxAttention, val);
-                });
-            });
-            return {
-                attentionMatrix,
-                minAttention,
-                maxAttention,
-                details: {
-                    features: transformedFeatures.length,
-                    weightMatrix: `64x32`,
-                    attentionVector: `64D`,
-                    selfAttention: 'included'
-                }
-            };
-        }
-
-        function createLearnableWeightMatrix(inputDim, outputDim) {
-            const W = [];
-            for (let i = 0; i < outputDim; i++) {
-                const row = [];
-                for (let j = 0; j < inputDim; j++) {
-                    const limit = Math.sqrt(6.0 / (inputDim + outputDim));
-                    row.push((Math.random() * 2 - 1) * limit);
-                }
-                W.push(row);
-            }
-            return W;
-        }
-
-        function createAttentionVector(dim) {
-            const a = [];
-            for (let i = 0; i < dim; i++) {
-                const weight = Math.sin(i * 0.1) * 0.3 + Math.cos(i * 0.05) * 0.2;
-                a.push(weight);
-            }
-            return a;
-        }
-
-        function createOriginalNodeFeatures(paragraphTokens, queryTokens) {
-            const features = [];
-            queryTokens.forEach((token, i) => {
-                const feature = [];
-                let seed = 0;
-                for (let c = 0; c < token.length; c++) {
-                    seed += token.charCodeAt(c);
-                }
-                for (let d = 0; d < 64; d++) {
-                    let value = 0;
-                    value += Math.sin(seed * (d + 1) * 0.01) * 0.3;
-                    value += Math.cos(seed * (d + 1) * 0.02) * 0.2;
-                    if (paragraphTokens.includes(token)) {
-                        value += Math.sin((seed + paragraphTokens.indexOf(token)) * 0.03) * 0.2;
-                    }
-                    value += Math.sin(i * 0.1 + d * 0.05) * 0.1;
-                    value += (token.length / 10.0) * Math.cos(d * 0.04);
-                    feature.push(value);
-                }
-                features.push(feature);
-            });
-            return features;
-        }
-
-        function matrixVectorMultiply(matrix, vector) {
-            const result = [];
-            for (let i = 0; i < matrix.length; i++) {
-                let sum = 0;
-                for (let j = 0; j < vector.length; j++) {
-                    sum += matrix[i][j] * vector[j];
-                }
-                result.push(sum);
-            }
-            return result;
-        }
-
-        function createOriginalAttentionScores(transformedFeatures, attentionVector) {
-            const n = transformedFeatures.length;
-            const scores = [];
-            for (let i = 0; i < n; i++) {
-                const row = [];
-                for (let j = 0; j < n; j++) {
-                    const concatenated = [...transformedFeatures[i], ...transformedFeatures[j]];
-                    let e_ij = 0;
-                    for (let k = 0; k < Math.min(attentionVector.length, concatenated.length); k++) {
-                        e_ij += attentionVector[k] * concatenated[k];
-                    }
-                    const leakyRelu = e_ij > 0 ? e_ij : 0.01 * e_ij;
-                    row.push(leakyRelu);
-                }
-                scores.push(row);
-            }
-            return scores;
-        }
-
-        function applyDualAttentionColoring(educationalGAT, originalGAT, queryText) {
-            console.log('🎨 Applying dual GAT visualization...');
-            applyGraphNodeColoring(educationalGAT);
-            createOriginalStyleDualMatrices(educationalGAT, originalGAT, queryText);
-            setupGraphToMatrixHover(educationalGAT.queryTokens);
-        }
-
-        function applyGraphNodeColoring(attentionData) {
-            const { queryTokens, attentionMatrix } = attentionData;
-            const nodeMaxAttention = [];
-            queryTokens.forEach((_, i) => {
-                let maxAttn = 0;
-                attentionMatrix.forEach(row => {
-                    if (row[i] > maxAttn) maxAttn = row[i];
-                });
-                nodeMaxAttention.push(maxAttn);
-            });
-            d3.selectAll('#text-as-graph text').each(function(d, i) {
-                if (i < nodeMaxAttention.length) {
-                    const attention = nodeMaxAttention[i];
-                    d3.select(this)
-                        .style('fill', '#2563eb')
-                        .style('opacity', attention);
-                }
-            });
-            d3.selectAll('#text-as-graph rect').each(function(d, i) {
-                if (i < nodeMaxAttention.length) {
-                    const attention = nodeMaxAttention[i];
-                    d3.select(this)
-                        .style('fill', '#fbbf24')
-                        .style('stroke', '#2563eb')
-                        .style('opacity', attention);
-                }
-            });
-        }
-
-        function createOriginalStyleDualMatrices(educationalGAT, originalGAT, queryText) {
-            const container = d3.select('#text-as-graph');
-            if (container.empty()) return;
-            container.selectAll('.dual-matrix').remove();
-
-            const queryTokens = educationalGAT.queryTokens;
-            const w = 26;
-            const matrixGap = 150;
-            const screenWidth = window.innerWidth;
-            const totalWidth = (w * queryTokens.length * 2) + matrixGap + 120;
-            const startX = Math.max(50, (screenWidth - totalWidth) / 2);
-
-            const educationalMatrix = container.append('svg')
-                .attr('class', 'dual-matrix educational-matrix')
-                .style('position', 'absolute')
-                .style('top', '200px')
-                .style('left', startX + 'px')
-                .style('overflow', 'visible')
-                .attr('font-size', 12)
-                .attr('fill', 'gray');
-
-            createOriginalStyleMatrix(educationalMatrix, educationalGAT.attentionMatrix, queryTokens, educationalGAT.minAttention, educationalGAT.maxAttention, '🎓 Educational GAT', '#3b82f6', w);
-
-            const rightX = startX + (w * queryTokens.length) + matrixGap + 80;
-            const originalMatrix = container.append('svg')
-                .attr('class', 'dual-matrix original-matrix')
-                .style('position', 'absolute')
-                .style('top', '200px')
-                .style('left', rightX + 'px')
-                .style('overflow', 'visible')
-                .attr('font-size', 12)
-                .attr('fill', 'gray');
-
-            createOriginalStyleMatrix(originalMatrix, originalGAT.attentionMatrix, queryTokens, originalGAT.minAttention, originalGAT.maxAttention, '🔬 Original GAT', '#dc2626', w);
-        }
-
-        function createOriginalStyleMatrix(svg, attentionMatrix, queryTokens, minAttention, maxAttention, title, baseColor, w) {
-            svg.append('text')
-                .attr('class', 'matrix-title')
-                .attr('x', (queryTokens.length * w) / 2)
-                .attr('y', (queryTokens.length * w) + 40)
-                .attr('text-anchor', 'middle')
-                .style('font-size', '14px')
-                .style('font-weight', 'bold')
-                .style('fill', '#374151')
-                .text(title);
-
-            const words = queryTokens.map((word, i) => ({ word, i }));
-            const pairs = [];
-            for(let i=0; i<words.length; i++) {
-                for(let j=0; j<words.length; j++) {
-                    pairs.push([words[j], words[i]]);
-                }
-            }
-
-            svg.selectAll('rect')
-                .data(pairs)
-                .enter()
-                .append('rect')
-                .attr('class', 'adj-mat-square')
-                .attr('width', w)
-                .attr('height', w)
-                .attr('transform', d => `translate(${d[0].i * w}, ${d[1].i * w})`)
-                .attr('fill', d => {
-                    const i = d[1].i;
-                    const j = d[0].i;
-                    const attention = attentionMatrix[i][j];
-                    if (attention === 0) return '#f3f4f6';
-                    return baseColor;
-                })
-                .attr('opacity', d => {
-                    const i = d[1].i;
-                    const j = d[0].i;
-                    const attention = attentionMatrix[i][j];
-                    if (attention === 0) return 0.1;
-                    const range = maxAttention - minAttention;
-                    if (range > 0) {
-                        const normalizedValue = (attention - minAttention) / range;
-                        return 0.2 + 0.8 * normalizedValue;
-                    }
-                    return 0.6;
-                })
-                .attr('stroke', '#aaa')
-                .attr('stroke-width', 0.2)
-                .on('mouseover', function(d) {
-                    const i = d[1].i;
-                    const j = d[0].i;
-                    d3.select(this).style('stroke', '#000').style('stroke-width', 3);
-                    svg.selectAll('text.top').style('fill', (labelD) => labelD.i === j ? '#000' : 'gray').style('font-weight', (labelD) => labelD.i === j ? 'bold' : 'normal');
-                    svg.selectAll('text.side').style('fill', (labelD) => labelD.i === i ? '#000' : 'gray').style('font-weight', (labelD) => labelD.i === i ? 'bold' : 'normal');
-                    d3.selectAll('.dual-matrix rect').each(function(otherD) {
-                        const thisMatrix = d3.select(this.parentNode);
-                        if (thisMatrix.node() === svg.node()) return;
-                        const otherRow = otherD[1].i;
-                        const otherCol = otherD[0].i;
-                        if (otherRow === i && otherCol === j) {
-                            d3.select(this).style('stroke', '#000').style('stroke-width', 3);
-                        }
-                    });
-                    d3.selectAll('.dual-matrix text.top, .dual-matrix text.side').each(function(labelD) {
-                        const thisMatrix = d3.select(this.parentNode);
-                        if (thisMatrix.node() === svg.node()) return;
-                        if (labelD.i === i || labelD.i === j) {
-                            d3.select(this).style('fill', '#000').style('font-weight', 'bold');
-                        }
-                    });
-                    d3.selectAll('#text-as-graph text').each(function(_, nodeIndex) {
-                        if (nodeIndex === i || nodeIndex === j) {
-                            d3.select(this).style('stroke', '#000').style('stroke-width', 3).style('fill', '#1e40af');
+                            pinnedCell.value = { i: d.row, j: d.col };
+                            applyHighlights(d.row, d.col, true);
                         }
                     });
 
-                    // Dispatch interaction event for calculation view
-                    const event = new CustomEvent('gat-interaction', {
-                        detail: {
-                            sourceIndex: i,
-                            targetIndex: j,
-                            sourceWord: queryTokens[i],
-                            targetWord: queryTokens[j],
-                            active: true
-                        }
-                    });
-                    window.dispatchEvent(event);
-
-                    const attention = attentionMatrix[i][j];
-                    console.log(`🔗 ${title} [${i},${j}]: ${queryTokens[i]} → ${queryTokens[j]} = ${attention.toFixed(3)}`);
-                })
-                .on('mouseout', function(d) {
-                    d3.select(this).style('stroke', '#aaa').style('stroke-width', 0.2);
-                    svg.selectAll('text.top, text.side').style('fill', 'gray').style('font-weight', 'normal');
-                    d3.selectAll('.dual-matrix rect').style('stroke', '#aaa').style('stroke-width', 0.2);
-                    d3.selectAll('.dual-matrix text.top, .dual-matrix text.side').style('fill', 'gray').style('font-weight', 'normal');
-                    d3.selectAll('#text-as-graph text').style('stroke', 'none').style('fill', '#000');
-                });
-
-            svg.selectAll('text.attention-value')
-                .data(pairs)
-                .enter()
-                .append('text')
-                .attr('class', 'attention-value')
-                .attr('transform', d => `translate(${d[0].i * w + w/2}, ${d[1].i * w + w/2 + 4})`)
-                .attr('text-anchor', 'middle')
-                .style('font-size', '10px')
-                .style('font-weight', 'bold')
-                .style('pointer-events', 'none')
-                .attr('fill', d => {
-                    const i = d[1].i;
-                    const j = d[0].i;
-                    const attention = attentionMatrix[i][j];
-                    const range = maxAttention - minAttention;
-                    const normalizedValue = range > 0 ? (attention - minAttention) / range : 0.5;
-                    const opacity = 0.2 + 0.8 * normalizedValue;
-                    return opacity > 0.5 ? 'white' : '#1f2937';
-                })
-                .text(d => {
-                    const i = d[1].i;
-                    const j = d[0].i;
-                    return attentionMatrix[i][j].toFixed(1);
-                });
-
-            svg.selectAll('text.top')
-                .data(words)
-                .enter()
-                .append('text')
-                .attr('class', 'top')
-                .attr('transform', d => `translate(${d.i * w + w / 2}, -5) rotate(-90)`)
-                .attr('text-anchor', 'start')
-                .style('font-size', '12px')
-                .style('fill', 'gray')
-                .text(d => d.word);
-
-            svg.selectAll('text.side')
-                .data(words)
-                .enter()
-                .append('text')
-                .attr('class', 'side')
-                .attr('transform', d => `translate(-5, ${(d.i + .75) * w})`)
-                .attr('text-anchor', 'end')
-                .style('font-size', '12px')
-                .style('fill', 'gray')
-                .text(d => d.word);
-        }
-
-        function setupGraphToMatrixHover(queryTokens) {
-            d3.selectAll('#text-as-graph text').on('mouseover', function(d, i) {
-                if (i < queryTokens.length) {
-                    d3.selectAll('.dual-matrix rect').each(function(rectD) {
-                        const row = rectD[1].i;
-                        const col = rectD[0].i;
-                        if (row === i || col === i) {
-                            d3.select(this).style('stroke', '#2563eb').style('stroke-width', 3);
-                        }
-                    });
-                    d3.selectAll('.dual-matrix text.top, .dual-matrix text.side').each(function(labelD) {
-                        if (labelD.i === i) {
-                            d3.select(this).style('fill', '#2563eb').style('font-weight', 'bold');
-                        }
-                    });
-                    d3.select(this).style('stroke', '#2563eb').style('stroke-width', 3).style('fill', '#1e40af').style('font-weight', 'bold');
-
-                    // Dispatch generic hover event (self-focus)
-                    const event = new CustomEvent('gat-interaction', {
-                        detail: {
-                            sourceIndex: i,
-                            targetIndex: i, // Self focus by default when hovering node
-                            sourceWord: queryTokens[i],
-                            targetWord: queryTokens[i],
-                            active: true
-                        }
-                    });
-                    window.dispatchEvent(event);
-                }
-            }).on('mouseout', function() {
-                d3.selectAll('.dual-matrix rect').style('stroke', '#aaa').style('stroke-width', 0.2);
-                d3.selectAll('.dual-matrix text.top, .dual-matrix text.side').style('fill', 'gray').style('font-weight', 'normal');
-                d3.selectAll('#text-as-graph text').style('stroke', 'none').style('fill', '#000').style('font-weight', 'normal');
-            }).on('click', function(d, i) {
-                if (i < queryTokens.length) {
-                    const nodeText = queryTokens[i];
-                    navigator.clipboard.writeText(nodeText).then(() => {
-                        console.log(`📋 Copied to clipboard: "${nodeText}"`);
-                        d3.select(this).style('fill', '#10b981').transition().duration(300).style('fill', '#000');
-                    });
-                }
-            });
-        }
-
-        // --- TextAsGraph Class ---
-        const padding = 30;
-        const wordSpacing = 30;
-        const fontSize = 30;
-
-        class TextAsGraph {
-            constructor() {
-                this.sel = d3.select('#text-as-graph');
-                this.sel.selectAll('*').remove();
-                this.wordsHolder = this.sel.append('div');
-                this.measurementSvg = d3.select('body').append('svg')
-                    .style('position', 'absolute')
-                    .style('left', '-9999px')
-                    .style('top', '0px')
-                    .attr('width', 1000)
-                    .attr('height', 100);
-                this.charWidth = this.calculateDynamicCharWidth();
-                this.coords = [null, null];
-
-                const c = conventions({
-                    sel: this.wordsHolder,
-                    margin: { left: 0 },
-                    layers: 'sd',
-                    height: 400,
-                    width: window.innerWidth - 40
-                });
-                const [svgSel, divSel] = c.layers;
-                divSel.st({ left: 0, top: 20 + padding, height: 30 });
-
-                const that = this;
-                const inputSel = divSel.append('input')
-                    .st({
-                        'word-spacing': wordSpacing + 'px',
-                        fontSize,
-                        background: 'transparent',
-                        border: 'none',
-                        outline: 'none',
-                        position: 'absolute',
-                        zIndex: 10,
-                        color: 'transparent'
+                g.selectAll('text.cell-val')
+                    .data(flat)
+                    .enter()
+                    .append('text')
+                    .attr('class', 'cell-val')
+                    .attr('x', d => d.col * cell + cell / 2)
+                    .attr('y', d => d.row * cell + cell / 2 + 4)
+                    .attr('text-anchor', 'middle')
+                    .style('font-size', cell >= 36 ? '10.5px' : '9.5px')
+                    .style('font-family', 'ui-monospace, SFMono-Regular, Menlo, monospace')
+                    .style('font-weight', '600')
+                    .style('pointer-events', 'none')
+                    .attr('fill', d => {
+                        if (d.val === 0) return '#94a3b8';
+                        return (0.15 + 0.85 * (d.val / normMax)) > 0.55 ? '#ffffff' : '#0f172a';
                     })
-                    .at({ maxlength: 100 })
-                    .on('input', () => this.render())
-                    .on('mousemove', function () {
-                        const x = d3.mouse(this)[0];
-                        let offset = 0;
-                        let wordIdx = 0;
-                        for (let l of [...this.value]) {
-                            const isSpace = l == ' ';
-                            offset += isSpace ? that.charWidth + wordSpacing : that.charWidth;
-                            wordIdx += isSpace ? 1 : 0;
-                            if (offset > x) {
-                                that.hover(wordIdx, isSpace ? wordIdx - 1 : wordIdx);
-                                return;
+                    .text(d => d.val.toFixed(2));
+
+                const wordItems = words.map((w, i) => ({ w, i }));
+                g.selectAll('text.col-label')
+                    .data(wordItems)
+                    .enter()
+                    .append('text')
+                    .attr('class', 'col-label')
+                    .attr('transform', d => `translate(${d.i * cell + cell / 2 + 4}, -8) rotate(-45)`)
+                    .attr('text-anchor', 'start')
+                    .style('font-size', '11.5px')
+                    .style('fill', '#475569')
+                    .text(d => d.w);
+
+                g.selectAll('text.row-label')
+                    .data(wordItems)
+                    .enter()
+                    .append('text')
+                    .attr('class', 'row-label')
+                    .attr('x', -8)
+                    .attr('y', d => d.i * cell + cell / 2 + 4)
+                    .attr('text-anchor', 'end')
+                    .style('font-size', '11.5px')
+                    .style('fill', '#475569')
+                    .text(d => d.w);
+
+                g.selectAll('text.row-sum')
+                    .data(rowSums.map((s, i) => ({ s, i })))
+                    .enter()
+                    .append('text')
+                    .attr('class', 'row-sum')
+                    .attr('x', gridSize + 8)
+                    .attr('y', d => d.i * cell + cell / 2 + 4)
+                    .style('font-size', '10px')
+                    .style('font-family', 'ui-monospace, Menlo, monospace')
+                    .style('fill', '#059669')
+                    .text(d => `Σ=${d.s.toFixed(2)}`);
+            }
+
+            function renderTokenGraph(words, attention) {
+                const svg = d3.select('#token-graph-svg');
+                svg.selectAll('*').remove();
+                const n = words.length;
+                if (!n) return;
+
+                const charW = 9.5;
+                const padX = 24;
+                const gapX = 26;
+                const boxH = 34;
+                const nodeMeta = words.map((w, i) => {
+                    const boxW = Math.max(58, Math.round(w.length * charW + padX));
+                    let maxIn = 0;
+                    for (let r = 0; r < n; r++) {
+                        if (r !== i && attention.gatAlpha[r][i] > maxIn) maxIn = attention.gatAlpha[r][i];
+                    }
+                    if (maxIn === 0) maxIn = attention.gatAlpha[i][i];
+                    return { word: w, i, boxW, maxIn };
+                });
+
+                const totalW = nodeMeta.reduce((s, d) => s + d.boxW, 0) + Math.max(0, n - 1) * gapX + 48;
+                const svgW = Math.max(720, totalW);
+                const svgH = 164;
+                svg.attr('width', svgW).attr('height', svgH);
+
+                let curX = Math.max(24, (svgW - (totalW - 48)) / 2);
+                const baseY = 74;
+                nodeMeta.forEach(d => {
+                    d.x = curX;
+                    d.cx = curX + d.boxW / 2;
+                    curX += d.boxW + gapX;
+                });
+
+                const defs = svg.append('defs');
+                defs.append('marker')
+                    .attr('id', 'tg-arrow')
+                    .attr('viewBox', '0 -4 8 8')
+                    .attr('refX', 7)
+                    .attr('refY', 0)
+                    .attr('markerWidth', 5)
+                    .attr('markerHeight', 5)
+                    .attr('orient', 'auto')
+                    .append('path')
+                    .attr('d', 'M0,-4L8,0L0,4Z')
+                    .attr('fill', '#2563eb');
+
+                const edges = [];
+                for (let i = 0; i < n; i++) {
+                    for (let j = 0; j < n; j++) {
+                        if (i === j) continue;
+                        const weight = attention.gatAlpha[i][j];
+                        if (weight > 0.04) edges.push({ source: i, target: j, weight });
+                    }
+                }
+
+                svg.append('g')
+                    .attr('class', 'arcs-layer')
+                    .selectAll('path.attn-arc')
+                    .data(edges)
+                    .enter()
+                    .append('path')
+                    .attr('class', 'attn-arc')
+                    .attr('fill', 'none')
+                    .attr('stroke', '#2563eb')
+                    .attr('marker-end', 'url(#tg-arrow)')
+                    .attr('d', d => {
+                        const s = nodeMeta[d.source];
+                        const t = nodeMeta[d.target];
+                        const dist = Math.abs(s.cx - t.cx);
+                        const arcH = Math.min(62, 18 + dist * 0.18);
+                        const sweep = d.source < d.target ? (baseY - arcH) : (baseY + boxH + arcH);
+                        const startY = d.source < d.target ? baseY : (baseY + boxH);
+                        const endY = d.source < d.target ? baseY - 2 : (baseY + boxH + 2);
+                        return `M ${s.cx} ${startY} Q ${(s.cx + t.cx) / 2} ${sweep} ${t.cx} ${endY}`;
+                    });
+
+                const nodes = svg.append('g')
+                    .attr('class', 'nodes-layer')
+                    .selectAll('g.token-node-group')
+                    .data(nodeMeta)
+                    .enter()
+                    .append('g')
+                    .attr('class', 'token-node-group')
+                    .on('mouseenter', (_, d) => {
+                        if (!pinnedCell.value) {
+                            let bestJ = 0, bestW = -1;
+                            for (let j = 0; j < n; j++) {
+                                if (attention.gatAlpha[d.i][j] > bestW) { bestW = attention.gatAlpha[d.i][j]; bestJ = j; }
                             }
+                            hoveredCell.value = { i: d.i, j: bestJ };
+                            applyHighlights(d.i, bestJ, false);
                         }
                     })
-                    .on('mouseout', d => this.hover());
+                    .on('mouseleave', () => {
+                        if (!pinnedCell.value) {
+                            const fb = pickDefaultCell(plainState.attention);
+                            hoveredCell.value = fb;
+                            applyHighlights(fb.i, fb.j, false);
+                        }
+                    });
 
-                this.inputNode = inputSel.node();
-                this.inputNode.value = 'Graphs are all around us';
+                nodes.append('rect')
+                    .attr('class', 'token-pill')
+                    .attr('x', d => d.x)
+                    .attr('y', baseY)
+                    .attr('width', d => d.boxW)
+                    .attr('height', boxH)
+                    .attr('rx', 8)
+                    .attr('fill', '#fef08a')
+                    .attr('fill-opacity', d => Math.min(1, 0.25 + d.maxIn * 1.4))
+                    .attr('stroke', '#2563eb')
+                    .attr('stroke-width', 1.5);
 
-                this.rectSel = svgSel.append('g').attr('class', 'rects');
-                this.wordSel = svgSel.append('g').attr('class', 'words');
-                this.arrowSel = svgSel.append('g').attr('class', 'arrows');
-                this.adjMatSel = this.sel.append('svg').st({ position: 'absolute', top: 200, left: 50, overflow: 'visible' });
+                nodes.append('text')
+                    .attr('x', d => d.cx)
+                    .attr('y', baseY + boxH / 2 + 4.5)
+                    .attr('text-anchor', 'middle')
+                    .style('font-family', 'ui-monospace, SFMono-Regular, Menlo, monospace')
+                    .style('font-size', '13px')
+                    .style('font-weight', '600')
+                    .attr('fill', '#0f172a')
+                    .text(d => d.word);
 
-                this.render();
+                // Feature barcode strip (24 bins) directly beneath each token node
+                const bins = 24;
+                nodeMeta.forEach(d => {
+                    const vec = attention.embeddings[d.i];
+                    if (!vec) return;
+                    const sliceLen = Math.min(vec.length, 64);
+                    let minV = Infinity, maxV = -Infinity;
+                    for (let k = 0; k < sliceLen; k++) {
+                        if (vec[k] < minV) minV = vec[k];
+                        if (vec[k] > maxV) maxV = vec[k];
+                    }
+                    const range = maxV - minV || 1;
+                    const barW = d.boxW / bins;
+                    const gBar = svg.append('g');
+                    for (let b = 0; b < bins; b++) {
+                        const val = vec[Math.floor((b / bins) * sliceLen)];
+                        const norm = (val - minV) / range;
+                        gBar.append('rect')
+                            .attr('x', d.x + b * barW)
+                            .attr('y', baseY + boxH + 6)
+                            .attr('width', Math.max(1, barW - 0.3))
+                            .attr('height', 7)
+                            .attr('fill', `rgb(${Math.round(230 * (1 - norm))}, ${Math.round(80 + 135 * norm)}, 245)`);
+                    }
+                });
             }
 
-            render(embeddings = null) {
-                this.rectSel.selectAll('*').remove();
-                this.wordSel.selectAll('*').remove();
-                this.arrowSel.selectAll('*').remove();
-                this.sel.selectAll('canvas.embedding-viz').remove();
-
-                const words = this.inputNode.value.split(' ').map((word, i) => ({ word, i }));
-                const wordDimensions = this.precomputeTextDimensions(words.map(w => w.word));
-                const wordsWithDimensions = words.map((word, i) => ({
-                    ...word,
-                    width: wordDimensions[i].width,
-                    height: wordDimensions[i].height
-                }));
-
-                const pad = 5;
-                const spaceWidth = this.charWidth + wordSpacing;
-                const height = 100;
-                const maxWidth = window.innerWidth - 100;
-                const lineHeight = 120;
-
-                const wordPositions = [];
-                let currentX = 0;
-                let currentY = 0;
-                let currentLine = 0;
-
-                wordsWithDimensions.forEach((d, i) => {
-                    const width = d.width;
-                    const wordWidth = width + pad * 2;
-                    if (currentX + wordWidth > maxWidth && currentX > 0) {
-                        currentLine++;
-                        currentX = 0;
-                        currentY = currentLine * lineHeight;
+            function pickDefaultCell(att) {
+                if (!att) return { i: 0, j: 0 };
+                const n = att.gatAlpha.length;
+                let bestI = 0, bestJ = n > 1 ? 1 : 0, bestVal = -1;
+                for (let i = 0; i < n; i++) {
+                    for (let j = 0; j < n; j++) {
+                        if (n > 1 && i === j) continue;
+                        if (att.gatAlpha[i][j] > bestVal) {
+                            bestVal = att.gatAlpha[i][j];
+                            bestI = i;
+                            bestJ = j;
+                        }
                     }
-                    wordPositions.push({
-                        ...d,
-                        x: currentX,
-                        y: currentY,
-                        width: width,
-                        line: currentLine
-                    });
-                    currentX += wordWidth + spaceWidth;
-                });
-
-                wordPositions.forEach((d, i) => {
-                    this.rectSel.append('rect')
-                        .attr('x', d.x - pad + padding)
-                        .attr('y', d.y + height / 4)
-                        .attr('width', d.width + pad * 2)
-                        .attr('height', height / 2)
-                        .attr('rx', height / 6)
-                        .attr('ry', height / 6)
-                        .attr('fill', `hsl(51, 100%, ${Math.random()*50 + 50}%)`)
-                        .attr('stroke', '#000')
-                        .attr('stroke-width', 1)
-                        .attr('data-index', i)
-                        .on('mouseover', () => this.hover(i, i))
-                        .on('mouseout', () => this.hover());
-
-                    this.wordSel.append('text')
-                        .attr('x', d.x + d.width / 2 + padding)
-                        .attr('y', d.y + height / 2)
-                        .attr('dy', '.33em')
-                        .attr('text-anchor', 'middle')
-                        .attr('fill', '#000')
-                        .attr('font-family', 'monospace')
-                        .attr('font-size', fontSize)
-                        .attr('pointer-events', 'none')
-                        .text(d.word);
-
-                    if (embeddings && embeddings[i]) {
-                        // Render embedding visualization below the node
-                        const vizWidth = d.width + pad * 2;
-                        const vizHeight = 10;
-                    }
-                });
-
-                // Post-process for embeddings if available
-                if (embeddings) {
-                    this.renderNodeEmbeddings(embeddings, wordPositions);
                 }
-
-                const blue = d3.color('steelblue').darker(-.5);
-                wordPositions.forEach((d, i) => {
-                    if (i < wordPositions.length - 1) {
-                        const nextWord = wordPositions[i + 1];
-                        const fromX = d.x + d.width + pad * 2 + padding;
-                        const fromY = d.y + height / 2;
-                        const toX = nextWord.x - pad + padding;
-                        const toY = nextWord.y + height / 2;
-                        this.arrowSel.append('text')
-                            .attr('x', (fromX + toX) / 2)
-                            .attr('y', (fromY + toY) / 2)
-                            .attr('dy', '.33em')
-                            .attr('text-anchor', 'middle')
-                            .attr('fill', blue)
-                            .attr('font-size', 30)
-                            .attr('data-from', i)
-                            .attr('data-to', i + 1)
-                            .text('→');
-                    }
-                });
-
-                const screenWidth = window.innerWidth;
-                const maxLineWidth = Math.max(...Array.from(new Set(wordPositions.map(w => w.line)))
-                    .map(lineNum => {
-                        const lineWords = wordPositions.filter(w => w.line === lineNum);
-                        const lastWord = lineWords[lineWords.length - 1];
-                        return lastWord.x + lastWord.width + pad * 2;
-                    }));
-                const centerOffset = (screenWidth - maxLineWidth) / 2;
-                this.rectSel.attr('transform', `translate(${centerOffset}, 0)`);
-                this.wordSel.attr('transform', `translate(${centerOffset}, 0)`);
-                this.arrowSel.attr('transform', `translate(${centerOffset}, 0)`);
+                return { i: bestI, j: bestJ };
             }
 
-            hover(i, j) {
-                if (this.coords[0] == i && this.coords[1] == j) return;
-                this.coords = [i, j];
-                const blue = d3.color('steelblue').darker(-.5);
-                const blueDark = d3.color('steelblue').darker(2);
+            function renderAll() {
+                const words = plainState.queryWords;
+                if (!words.length) return;
+                const att = computeDualAttention(plainState.embeddings, {
+                    topology: topology.value,
+                    temperature: temperature.value,
+                    eduSelfLoops: eduSelfLoops.value,
+                    numHeads: numHeads.value,
+                    seed: gatSeed.value
+                });
+                plainState.attention = att;
+                activeDim.value = att.dim;
 
-                this.rectSel.selectAll('rect')
-                    .attr('stroke', function() {
-                        const idx = +this.getAttribute('data-index');
-                        return (idx === i || idx === j) ? '#000' : '#000';
-                    })
-                    .attr('stroke-width', function() {
-                        const idx = +this.getAttribute('data-index');
-                        return (idx === i || idx === j) ? 3 : 1;
-                    });
+                renderTokenGraph(words, att);
+                renderMatrix('#edu-matrix-svg', words, att.dotAlpha, att.eduRowSums, '#2563eb');
+                renderMatrix('#gat-matrix-svg', words, att.gatAlpha, att.gatRowSums, '#dc2626');
 
-                // Dispatch interaction event
-                if (i !== undefined && i === j) {
-                    const words = this.inputNode.value.split(' ');
-                    if (words[i]) {
-                         const event = new CustomEvent('gat-interaction', {
-                             detail: {
-                                 sourceIndex: i,
-                                 targetIndex: i,
-                                 sourceWord: words[i],
-                                 targetWord: words[i],
-                                 active: true
-                             }
-                         });
-                         window.dispatchEvent(event);
-                    }
-                } else if (i === undefined) {
-                     const event = new CustomEvent('gat-interaction', {
-                         detail: { active: false }
-                     });
-                     window.dispatchEvent(event);
+                if (!pinnedCell.value || pinnedCell.value.i >= words.length || pinnedCell.value.j >= words.length) {
+                    pinnedCell.value = null;
+                    const fb = pickDefaultCell(att);
+                    hoveredCell.value = fb;
+                    applyHighlights(fb.i, fb.j, false);
+                } else {
+                    applyHighlights(pinnedCell.value.i, pinnedCell.value.j, true);
                 }
             }
 
-            calculateDynamicCharWidth() {
-                const testText = this.measurementSvg.append('text')
-                    .attr('font-family', 'monospace')
-                    .attr('font-size', fontSize + 'px')
-                    .style('font-family', 'monospace')
-                    .style('font-size', fontSize + 'px')
-                    .text('x');
-                const width = testText.node().getComputedTextLength();
-                testText.remove();
-                return width > 0 ? width : 18;
-            }
+            const recomputeMathOnly = () => {
+                if (!plainState.embeddings.length) return;
+                renderAll();
+            };
 
-            measureTextWidth(text) {
-                if (!text || text.length === 0) return 0;
-                const textElement = this.measurementSvg.append('text')
-                    .attr('font-family', 'monospace')
-                    .attr('font-size', fontSize + 'px')
-                    .style('font-family', 'monospace')
-                    .style('font-size', fontSize + 'px')
-                    .text(text);
-                const bbox = textElement.node().getBBox();
-                const width = bbox.width;
-                const actualWidth = width > 0 ? width : text.length * this.charWidth;
-                textElement.remove();
-                return actualWidth;
-            }
+            const initWorker = () => {
+                if (worker) worker.terminate();
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                worker = new Worker(URL.createObjectURL(blob), { type: 'module' });
+                worker.onerror = (err) => {
+                    workerLoading.value = false;
+                    statusKind.value = 'error';
+                    statusLabel.value = 'Worker error (using synthetic baseline)';
+                    console.error('TextGraph worker error:', err);
+                };
+                worker.onmessage = (e) => {
+                    const { type, data } = e.data;
+                    if (type === 'progress') {
+                        workerLoading.value = true;
+                        workerProgress.value = data.percent;
+                        statusKind.value = '';
+                        statusLabel.value = `Loading ${MODEL_META[selectedModelId.value]?.label || 'model'} (${data.percent}%)`;
+                    } else if (type === 'encoded') {
+                        if (data.requestId !== requestSeq) return;
+                        workerLoading.value = false;
+                        workerProgress.value = 100;
+                        statusKind.value = 'ready';
+                        statusLabel.value = `${MODEL_META[data.modelId]?.label || data.modelId} (${data.backend.toUpperCase()})`;
+                        embInfo.value = `${data.dim}D contextualized token vectors`;
+                        plainState.embeddings = data.embeddings;
+                        renderAll();
+                    } else if (type === 'error') {
+                        workerLoading.value = false;
+                        statusKind.value = 'error';
+                        statusLabel.value = `Fallback to Synthetic: ${data.message}`;
+                    }
+                };
+            };
 
-            precomputeTextDimensions(words) {
-                return words.map(word => ({
-                    word,
-                    width: this.measureTextWidth(word),
-                    height: fontSize * 1.2
-                }));
-            }
+            const recomputeFromModel = () => {
+                const words = tokenizeWords(queryText.value);
+                if (!words.length) return;
+                plainState.queryWords = words;
 
-            renderNodeEmbeddings(embeddings, wordPositions) {
-                // Calculate offset same as render()
-                const screenWidth = window.innerWidth;
-                const pad = 5;
-                const maxLineWidth = Math.max(...Array.from(new Set(wordPositions.map(w => w.line)))
-                    .map(lineNum => {
-                        const lineWords = wordPositions.filter(w => w.line === lineNum);
-                        const lastWord = lineWords[lineWords.length - 1];
-                        return lastWord.x + lastWord.width + pad * 2;
-                    }));
-                const centerOffset = (screenWidth - maxLineWidth) / 2;
+                if (selectedModelId.value === 'synthetic') {
+                    workerLoading.value = false;
+                    statusKind.value = 'ready';
+                    statusLabel.value = 'Synthetic Baseline (64D Instant)';
+                    embInfo.value = '64D deterministic vectors';
+                    plainState.embeddings = computeSyntheticEmbeddings(paragraphText.value, words);
+                    renderAll();
+                    return;
+                }
 
-                wordPositions.forEach((d, i) => {
-                    if (!embeddings[i]) return;
+                // Render instant synthetic baseline while worker computes neural embeddings
+                if (plainState.embeddings.length !== words.length) {
+                    plainState.embeddings = computeSyntheticEmbeddings(paragraphText.value, words);
+                    renderAll();
+                }
 
-                    const width = d.width + pad * 2;
-                    const height = 10;
-                    // Absolute positioning calculation
-                    // rects are at: transform(centerOffset, 0) -> x: d.x - pad + padding
-                    const absX = centerOffset + (d.x - pad + padding);
-                    const absY = d.y + (100 / 4) + (100 / 2) + 25; // Below the node
-
-                    const canvas = this.sel.append('canvas')
-                        .attr('class', 'embedding-viz')
-                        .attr('width', width)
-                        .attr('height', height)
-                        .style('position', 'absolute')
-                        .style('left', absX + 'px')
-                        .style('top', absY + 'px')
-                        .style('border', '1px solid #ccc')
-                        .style('border-radius', '2px')
-                        .style('image-rendering', 'pixelated')
-                        .node();
-
-                    const ctx = canvas.getContext('2d');
-                    const vector = embeddings[i];
-                    const cols = vector.length;
-
-                    // Normalize
-                    let min = Infinity, max = -Infinity;
-                    vector.forEach(v => {
-                        if (v < min) min = v;
-                        if (v > max) max = v;
-                    });
-                    const range = max - min || 1;
-
-                    // Draw stretched barcodes
-                    const barWidth = width / cols;
-
-                    for(let k=0; k<cols; k++) {
-                        const val = vector[k];
-                        const norm = (val - min) / range;
-                        const intensity = Math.floor(norm * 255);
-                        ctx.fillStyle = `rgb(0, ${intensity}, 255)`; // Blue heatmap style
-                        ctx.fillRect(k * barWidth, 0, barWidth + 1, height); // +1 to avoid gaps
+                if (!worker) initWorker();
+                requestSeq++;
+                workerLoading.value = true;
+                workerProgress.value = 0;
+                const meta = MODEL_META[selectedModelId.value];
+                statusKind.value = '';
+                statusLabel.value = `Encoding with ${meta.label}...`;
+                worker.postMessage({
+                    type: 'encode',
+                    data: {
+                        requestId: requestSeq,
+                        modelId: selectedModelId.value,
+                        meta: JSON.parse(JSON.stringify(meta)),
+                        paragraphText: paragraphText.value,
+                        queryWords: JSON.parse(JSON.stringify(words))
                     }
                 });
-            }
+            };
+
+            const onModelChange = () => {
+                recomputeFromModel();
+            };
+
+            const applyPreset = (p) => {
+                paragraphText.value = p.paragraph;
+                queryText.value = p.query;
+                recomputeFromModel();
+            };
+
+            onMounted(() => {
+                window.addEventListener('beforeunload', () => {
+                    if (worker) { worker.terminate(); worker = null; }
+                });
+                recomputeFromModel();
+            });
+
+            return {
+                isCvCopy,
+                showRefs,
+                presets,
+                paragraphText,
+                queryText,
+                selectedModelId,
+                topology,
+                numHeads,
+                gatSeed,
+                temperature,
+                eduSelfLoops,
+                workerLoading,
+                workerProgress,
+                statusKind,
+                statusLabel,
+                embInfo,
+                activeDim,
+                pinnedCell,
+                activeCell,
+                queryTokensPreview,
+                texDot,
+                texGat,
+                katexInline,
+                canvasHSource,
+                canvasHTarget,
+                canvasW,
+                canvasConcat,
+                canvasA,
+                recomputeMathOnly,
+                recomputeFromModel,
+                onModelChange,
+                applyPreset
+            };
         }
-
-        // --- Vue Components ---
-        const ControlPanel = {
-            template: `
-                <div class="text-input-section"
-                    ref="draggableBox"
-                    :style="{ left: position.x + 'px', top: position.y + 'px', cursor: isDragging ? 'grabbing' : 'grab' }"
-                    @mousedown="startDrag">
-                    <div class="drag-handle" @mousedown="startDrag"></div>
-                    <div class="paragraph-section">
-                        <div class="section-header">
-                            <div class="section-title">📄 Context Paragraph</div>
-                            <button class="toggle-btn" @click.stop="toggleParagraph">
-                                {{ isParagraphVisible ? '▼' : '▲' }}
-                            </button>
-                        </div>
-                        <div v-show="isParagraphVisible" class="paragraph-container">
-                            <textarea id="paragraph-input" v-model="localParagraph" placeholder="Enter full paragraph for attention context..." maxlength="10000" @mousedown.stop></textarea>
-                            <div class="char-count"><span>{{ localParagraph.length }}</span>/10000 chars</div>
-                        </div>
-                    </div>
-                    <div class="query-section-title">🎯 Query Sentence</div>
-                    <input id="manual-text-input" type="text" v-model="localQuery" placeholder="Enter query sentence..." class="query-input" @keydown.enter="emitUpdate" @mousedown.stop>
-                    <div class="embedding-section">
-                        <div class="radio-label">
-                            <span>🧠 Using EmbeddingGemma Tokenizer & Embeddings</span>
-                        </div>
-                        <div v-if="isLoading" class="loading-indicator" style="margin-top: 6px;">
-                            <div style="color: #2563eb; font-weight: 500; font-size: 11px; margin-bottom: 2px; display: flex; justify-content: space-between;">
-                                <span>{{ loadingStatus }}</span>
-                                <span v-if="loadingProgress > 0">{{ loadingProgress }}%</span>
-                            </div>
-                            <div class="progress-bar-bg" style="width: 100%; height: 4px; background: #e5e7eb; border-radius: 2px; overflow: hidden;">
-                                <div class="progress-bar-fill" :style="{ width: loadingProgress + '%', height: '100%', background: '#2563eb', transition: 'width 0.3s ease' }"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="button-container">
-                        <button id="update-graph" class="update-btn" @click.stop="emitUpdate" @mousedown.stop>🔄 Compute GAT</button>
-                    </div>
-                </div>
-            `,
-            props: ['query', 'paragraph', 'isLoading', 'loadingProgress', 'loadingStatus'],
-            emits: ['update:query', 'update:paragraph', 'update'],
-            setup(props, { emit }) {
-                const localQuery = ref(props.query);
-                const localParagraph = ref(props.paragraph);
-
-                watch(() => props.query, (newVal) => localQuery.value = newVal);
-                watch(() => props.paragraph, (newVal) => localParagraph.value = newVal);
-
-                watch(localQuery, (newVal) => emit('update:query', newVal));
-                watch(localParagraph, (newVal) => emit('update:paragraph', newVal));
-
-                const isParagraphVisible = ref(true);
-                const toggleParagraph = () => { isParagraphVisible.value = !isParagraphVisible.value; };
-                const emitUpdate = () => { emit('update'); };
-
-                // Drag functionality
-                const draggableBox = ref(null);
-                const position = reactive({ x: 20, y: window.innerHeight - 380 });
-                const isDragging = ref(false);
-                let dragStart = { x: 0, y: 0 };
-                let initialPos = { x: 0, y: 0 };
-
-                const startDrag = (e) => {
-                    if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
-                    isDragging.value = true;
-                    dragStart.x = e.clientX;
-                    dragStart.y = e.clientY;
-                    initialPos.x = position.x;
-                    initialPos.y = position.y;
-                    window.addEventListener('mousemove', onDrag);
-                    window.addEventListener('mouseup', stopDrag);
-                };
-
-                const onDrag = (e) => {
-                    if (!isDragging.value) return;
-                    const deltaX = e.clientX - dragStart.x;
-                    const deltaY = e.clientY - dragStart.y;
-                    const newX = Math.max(0, Math.min(window.innerWidth - 350, initialPos.x + deltaX));
-                    const newY = Math.max(0, Math.min(window.innerHeight - 50, initialPos.y + deltaY));
-                    position.x = newX;
-                    position.y = newY;
-                };
-
-                const stopDrag = () => {
-                    isDragging.value = false;
-                    window.removeEventListener('mousemove', onDrag);
-                    window.removeEventListener('mouseup', stopDrag);
-                };
-
-                onMounted(() => {
-                    // setTimeout(() => { isRealEmbeddingLoading.value = false; }, 1000);
-                });
-
-                return {
-                    localQuery, localParagraph,
-                    isParagraphVisible, toggleParagraph, emitUpdate,
-                    draggableBox, position, isDragging, startDrag
-                };
-            }
-        };
-
-        const GraphVisualizer = {
-            template: `
-                <div id="text-as-graph" ref="graphContainer" :style="{ cursor: isDragging ? 'grabbing' : 'grab' }" @mousedown="startDrag"></div>
-            `,
-            props: ['query', 'paragraph'],
-            setup(props, { expose }) {
-                const graphContainer = ref(null);
-                const textAsGraphInstance = ref(null);
-
-                const updateGraph = async () => {
-                    if (!textAsGraphInstance.value) return;
-                    const queryText = props.query.trim();
-                    const paragraphText = props.paragraph ? props.paragraph.trim() : '';
-                    if (!queryText) return;
-
-                    console.log(`Computing GAT attention with EmbeddingGemma...`);
-
-                    let educationalGAT, originalGAT;
-
-                    // Always try to use EmbeddingGemma logic first
-                    if (window.EmbeddingGemmaManager) {
-                        try {
-                            educationalGAT = await computeEmbeddingGATAttention(paragraphText, queryText, 'educational');
-                            originalGAT = await computeEmbeddingGATAttention(paragraphText, queryText, 'original');
-                        } catch (e) {
-                            console.error("Embedding calculation failed, falling back to synthetic", e);
-                            educationalGAT = computeGATAttention(paragraphText, queryText);
-                            originalGAT = computeOriginalGATAttention(paragraphText, queryText);
-                        }
-                    } else {
-                        console.warn("EmbeddingGemmaManager missing, falling back to synthetic");
-                        educationalGAT = computeGATAttention(paragraphText, queryText);
-                        originalGAT = computeOriginalGATAttention(paragraphText, queryText);
-                    }
-
-                    const visualizationInput = document.querySelector('#text-as-graph input');
-                    if (visualizationInput) {
-                        visualizationInput.value = queryText;
-                        visualizationInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-                        // Return promise that resolves when visualization updates
-                        return new Promise(resolve => {
-                            setTimeout(() => {
-                                applyDualAttentionColoring(educationalGAT, originalGAT, queryText);
-
-                                // Render embedding visualizations on nodes
-                                if (textAsGraphInstance.value && educationalGAT.embeddings) {
-                                    textAsGraphInstance.value.renderNodeEmbeddings(educationalGAT.embeddings, textAsGraphInstance.value.latestWordPositions || []);
-                                    // Note: renderNodeEmbeddings requires word positions. TextAsGraph keeps track of them internally?
-                                    // TextAsGraph.render calculates them locally. We should probably just trigger a re-render.
-                                    // Modified TextAsGraph.render to accept embeddings.
-                                    textAsGraphInstance.value.render(educationalGAT.embeddings);
-                                }
-
-                                // Dispatch data for App to store
-                                window.dispatchEvent(new CustomEvent('gat-data-calculated', {
-                                    detail: { educationalGAT, originalGAT }
-                                }));
-                                resolve();
-                            }, 100);
-                        });
-                    }
-                };
-
-                onMounted(() => {
-                    textAsGraphInstance.value = new TextAsGraph();
-                    setTimeout(() => { updateGraph(); }, 500);
-                });
-
-                expose({ updateGraph });
-
-                // Drag functionality
-                const isDragging = ref(false);
-                let dragStart = { x: 0, y: 0 };
-                let initialPos = { x: 0, y: 0 };
-
-                const startDrag = (e) => {
-                    if (['rect', 'text', 'path', 'INPUT'].includes(e.target.tagName)) return;
-                    isDragging.value = true;
-                    dragStart.x = e.clientX;
-                    dragStart.y = e.clientY;
-                    const style = window.getComputedStyle(graphContainer.value);
-                    initialPos.x = parseInt(style.left || 0);
-                    initialPos.y = parseInt(style.top || 0);
-                    graphContainer.value.style.position = 'relative';
-                    window.addEventListener('mousemove', onDrag);
-                    window.addEventListener('mouseup', stopDrag);
-                };
-
-                const onDrag = (e) => {
-                    if (!isDragging.value) return;
-                    const deltaX = e.clientX - dragStart.x;
-                    const deltaY = e.clientY - dragStart.y;
-                    graphContainer.value.style.left = (initialPos.x + deltaX) + 'px';
-                    graphContainer.value.style.top = (initialPos.y + deltaY) + 'px';
-                };
-
-                const stopDrag = () => {
-                    isDragging.value = false;
-                    window.removeEventListener('mousemove', onDrag);
-                    window.removeEventListener('mouseup', stopDrag);
-                };
-
-                return { graphContainer, isDragging, startDrag, updateGraph };
-            }
-        };
-
-        const CalculationBreakdown = {
-            template: `
-                <div class="calculation-container" v-if="details.active">
-                    <div class="calc-row educational">
-                        <div class="path-label">
-                            <span class="emoji">🎓</span> Educational GAT Path
-                        </div>
-                        <div class="step-box">
-                            <div class="step-title">Word Embeddings</div>
-                            <div class="math-formula">
-                                $$ \vec{h}_i, \vec{h}_j $$
-                            </div>
-                            <div class="viz-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 5px;">
-                                <div style="font-size: 9px; color: #666; margin-bottom: 2px;">Source (i) & Target (j)</div>
-                                <canvas ref="canvasEduEmbSource" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px; margin-bottom: 2px;"></canvas>
-                                <canvas ref="canvasEduEmbTarget" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px;"></canvas>
-                            </div>
-                        </div>
-                        <div class="arrow">&rarr;</div>
-                        <div class="step-box">
-                            <div class="step-title">Dot Product Attention</div>
-                            <div class="math-formula">
-                                $$ \\text{score}_{ij} = \\vec{h}_i \\cdot \\vec{h}_j $$
-                            </div>
-                            <div class="step-value" v-if="details.eduDotProduct !== undefined" style="font-size: 0.8em; color: #555;">
-                                Raw: {{ details.eduDotProduct.toFixed(4) }}
-                            </div>
-                        </div>
-                        <div class="arrow">&rarr;</div>
-                        <div class="step-box">
-                            <div class="step-title">Raw Attention Score</div>
-                            <div class="step-value highlight">
-                                {{ details.eduScore.toFixed(4) }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="calc-row original">
-                        <div class="path-label">
-                            <span class="emoji">🔬</span> Original GAT Path
-                            <div class="paper-link">
-                                <a href="https://arxiv.org/abs/1710.10903" target="_blank">(Veličković et al. 2017)</a>
-                            </div>
-                        </div>
-                        <div class="step-box">
-                            <div class="step-title">Linear Transformation</div>
-                            <div class="math-formula">
-                                $$ \\vec{h}'_i = \\mathbf{W}\\vec{h}_i $$
-                            </div>
-                            <div class="viz-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 5px;">
-                                <div style="font-size: 9px; color: #666; margin-bottom: 2px;">Matrix W (32x64)</div>
-                                <canvas ref="canvasW" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px;"></canvas>
-                            </div>
-                            <div class="step-value" v-if="details.origWhi && details.origWhi.length" style="font-size: 0.7em; color: #555; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                [{{ details.origWhi.slice(0,3).map(n => n.toFixed(2)).join(', ') }}, ...]
-                            </div>
-                        </div>
-                        <div class="arrow">&rarr;</div>
-                        <div class="step-box">
-                            <div class="step-title">Concatenation</div>
-                            <div class="math-formula">
-                                $$ [\\vec{h}'_i || \\vec{h}'_j] $$
-                            </div>
-                            <div class="viz-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 5px;">
-                                <div style="font-size: 9px; color: #666; margin-bottom: 2px;">Concat (64D)</div>
-                                <canvas ref="canvasConcat" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px;"></canvas>
-                            </div>
-                            <div class="step-value" v-if="details.origConcat && details.origConcat.length" style="font-size: 0.7em; color: #555;">
-                                Size: {{ details.origConcat.length }}D
-                            </div>
-                        </div>
-                        <div class="arrow">&rarr;</div>
-                        <div class="step-box">
-                            <div class="step-title">Attention Vector</div>
-                            <div class="math-formula">
-                                $$ \\vec{a}^T [\\vec{h}'_i || \\vec{h}'_j] $$
-                            </div>
-                            <div class="viz-container" style="display: flex; flex-direction: column; align-items: center; margin-top: 5px;">
-                                <div style="font-size: 9px; color: #666; margin-bottom: 2px;">Vector a (64D)</div>
-                                <canvas ref="canvasA" width="64" height="32" style="border: 1px solid #ccc; image-rendering: pixelated; width: 64px; height: 32px;"></canvas>
-                            </div>
-                            <div class="step-value" v-if="details.origRawPreLeaky !== undefined" style="font-size: 0.8em; color: #555;">
-                                = {{ details.origRawPreLeaky.toFixed(4) }}
-                            </div>
-                        </div>
-                        <div class="arrow">&rarr;</div>
-                        <div class="step-box">
-                            <div class="step-title">Raw Attention Score</div>
-                            <div class="step-value highlight" v-if="details.origScore !== undefined">
-                                {{ details.origScore.toFixed(4) }}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="interaction-info">
-                        Analyzing relationship: <strong>"{{ details.sourceWord }}"</strong> → <strong>"{{ details.targetWord }}"</strong>
-                    </div>
-                </div>
-                <div class="calculation-container placeholder" v-else>
-                    <p>Hover over graph nodes or matrix cells to see inner calculations.</p>
-                </div>
-            `,
-            props: ['details'],
-            setup(props) {
-                const canvasW = ref(null);
-                const canvasConcat = ref(null);
-                const canvasA = ref(null);
-                const canvasEduEmbSource = ref(null);
-                const canvasEduEmbTarget = ref(null);
-
-                const drawMatrix = (canvas, data, rows, cols, isVector = false) => {
-                    if (!canvas) return;
-                    const ctx = canvas.getContext('2d');
-                    const imgData = ctx.createImageData(cols, rows);
-
-                    // Normalize data for visualization
-                    let minVal = Infinity, maxVal = -Infinity;
-                    // Flatten if needed or iterate
-                    const flatData = isVector ? data : data.flat();
-                    flatData.forEach(v => {
-                        if (v < minVal) minVal = v;
-                        if (v > maxVal) maxVal = v;
-                    });
-
-                    const range = maxVal - minVal || 1;
-
-                    for (let y = 0; y < rows; y++) {
-                        for (let x = 0; x < cols; x++) {
-                            // If vector, reuse the same data for all rows (stretch vertical)
-                            // If matrix, flatten normally row-major
-                            const val = isVector ? flatData[x] : flatData[y * cols + x];
-
-                            // Handle potential bounds issues if data is smaller than cols
-                            if (val === undefined) continue;
-
-                            const norm = (val - minVal) / range;
-                            const intensity = Math.floor(norm * 255);
-
-                            const i = (y * cols + x) * 4;
-                            imgData.data[i + 0] = 0;   // R
-                            imgData.data[i + 1] = intensity; // G
-                            imgData.data[i + 2] = 255; // B
-                            imgData.data[i + 3] = 255; // Alpha
-                        }
-                    }
-                    ctx.putImageData(imgData, 0, 0);
-                };
-
-                watch(() => props.details, (newVal) => {
-                    if (newVal.active) {
-                        // Wait for DOM update
-                        setTimeout(() => {
-                            if (newVal.W) drawMatrix(canvasW.value, newVal.W, 32, 64); // W is 32x64
-                            if (newVal.origConcat) drawMatrix(canvasConcat.value, newVal.origConcat, 32, 64, true);
-                            if (newVal.a) drawMatrix(canvasA.value, newVal.a, 32, 64, true);
-                            if (newVal.eduEmbSource && newVal.eduEmbSource.length) drawMatrix(canvasEduEmbSource.value, newVal.eduEmbSource, 32, Math.min(64, newVal.eduEmbSource.length), true);
-                            if (newVal.eduEmbTarget && newVal.eduEmbTarget.length) drawMatrix(canvasEduEmbTarget.value, newVal.eduEmbTarget, 32, Math.min(64, newVal.eduEmbTarget.length), true);
-                        }, 50);
-                    }
-                }, { deep: true });
-
-                return { canvasW, canvasConcat, canvasA, canvasEduEmbSource, canvasEduEmbTarget };
-            },
-            updated() {
-                if (window.MathJax) {
-                    window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub]);
-                }
-            }
-        };
-
-        const App = {
-            template: `
-                <div class="app-container">
-                    <div style="position: fixed; top: 10px; right: 12px; z-index: 1002; display: flex; gap: 8px; align-items: center; background: rgba(255,255,255,0.92); backdrop-filter: blur(6px); padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                        <a href="../index.html" style="color: #2563eb; text-decoration: none; font-weight: 600;">&larr; 1kaiser.github.io</a>
-                        <span style="color: #cbd5e1;">|</span>
-                        <a href="/TextGraph/" style="color: #2563eb; text-decoration: none;">Canonical App</a>
-                        <span style="color: #cbd5e1;">|</span>
-                        <a href="https://github.com/1kaiser/TextGraph" target="_blank" rel="noopener" style="color: #4b5563; text-decoration: none;">GitHub</a>
-                        <button type="button" @click="showRefs = !showRefs" style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 12px; color: #1f2937; font-weight: 500;">References</button>
-                    </div>
-                    <div v-if="showRefs" style="position: fixed; top: 48px; right: 12px; z-index: 1003; max-width: 440px; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 14px 16px; box-shadow: 0 10px 28px rgba(0,0,0,0.16); font-size: 12px; color: #334155; line-height: 1.55;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong style="font-size: 13px; color: #0f172a;">References &amp; Attribution</strong>
-                            <button type="button" @click="showRefs = false" style="background: none; border: none; cursor: pointer; font-size: 14px; color: #64748b;">&times;</button>
-                        </div>
-                        <ul style="margin: 0; padding-left: 16px;">
-                            <li>Veličković, P. et al. (2018). <em>Graph Attention Networks</em>. ICLR (<a href="https://arxiv.org/abs/1710.10903" target="_blank" rel="noopener">arXiv:1710.10903</a>).</li>
-                            <li>Sanchez-Lengeling, B., Reif, E., Pearce, A., &amp; Wiltschko, A. B. (2021). <em>A Gentle Introduction to Graph Neural Networks</em>. Distill (<a href="https://doi.org/10.23915/distill.00033" target="_blank" rel="noopener">doi:10.23915/distill.00033</a>).</li>
-                            <li><strong>Models &amp; Libraries:</strong> <a href="https://huggingface.co/onnx-community/embeddinggemma-300m-ONNX" target="_blank" rel="noopener">EmbeddingGemma-300M (ONNX)</a>, <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">Transformers.js</a>, <a href="https://vuejs.org/" target="_blank" rel="noopener">Vue 3</a>, <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a>, <a href="https://www.mathjax.org/" target="_blank" rel="noopener">MathJax</a>.</li>
-                        </ul>
-                    </div>
-                    <ControlPanel
-                        v-model:query="queryText"
-                        v-model:paragraph="paragraphText"
-                        :is-loading="isLoading"
-                        :loading-progress="loadingProgress"
-                        :loading-status="loadingStatus"
-                        @update="handleUpdate"
-                    />
-                    <GraphVisualizer
-                        ref="graphVisualizer"
-                        :query="queryText"
-                        :paragraph="paragraphText"
-                    />
-                    <CalculationBreakdown :details="interactionDetails" />
-                </div>
-            `,
-            components: { ControlPanel, GraphVisualizer, CalculationBreakdown },
-            setup() {
-                const showRefs = ref(false);
-                const queryText = ref('Graph attention mechanisms capture relationships');
-                const paragraphText = ref('Neural networks are powerful machine learning models. Graph attention mechanisms capture complex relationships between words. These models can transform how we process natural language understanding.');
-                const isLoading = ref(false);
-                const loadingProgress = ref(0);
-                const loadingStatus = ref('Initializing...');
-                const graphVisualizer = ref(null);
-
-                const interactionDetails = reactive({
-                    active: false,
-                    sourceIndex: 0,
-                    targetIndex: 0,
-                    sourceWord: '',
-                    targetWord: '',
-                    eduScore: 0,
-                    origScore: 0,
-                    eduDotProduct: 0,
-                    eduEmbSource: [],
-                    eduEmbTarget: [],
-                    origWhi: [],
-                    origConcat: [],
-                    origRawPreLeaky: 0,
-                    W: null,
-                    a: null
-                });
-
-                // Use a ref to ensure it's available across the component scope
-                const storedEducationalData = ref(null);
-
-                const handleUpdate = async () => {
-                    if (graphVisualizer.value) {
-                        isLoading.value = true;
-                        try {
-                            await graphVisualizer.value.updateGraph();
-                        } finally {
-                            isLoading.value = false;
-                        }
-                    }
-                };
-
-                onMounted(() => {
-                    // Listen for global data events to update stored data
-                    window.addEventListener('gat-data-calculated', (e) => {
-                        console.log("App received gat-data-calculated", e.detail);
-                        storedEducationalData.value = e.detail.educationalGAT;
-                        // Also update currentOriginalGATParams if they were regenerated
-                    });
-
-                    // Listen for embedding progress
-                    window.addEventListener('embedding-progress', (e) => {
-                        if (e.detail.progress !== undefined) {
-                            loadingProgress.value = e.detail.progress;
-                        }
-                        if (e.detail.isLoading !== undefined) {
-                            isLoading.value = e.detail.isLoading;
-                        }
-                        if (e.detail.status !== undefined) {
-                            loadingStatus.value = e.detail.status;
-                        }
-                    });
-
-                    window.addEventListener('gat-interaction', (e) => {
-                        const { sourceIndex, targetIndex, sourceWord, targetWord, active } = e.detail;
-                        interactionDetails.active = active;
-                        if (active) {
-                            interactionDetails.sourceIndex = sourceIndex;
-                            interactionDetails.targetIndex = targetIndex;
-                            interactionDetails.sourceWord = sourceWord;
-                            interactionDetails.targetWord = targetWord;
-
-                            // Re-calculate scores for display
-                            // Note: For accurate values we should ideally access the pre-computed matrices
-                            // But re-computing specifically for this pair is fast and works if functions are deterministic or access stored params.
-
-                            // Educational (Dot Product)
-                            // We need embeddings. Since we don't store them globally, we'll simulate or re-compute if possible.
-                            // Limitation: Re-computing embeddings from scratch might differ if random seed is involved.
-                            // The current implementation of synthetic embeddings IS deterministic based on string char codes.
-                            // So re-computing is safe!
-
-                            // However, we need the paragraph context for context features.
-                            const pTokens = paragraphText.value ? paragraphText.value.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w) : [];
-                            const qTokens = queryText.value.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w);
-
-                            // Only proceed if tokens match current state (basic check)
-                            const cleanSource = sourceWord.toLowerCase().replace(/[^\w\s]/g, '');
-                            if (qTokens[sourceIndex] === cleanSource) {
-                                // Compute Educational Score
-                                let dotProduct = 0;
-                                let embI = [];
-                                let embJ = [];
-
-                                // Check if we have valid stored data that matches current query length
-                                const hasValidStoredData = storedEducationalData.value &&
-                                                         storedEducationalData.value.embeddings &&
-                                                         storedEducationalData.value.embeddings.length === qTokens.length;
-
-                                if (hasValidStoredData) {
-                                    // Use real stored embeddings
-                                    embI = storedEducationalData.value.embeddings[sourceIndex];
-                                    embJ = storedEducationalData.value.embeddings[targetIndex];
-
-                                    // Recalculate dot product using these embeddings to be sure
-                                    for (let d = 0; d < embI.length; d++) {
-                                        dotProduct += embI[d] * embJ[d];
-                                    }
-                                } else {
-                                    // Fallback to recalculating synthetic if missing
-                                    // console.warn("Missing or invalid stored educational data, using synthetic fallback");
-                                    const embeddings = createEmbeddingMatrix(pTokens, qTokens);
-                                    embI = embeddings[sourceIndex];
-                                    embJ = embeddings[targetIndex];
-                                    for (let d = 0; d < embI.length; d++) {
-                                        dotProduct += embI[d] * embJ[d];
-                                    }
-                                }
-
-                                interactionDetails.eduEmbSource = embI;
-                                interactionDetails.eduEmbTarget = embJ;
-
-                                // Normalized score logic (simplified for viz)
-                                const eduScore = Math.max(0.1 * dotProduct, dotProduct);
-                                const posBias = Math.abs(sourceIndex - targetIndex) === 1 ? 0.3 : 0;
-                                interactionDetails.eduScore = Math.max(0, eduScore + posBias);
-                                interactionDetails.eduDotProduct = dotProduct;
-
-                                // Compute Original Score
-                                // We use the stored params W and a
-                                if (currentOriginalGATParams.W && currentOriginalGATParams.a) {
-                                    // console.log("Updating Original GAT calculation for", sourceIndex, targetIndex);
-                                    const nodeFeatures = createOriginalNodeFeatures(pTokens, qTokens);
-                                    const W = currentOriginalGATParams.W;
-                                    const a = currentOriginalGATParams.a;
-
-                                    // Correct usage: matrixVectorMultiply(matrix, vector)
-                                    // W is the matrix (32x64), nodeFeatures is the vector (64)
-                                    const Wh_i = matrixVectorMultiply(W, nodeFeatures[sourceIndex]);
-                                    const Wh_j = matrixVectorMultiply(W, nodeFeatures[targetIndex]);
-
-                                    const concat = [...Wh_i, ...Wh_j];
-                                    let e_ij = 0;
-                                    for(let k=0; k<Math.min(a.length, concat.length); k++) {
-                                        e_ij += a[k] * concat[k];
-                                    }
-                                    const origScore = e_ij > 0 ? e_ij : 0.01 * e_ij;
-                                    interactionDetails.origScore = origScore;
-                                    interactionDetails.origWhi = Wh_i;
-                                    interactionDetails.origConcat = concat;
-                                    interactionDetails.origRawPreLeaky = e_ij;
-                                    interactionDetails.W = W;
-                                    interactionDetails.a = a;
-                                }
-                            }
-                        }
-                    });
-                });
-
-                return {
-                    showRefs, queryText, paragraphText, isLoading, loadingProgress, loadingStatus, graphVisualizer, handleUpdate, interactionDetails
-                };
-            }
-        };
-
-        createApp(App).mount('#app');
-    </script>
+    }).mount('#app');
+</script>
 </body>
 </html>
